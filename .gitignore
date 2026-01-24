@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# IDE/Editor
+.vscode/
+.idea/
+
+# Claude Code
+.claude/
+
+# Playwright
+.playwright-mcp/
+
+# OS files
+.DS_Store

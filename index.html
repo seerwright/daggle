@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daggle — Internal Data Science Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300@display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Navigation -->
+        <nav class="nav">
+            <div class="nav-left">
+                <a href="#" class="logo">
+                    <svg class="logo-mark" viewBox="0 0 32 32" fill="none">
+                        <rect x="2" y="2" width="12" height="12" rx="2" fill="currentColor" opacity="0.9"/>
+                        <rect x="18" y="2" width="12" height="12" rx="2" fill="currentColor" opacity="0.5"/>
+                        <rect x="2" y="18" width="12" height="12" rx="2" fill="currentColor" opacity="0.5"/>
+                        <rect x="18" y="18" width="12" height="12" rx="2" fill="currentColor" opacity="0.3"/>
+                    </svg>
+                    <span class="logo-text">Daggle</span>
+                </a>
+                <div class="nav-links">
+                    <a href="#" class="nav-link active" data-view="dashboard">Home</a>
+                    <a href="#" class="nav-link" data-view="competitions">Competitions</a>
+                    <a href="#" class="nav-link" data-view="datasets">Datasets</a>
+                    <a href="#" class="nav-link" data-view="leaderboard">Leaderboard</a>
+                    <a href="#" class="nav-link" data-view="discussions">Discussions</a>
+                </div>
+            </div>
+            <div class="nav-right">
+                <button class="search-trigger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <span>Search</span>
+                    <kbd>⌘K</kbd>
+                </button>
+                <button class="icon-btn notifications">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    <span class="notification-dot"></span>
+                </button>
+                <div class="user-menu">
+                    <div class="avatar">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" alt="Sarah Chen">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Home View -->
+            <section class="view view-dashboard active" id="view-dashboard">
+                <!-- Getting Started Banner -->
+                <div class="getting-started">
+                    <div class="getting-started-content">
+                        <div class="getting-started-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 16v-4"/>
+                                <path d="M12 8h.01"/>
+                            </svg>
+                        </div>
+                        <div class="getting-started-text">
+                            <span class="getting-started-title">New to Daggle?</span>
+                            <span class="getting-started-desc">Join a competition, download the dataset, build a model, and submit your predictions.</span>
+                        </div>
+                    </div>
+                    <a href="#" class="getting-started-link">
+                        Learn how it works
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M5 12h14"/>
+                            <path d="m12 5 7 7-7 7"/>
+                        </svg>
+                    </a>
+                </div>
+
+                <!-- Page Header -->
+                <header class="home-header">
+                    <div class="home-header-text">
+                        <h1>Active Competitions</h1>
+                        <p class="subtitle">Choose a challenge and start building</p>
+                    </div>
+                </header>
+
+                <!-- Competition Catalog -->
+                <div class="competition-catalog">
+                    <!-- Competition Tile - User is participating -->
+                    <article class="competition-tile participating">
+                        <div class="tile-participation-indicator">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            You're in
+                        </div>
+                        <div class="tile-header">
+                            <div class="tile-meta">
+                                <span class="tile-difficulty intermediate">Intermediate</span>
+                                <span class="tile-deadline">12 days left</span>
+                            </div>
+                        </div>
+                        <h3 class="tile-title">Customer Churn Prediction</h3>
+                        <p class="tile-description">Predict which customers will leave next quarter using transaction history and engagement signals.</p>
+                        <div class="tile-tags">
+                            <span class="tile-tag">Classification</span>
+                            <span class="tile-tag">Tabular</span>
+                        </div>
+                        <div class="tile-footer">
+                            <div class="tile-stats">
+                                <span class="tile-stat">234 participants</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm">Continue</button>
+                        </div>
+                    </article>
+
+                    <!-- Competition Tile - User is participating -->
+                    <article class="competition-tile participating">
+                        <div class="tile-participation-indicator">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            You're in
+                        </div>
+                        <div class="tile-header">
+                            <div class="tile-meta">
+                                <span class="tile-difficulty advanced">Advanced</span>
+                                <span class="tile-deadline">23 days left</span>
+                            </div>
+                        </div>
+                        <h3 class="tile-title">Fraud Detection Sprint</h3>
+                        <p class="tile-description">Identify fraudulent transactions in real-time payment data. Balance precision and recall for production use.</p>
+                        <div class="tile-tags">
+                            <span class="tile-tag">Anomaly Detection</span>
+                            <span class="tile-tag">Time Series</span>
+                        </div>
+                        <div class="tile-footer">
+                            <div class="tile-stats">
+                                <span class="tile-stat">156 participants</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm">Continue</button>
+                        </div>
+                    </article>
+
+                    <!-- Competition Tile - Not joined -->
+                    <article class="competition-tile">
+                        <div class="tile-header">
+                            <div class="tile-meta">
+                                <span class="tile-difficulty intermediate">Intermediate</span>
+                                <span class="tile-deadline">45 days left</span>
+                            </div>
+                        </div>
+                        <h3 class="tile-title">Q1 Sales Forecasting</h3>
+                        <p class="tile-description">Forecast regional sales for Q1 2025. Top solutions will present methodology to the finance team.</p>
+                        <div class="tile-tags">
+                            <span class="tile-tag">Forecasting</span>
+                            <span class="tile-tag">Time Series</span>
+                            <span class="tile-tag">Regression</span>
+                        </div>
+                        <div class="tile-footer">
+                            <div class="tile-stats">
+                                <span class="tile-stat">189 participants</span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm">View Details</button>
+                        </div>
+                    </article>
+
+                    <!-- Competition Tile - Not joined -->
+                    <article class="competition-tile">
+                        <div class="tile-header">
+                            <div class="tile-meta">
+                                <span class="tile-difficulty beginner">Beginner</span>
+                                <span class="tile-deadline">38 days left</span>
+                            </div>
+                        </div>
+                        <h3 class="tile-title">Customer Segmentation</h3>
+                        <p class="tile-description">Cluster customers into meaningful segments for targeted marketing campaigns. Great for those new to unsupervised learning.</p>
+                        <div class="tile-tags">
+                            <span class="tile-tag">Clustering</span>
+                            <span class="tile-tag">Unsupervised</span>
+                        </div>
+                        <div class="tile-footer">
+                            <div class="tile-stats">
+                                <span class="tile-stat">87 participants</span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm">View Details</button>
+                        </div>
+                    </article>
+
+                    <!-- Competition Tile - Upcoming -->
+                    <article class="competition-tile upcoming">
+                        <div class="tile-header">
+                            <div class="tile-meta">
+                                <span class="tile-difficulty advanced">Advanced</span>
+                                <span class="tile-deadline upcoming">Starts Feb 1</span>
+                            </div>
+                        </div>
+                        <h3 class="tile-title">Document Classification Challenge</h3>
+                        <p class="tile-description">Automatically categorize internal documents using NLP. Build a classification system for the legal team.</p>
+                        <div class="tile-tags">
+                            <span class="tile-tag">NLP</span>
+                            <span class="tile-tag">Classification</span>
+                            <span class="tile-tag">Text</span>
+                        </div>
+                        <div class="tile-footer">
+                            <div class="tile-stats">
+                                <span class="tile-stat">78 interested</span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm">Get Notified</button>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- Competitions View -->
+            <section class="view view-competitions" id="view-competitions">
+                <header class="view-header">
+                    <div class="greeting">
+                        <h1>Competitions</h1>
+                        <p class="subtitle">Solve real business challenges and compete with your colleagues</p>
+                    </div>
+                    <div class="header-actions">
+                        <div class="filter-group">
+                            <button class="filter-btn active">All</button>
+                            <button class="filter-btn">Active</button>
+                            <button class="filter-btn">Upcoming</button>
+                            <button class="filter-btn">Completed</button>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="competitions-grid">
+                    <!-- Competition Card 1 -->
+                    <div class="competition-card featured">
+                        <div class="competition-header">
+                            <div class="competition-badges">
+                                <span class="badge featured">Featured</span>
+                                <span class="badge active">Active</span>
+                            </div>
+                            <span class="prize-amount">$2,500</span>
+                        </div>
+                        <h3>Q1 Customer Churn Prediction</h3>
+                        <p>Predict which customers will churn using historical data. Top solutions will inform retention strategy.</p>
+                        <div class="competition-tags">
+                            <span class="tag">Classification</span>
+                            <span class="tag">Tabular</span>
+                            <span class="tag">Business</span>
+                        </div>
+                        <div class="competition-footer">
+                            <div class="competition-stats">
+                                <span class="stat">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                    234 teams
+                                </span>
+                                <span class="stat">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <polyline points="12,6 12,12 16,14"/>
+                                    </svg>
+                                    12d left
+                                </span>
+                            </div>
+                            <button class="btn btn-primary btn-sm">Join</button>
+                        </div>
+                    </div>
+
+                    <!-- Competition Card 2 -->
+                    <div class="competition-card">
+                        <div class="competition-header">
+                            <div class="competition-badges">
+                                <span class="badge active">Active</span>
+                            </div>
+                            <span class="prize-amount">$1,500</span>
+                        </div>
+                        <h3>Fraud Detection Sprint</h3>
+                        <p>Identify fraudulent transactions in real-time payment data. Focus on precision and recall balance.</p>
+                        <div class="competition-tags">
+                            <span class="tag">Anomaly Detection</span>
+                            <span class="tag">Time Series</span>
+                        </div>
+                        <div class="competition-footer">
+                            <div class="competition-stats">
+                                <span class="stat">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                    156 teams
+                                </span>
+                                <span class="stat">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <polyline points="12,6 12,12 16,14"/>
+                                    </svg>
+                                    23d left
+                                </span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm">View</button>
+                        </div>
+                    </div>
+
+                    <!-- Competition Card 3 -->
+                    <div class="competition-card">
+                        <div class="competition-header">
+                            <div class="competition-badges">
+                                <span class="badge active">Active</span>
+                            </div>
+                            <span class="prize-amount">$2,000</span>
+                        </div>
+                        <h3>Q1 Sales Forecasting</h3>
+                        <p>Forecast regional sales for Q1 2025. Winners will present methodology to the finance team.</p>
+                        <div class="competition-tags">
+                            <span class="tag">Forecasting</span>
+                            <span class="tag">Time Series</span>
+                            <span class="tag">Regression</span>
+                        </div>
+                        <div class="competition-footer">
+                            <div class="competition-stats">
+                                <span class="stat">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                    189 teams
+                                </span>
+                                <span class="stat">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <polyline points="12,6 12,12 16,14"/>
+                                    </svg>
+                                    45d left
+                                </span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm">View</button>
+                        </div>
+                    </div>
+
+                    <!-- Competition Card 4 -->
+                    <div class="competition-card upcoming">
+                        <div class="competition-header">
+                            <div class="competition-badges">
+                                <span class="badge upcoming">Starts Feb 1</span>
+                            </div>
+                            <span class="prize-amount">$3,000</span>
+                        </div>
+                        <h3>Document Classification Challenge</h3>
+                        <p>Automatically categorize internal documents using NLP. Build a system for the legal team.</p>
+                        <div class="competition-tags">
+                            <span class="tag">NLP</span>
+                            <span class="tag">Classification</span>
+                            <span class="tag">Text</span>
+                        </div>
+                        <div class="competition-footer">
+                            <div class="competition-stats">
+                                <span class="stat">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                    78 interested
+                                </span>
+                                <span class="stat">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <polyline points="12,6 12,12 16,14"/>
+                                    </svg>
+                                    Starts in 8d
+                                </span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm">Notify Me</button>
+                        </div>
+                    </div>
+
+                    <!-- Competition Card 5 -->
+                    <div class="competition-card completed">
+                        <div class="competition-header">
+                            <div class="competition-badges">
+                                <span class="badge completed">Completed</span>
+                            </div>
+                            <span class="prize-amount">$1,000</span>
+                        </div>
+                        <h3>Customer Segmentation 2024</h3>
+                        <p>Cluster customers into meaningful segments for marketing campaigns.</p>
+                        <div class="competition-tags">
+                            <span class="tag">Clustering</span>
+                            <span class="tag">Unsupervised</span>
+                        </div>
+                        <div class="competition-footer">
+                            <div class="competition-stats">
+                                <span class="stat">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                    312 teams
+                                </span>
+                                <span class="stat winner">
+                                    🏆 Alex Kim
+                                </span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm">Results</button>
+                        </div>
+                    </div>
+
+                    <!-- Competition Card 6 -->
+                    <div class="competition-card completed">
+                        <div class="competition-header">
+                            <div class="competition-badges">
+                                <span class="badge completed">Completed</span>
+                            </div>
+                            <span class="prize-amount">$1,500</span>
+                        </div>
+                        <h3>Supply Chain Optimization</h3>
+                        <p>Optimize inventory levels and predict supply chain disruptions.</p>
+                        <div class="competition-tags">
+                            <span class="tag">Optimization</span>
+                            <span class="tag">Forecasting</span>
+                        </div>
+                        <div class="competition-footer">
+                            <div class="competition-stats">
+                                <span class="stat">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                    267 teams
+                                </span>
+                                <span class="stat winner">
+                                    🏆 Team Logistics
+                                </span>
+                            </div>
+                            <button class="btn btn-secondary btn-sm">Results</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Datasets View -->
+            <section class="view view-datasets" id="view-datasets">
+                <header class="view-header">
+                    <div class="greeting">
+                        <h1>Datasets</h1>
+                        <p class="subtitle">Explore and download curated internal datasets</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17,8 12,3 7,8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Upload Dataset
+                        </button>
+                    </div>
+                </header>
+
+                <div class="datasets-filters">
+                    <div class="search-box">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        <input type="text" placeholder="Search datasets...">
+                    </div>
+                    <div class="filter-pills">
+                        <button class="pill active">All</button>
+                        <button class="pill">Tabular</button>
+                        <button class="pill">Time Series</button>
+                        <button class="pill">Text</button>
+                        <button class="pill">Images</button>
+                    </div>
+                </div>
+
+                <div class="datasets-table">
+                    <div class="table-header">
+                        <span class="col-name">Name</span>
+                        <span class="col-type">Type</span>
+                        <span class="col-size">Size</span>
+                        <span class="col-updated">Updated</span>
+                        <span class="col-downloads">Downloads</span>
+                        <span class="col-actions"></span>
+                    </div>
+                    <div class="table-body">
+                        <div class="table-row">
+                            <div class="col-name">
+                                <div class="dataset-icon tabular">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <line x1="3" y1="9" x2="21" y2="9"/>
+                                        <line x1="3" y1="15" x2="21" y2="15"/>
+                                        <line x1="9" y1="3" x2="9" y2="21"/>
+                                    </svg>
+                                </div>
+                                <div class="dataset-info">
+                                    <span class="dataset-name">Customer Transactions 2024</span>
+                                    <span class="dataset-desc">Complete transaction history with customer metadata</span>
+                                </div>
+                            </div>
+                            <span class="col-type"><span class="type-badge tabular">Tabular</span></span>
+                            <span class="col-size">2.4 GB</span>
+                            <span class="col-updated">2 days ago</span>
+                            <span class="col-downloads">1,247</span>
+                            <span class="col-actions">
+                                <button class="icon-btn-sm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7,10 12,15 17,10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="table-row">
+                            <div class="col-name">
+                                <div class="dataset-icon timeseries">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/>
+                                    </svg>
+                                </div>
+                                <div class="dataset-info">
+                                    <span class="dataset-name">Sales Time Series (2020-2024)</span>
+                                    <span class="dataset-desc">Daily sales data by region and product category</span>
+                                </div>
+                            </div>
+                            <span class="col-type"><span class="type-badge timeseries">Time Series</span></span>
+                            <span class="col-size">856 MB</span>
+                            <span class="col-updated">1 week ago</span>
+                            <span class="col-downloads">892</span>
+                            <span class="col-actions">
+                                <button class="icon-btn-sm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7,10 12,15 17,10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="table-row">
+                            <div class="col-name">
+                                <div class="dataset-icon text">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14,2 14,8 20,8"/>
+                                        <line x1="16" y1="13" x2="8" y2="13"/>
+                                        <line x1="16" y1="17" x2="8" y2="17"/>
+                                        <polyline points="10,9 9,9 8,9"/>
+                                    </svg>
+                                </div>
+                                <div class="dataset-info">
+                                    <span class="dataset-name">Support Tickets Corpus</span>
+                                    <span class="dataset-desc">Anonymized customer support tickets with categories</span>
+                                </div>
+                            </div>
+                            <span class="col-type"><span class="type-badge text">Text</span></span>
+                            <span class="col-size">1.2 GB</span>
+                            <span class="col-updated">3 days ago</span>
+                            <span class="col-downloads">634</span>
+                            <span class="col-actions">
+                                <button class="icon-btn-sm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7,10 12,15 17,10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="table-row">
+                            <div class="col-name">
+                                <div class="dataset-icon tabular">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <line x1="3" y1="9" x2="21" y2="9"/>
+                                        <line x1="3" y1="15" x2="21" y2="15"/>
+                                        <line x1="9" y1="3" x2="9" y2="21"/>
+                                    </svg>
+                                </div>
+                                <div class="dataset-info">
+                                    <span class="dataset-name">Employee Churn History</span>
+                                    <span class="dataset-desc">HR data for churn analysis (anonymized)</span>
+                                </div>
+                            </div>
+                            <span class="col-type"><span class="type-badge tabular">Tabular</span></span>
+                            <span class="col-size">45 MB</span>
+                            <span class="col-updated">2 weeks ago</span>
+                            <span class="col-downloads">423</span>
+                            <span class="col-actions">
+                                <button class="icon-btn-sm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7,10 12,15 17,10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                </button>
+                            </span>
+                        </div>
+                        <div class="table-row">
+                            <div class="col-name">
+                                <div class="dataset-icon image">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                                        <polyline points="21,15 16,10 5,21"/>
+                                    </svg>
+                                </div>
+                                <div class="dataset-info">
+                                    <span class="dataset-name">Product Images Library</span>
+                                    <span class="dataset-desc">High-res product photos with metadata</span>
+                                </div>
+                            </div>
+                            <span class="col-type"><span class="type-badge image">Images</span></span>
+                            <span class="col-size">18.7 GB</span>
+                            <span class="col-updated">1 month ago</span>
+                            <span class="col-downloads">234</span>
+                            <span class="col-actions">
+                                <button class="icon-btn-sm">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7,10 12,15 17,10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Leaderboard View -->
+            <section class="view view-leaderboard" id="view-leaderboard">
+                <header class="view-header">
+                    <div class="greeting">
+                        <h1>Leaderboard</h1>
+                        <p class="subtitle">See who's leading the data science community</p>
+                    </div>
+                    <div class="header-actions">
+                        <select class="select-dropdown">
+                            <option>All Time</option>
+                            <option>This Month</option>
+                            <option>This Week</option>
+                        </select>
+                    </div>
+                </header>
+
+                <!-- Top 3 Podium -->
+                <div class="podium">
+                    <div class="podium-place second">
+                        <div class="podium-avatar">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Emma" alt="Emma Rodriguez">
+                            <span class="podium-medal">🥈</span>
+                        </div>
+                        <h4>Emma Rodriguez</h4>
+                        <span class="podium-score">8,234 pts</span>
+                        <span class="podium-rank">2nd</span>
+                    </div>
+                    <div class="podium-place first">
+                        <div class="podium-avatar">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="Alex Kim">
+                            <span class="podium-medal">🥇</span>
+                        </div>
+                        <h4>Alex Kim</h4>
+                        <span class="podium-score">9,847 pts</span>
+                        <span class="podium-rank">1st</span>
+                    </div>
+                    <div class="podium-place third">
+                        <div class="podium-avatar">
+                            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=David" alt="David Park">
+                            <span class="podium-medal">🥉</span>
+                        </div>
+                        <h4>David Park</h4>
+                        <span class="podium-score">7,901 pts</span>
+                        <span class="podium-rank">3rd</span>
+                    </div>
+                </div>
+
+                <!-- Full Leaderboard -->
+                <div class="leaderboard-table">
+                    <div class="leaderboard-header">
+                        <span class="col-rank">Rank</span>
+                        <span class="col-user">User</span>
+                        <span class="col-points">Points</span>
+                        <span class="col-competitions">Competitions</span>
+                        <span class="col-medals">Medals</span>
+                        <span class="col-trend">Trend</span>
+                    </div>
+                    <div class="leaderboard-body">
+                        <div class="leaderboard-row top-3">
+                            <span class="col-rank">1</span>
+                            <div class="col-user">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="">
+                                <span>Alex Kim</span>
+                            </div>
+                            <span class="col-points">9,847</span>
+                            <span class="col-competitions">23</span>
+                            <span class="col-medals">🥇×5 🥈×3 🥉×2</span>
+                            <span class="col-trend up">↑ 0</span>
+                        </div>
+                        <div class="leaderboard-row top-3">
+                            <span class="col-rank">2</span>
+                            <div class="col-user">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Emma" alt="">
+                                <span>Emma Rodriguez</span>
+                            </div>
+                            <span class="col-points">8,234</span>
+                            <span class="col-competitions">19</span>
+                            <span class="col-medals">🥇×3 🥈×4 🥉×3</span>
+                            <span class="col-trend up">↑ 1</span>
+                        </div>
+                        <div class="leaderboard-row top-3">
+                            <span class="col-rank">3</span>
+                            <div class="col-user">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=David" alt="">
+                                <span>David Park</span>
+                            </div>
+                            <span class="col-points">7,901</span>
+                            <span class="col-competitions">21</span>
+                            <span class="col-medals">🥇×2 🥈×5 🥉×4</span>
+                            <span class="col-trend down">↓ 1</span>
+                        </div>
+                        <div class="leaderboard-row">
+                            <span class="col-rank">4</span>
+                            <div class="col-user">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Priya" alt="">
+                                <span>Priya Sharma</span>
+                            </div>
+                            <span class="col-points">7,456</span>
+                            <span class="col-competitions">18</span>
+                            <span class="col-medals">🥇×2 🥈×3 🥉×5</span>
+                            <span class="col-trend up">↑ 2</span>
+                        </div>
+                        <div class="leaderboard-row">
+                            <span class="col-rank">5</span>
+                            <div class="col-user">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Michael" alt="">
+                                <span>Michael Torres</span>
+                            </div>
+                            <span class="col-points">6,892</span>
+                            <span class="col-competitions">16</span>
+                            <span class="col-medals">🥇×1 🥈×4 🥉×3</span>
+                            <span class="col-trend down">↓ 1</span>
+                        </div>
+                        <div class="leaderboard-row highlight">
+                            <span class="col-rank">12</span>
+                            <div class="col-user">
+                                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" alt="">
+                                <span>Sarah Chen (You)</span>
+                            </div>
+                            <span class="col-points">4,892</span>
+                            <span class="col-competitions">11</span>
+                            <span class="col-medals">🥈×2 🥉×3</span>
+                            <span class="col-trend up">↑ 4</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Discussions View -->
+            <section class="view view-discussions" id="view-discussions">
+                <header class="view-header">
+                    <div class="greeting">
+                        <h1>Discussions</h1>
+                        <p class="subtitle">Share knowledge and learn from your colleagues</p>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-primary">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="12" y1="5" x2="12" y2="19"/>
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            New Discussion
+                        </button>
+                    </div>
+                </header>
+
+                <div class="discussions-filters">
+                    <div class="filter-pills">
+                        <button class="pill active">All Topics</button>
+                        <button class="pill">Questions</button>
+                        <button class="pill">Tutorials</button>
+                        <button class="pill">Show & Tell</button>
+                        <button class="pill">Competition Talk</button>
+                    </div>
+                    <select class="select-dropdown">
+                        <option>Most Recent</option>
+                        <option>Most Popular</option>
+                        <option>Most Replies</option>
+                    </select>
+                </div>
+
+                <div class="discussions-full-list">
+                    <div class="discussion-card">
+                        <div class="discussion-votes">
+                            <button class="vote-btn upvoted">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2">
+                                    <polyline points="18,15 12,9 6,15"/>
+                                </svg>
+                            </button>
+                            <span class="vote-count">42</span>
+                            <button class="vote-btn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6,9 12,15 18,9"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="discussion-main">
+                            <div class="discussion-header">
+                                <span class="discussion-tag question">Question</span>
+                                <span class="discussion-tag competition">Churn Challenge</span>
+                            </div>
+                            <h3>Best practices for handling imbalanced datasets in churn prediction?</h3>
+                            <p>I'm working on the customer churn challenge and my dataset has about 8% positive class. I've tried SMOTE but the results are mixed. What approaches have worked for you?</p>
+                            <div class="discussion-footer">
+                                <div class="discussion-author">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Michael" alt="">
+                                    <span>Michael Torres</span>
+                                </div>
+                                <span class="discussion-time">4 hours ago</span>
+                                <span class="discussion-replies">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                    23 replies
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="discussion-card">
+                        <div class="discussion-votes">
+                            <button class="vote-btn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="18,15 12,9 6,15"/>
+                                </svg>
+                            </button>
+                            <span class="vote-count">38</span>
+                            <button class="vote-btn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6,9 12,15 18,9"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="discussion-main">
+                            <div class="discussion-header">
+                                <span class="discussion-tag tutorial">Tutorial</span>
+                            </div>
+                            <h3>SHAP values interpretation guide for tree-based models</h3>
+                            <p>I put together a comprehensive guide on interpreting SHAP values for XGBoost and LightGBM models. Includes examples from our recent competitions.</p>
+                            <div class="discussion-footer">
+                                <div class="discussion-author">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Priya" alt="">
+                                    <span>Priya Sharma</span>
+                                </div>
+                                <span class="discussion-time">1 day ago</span>
+                                <span class="discussion-replies">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                    18 replies
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="discussion-card">
+                        <div class="discussion-votes">
+                            <button class="vote-btn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="18,15 12,9 6,15"/>
+                                </svg>
+                            </button>
+                            <span class="vote-count">29</span>
+                            <button class="vote-btn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6,9 12,15 18,9"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="discussion-main">
+                            <div class="discussion-header">
+                                <span class="discussion-tag tutorial">Tutorial</span>
+                                <span class="discussion-tag competition">Sales Forecast</span>
+                            </div>
+                            <h3>Feature engineering tips for time-series sales data</h3>
+                            <p>Sharing some feature engineering techniques that helped me improve my sales forecasting model by 15%. Lag features, rolling windows, and holiday effects.</p>
+                            <div class="discussion-footer">
+                                <div class="discussion-author">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=James" alt="">
+                                    <span>James Wilson</span>
+                                </div>
+                                <span class="discussion-time">2 days ago</span>
+                                <span class="discussion-replies">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                    31 replies
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="discussion-card">
+                        <div class="discussion-votes">
+                            <button class="vote-btn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="18,15 12,9 6,15"/>
+                                </svg>
+                            </button>
+                            <span class="vote-count">24</span>
+                            <button class="vote-btn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6,9 12,15 18,9"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="discussion-main">
+                            <div class="discussion-header">
+                                <span class="discussion-tag show-tell">Show & Tell</span>
+                            </div>
+                            <h3>My winning solution for Customer Segmentation 2024</h3>
+                            <p>Now that the competition is over, I'm sharing my full approach. Used a combination of RFM analysis, K-means, and hierarchical clustering.</p>
+                            <div class="discussion-footer">
+                                <div class="discussion-author">
+                                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Alex" alt="">
+                                    <span>Alex Kim</span>
+                                    <span class="author-badge">🥇 Winner</span>
+                                </div>
+                                <span class="discussion-time">5 days ago</span>
+                                <span class="discussion-replies">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                    </svg>
+                                    47 replies
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Search Modal -->
+    <div class="modal-overlay" id="search-modal">
+        <div class="modal search-modal">
+            <div class="search-modal-input">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input type="text" placeholder="Search competitions, datasets, users..." autofocus>
+                <kbd>ESC</kbd>
+            </div>
+            <div class="search-results">
+                <div class="search-section">
+                    <h4>Quick Actions</h4>
+                    <div class="search-item">
+                        <span class="search-icon">📊</span>
+                        <span>New Notebook</span>
+                        <kbd>⌘N</kbd>
+                    </div>
+                    <div class="search-item">
+                        <span class="search-icon">📤</span>
+                        <span>Submit Solution</span>
+                        <kbd>⌘S</kbd>
+                    </div>
+                </div>
+                <div class="search-section">
+                    <h4>Recent</h4>
+                    <div class="search-item">
+                        <span class="search-icon">🏆</span>
+                        <span>Customer Churn Challenge</span>
+                    </div>
+                    <div class="search-item">
+                        <span class="search-icon">📁</span>
+                        <span>Customer Transactions 2024</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

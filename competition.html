@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Churn Prediction — Daggle</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=JetBrains+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,300@display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="competition.css">
+</head>
+<body>
+    <!--
+        Competition page modes:
+        - discovery: Not enrolled (default)
+        - participant: Enrolled + active
+        - sponsor: Competition creator/host (future)
+        - admin: Platform admin (future)
+
+        Mode is set via data-mode attribute on body element.
+    -->
+    <div class="app" data-competition-mode="discovery">
+        <!-- Navigation -->
+        <nav class="nav">
+            <div class="nav-left">
+                <a href="index.html" class="logo">
+                    <svg class="logo-mark" viewBox="0 0 32 32" fill="none">
+                        <rect x="2" y="2" width="12" height="12" rx="2" fill="currentColor" opacity="0.9"/>
+                        <rect x="18" y="2" width="12" height="12" rx="2" fill="currentColor" opacity="0.5"/>
+                        <rect x="2" y="18" width="12" height="12" rx="2" fill="currentColor" opacity="0.5"/>
+                        <rect x="18" y="18" width="12" height="12" rx="2" fill="currentColor" opacity="0.3"/>
+                    </svg>
+                    <span class="logo-text">Daggle</span>
+                </a>
+                <div class="nav-links">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="index.html#competitions" class="nav-link active">Competitions</a>
+                    <a href="index.html#datasets" class="nav-link">Datasets</a>
+                    <a href="index.html#leaderboard" class="nav-link">Leaderboard</a>
+                    <a href="index.html#discussions" class="nav-link">Discussions</a>
+                </div>
+            </div>
+            <div class="nav-right">
+                <button class="search-trigger">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/>
+                        <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <span>Search</span>
+                    <kbd>⌘K</kbd>
+                </button>
+                <button class="icon-btn notifications">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                </button>
+                <div class="user-menu">
+                    <div class="avatar">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah" alt="Sarah Chen">
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Competition Detail Content -->
+        <main class="competition-page">
+            <!-- Breadcrumb -->
+            <nav class="breadcrumb">
+                <a href="index.html">Home</a>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+                <a href="index.html">Competitions</a>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+                <span>Customer Churn Prediction</span>
+            </nav>
+
+            <!-- Competition Header - Compact -->
+            <header class="competition-header">
+                <div class="header-top">
+                    <div class="header-meta">
+                        <!-- Discovery/Participant mode badges -->
+                        <span class="status-pill active mode-discovery-participant">Active</span>
+                        <!-- Sponsor mode badge -->
+                        <span class="managing-badge mode-sponsor-only">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                            </svg>
+                            Managing
+                        </span>
+                        <span class="health-indicator mode-sponsor-only">
+                            <span class="health-dot"></span>
+                            Healthy
+                        </span>
+                        <span class="difficulty-badge intermediate mode-discovery-participant">Intermediate</span>
+                        <span class="deadline-badge mode-discovery-participant">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12,6 12,12 16,14"/>
+                            </svg>
+                            12 days left
+                        </span>
+                        <!-- Enrolled indicator (participant mode only) -->
+                        <span class="enrolled-badge mode-participant-only">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                            Joined
+                        </span>
+                    </div>
+
+                    <!-- Discovery mode CTAs -->
+                    <div class="header-actions mode-discovery-only">
+                        <button class="btn btn-primary" id="join-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="8.5" cy="7" r="4"/>
+                                <line x1="20" y1="8" x2="20" y2="14"/>
+                                <line x1="23" y1="11" x2="17" y2="11"/>
+                            </svg>
+                            Join Competition
+                        </button>
+                    </div>
+
+                    <!-- Participant mode CTAs -->
+                    <div class="header-actions mode-participant-only">
+                        <button class="btn btn-secondary" id="view-submissions-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                            </svg>
+                            My Submissions
+                        </button>
+                        <button class="btn btn-primary" id="submit-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            Make a Submission
+                        </button>
+                    </div>
+
+                    <!-- Sponsor/Admin mode CTAs -->
+                    <div class="header-actions mode-sponsor-only">
+                        <button class="btn btn-secondary" id="view-as-participant-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            View as Participant
+                        </button>
+                        <button class="btn btn-primary" id="edit-settings-btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"/>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                            </svg>
+                            Edit Competition Settings
+                        </button>
+                    </div>
+                </div>
+
+                <h1>Customer Churn Prediction</h1>
+                <p class="header-summary">Help the Retention Team identify customers likely to cancel in the next 30 days. A 5% accuracy improvement could save an estimated <strong>$2.4M annually</strong>.</p>
+
+                <div class="header-quick-facts">
+                    <div class="quick-fact">
+                        <span class="fact-label">Hosted by</span>
+                        <span class="fact-value">Retention Team</span>
+                    </div>
+                    <div class="quick-fact">
+                        <span class="fact-label">Type</span>
+                        <span class="fact-value">Binary Classification</span>
+                    </div>
+                    <div class="quick-fact">
+                        <span class="fact-label">Metric</span>
+                        <span class="fact-value">AUC-ROC</span>
+                    </div>
+                    <div class="quick-fact">
+                        <span class="fact-label">Participants</span>
+                        <span class="fact-value">234</span>
+                    </div>
+                </div>
+
+                <!-- Participant Status Summary (participant mode only) -->
+                <div class="participant-status mode-participant-only" data-testid="participant-status">
+                    <div class="status-item">
+                        <span class="status-label">Your Best</span>
+                        <span class="status-value" id="user-best-score">0.8234</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Your Rank</span>
+                        <span class="status-value" id="user-rank">#12 <span class="rank-context">of 234</span></span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Today's Submissions</span>
+                        <span class="status-value" id="submissions-remaining">2 / 5 <span class="submissions-context">remaining</span></span>
+                    </div>
+                    <div class="status-item leaderboard-snippet">
+                        <span class="status-label">Leaderboard</span>
+                        <a href="#" class="leaderboard-link" id="leaderboard-context">
+                            Top 6% — 4 spots from top 10
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Admin Status Summary (sponsor mode only) -->
+                <div class="admin-status-bar mode-sponsor-only" data-testid="admin-status-bar">
+                    <div class="admin-status-item">
+                        <span class="status-label">Participants</span>
+                        <span class="status-value" id="admin-participants">234 enrolled</span>
+                    </div>
+                    <div class="admin-status-item">
+                        <span class="status-label">Submissions Today</span>
+                        <span class="status-value" id="admin-submissions-today">47 new</span>
+                    </div>
+                    <div class="admin-status-item">
+                        <span class="status-label">Errors (24h)</span>
+                        <span class="status-value" id="admin-errors">3 failures</span>
+                    </div>
+                    <div class="admin-status-item">
+                        <span class="status-label">Days Left</span>
+                        <span class="status-value" id="admin-days-left">12</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Tabbed Content Area -->
+            <div class="tab-container">
+                <nav class="tab-nav" role="tablist" data-testid="competition-tab-nav">
+                    <!-- Submissions tab (participant mode only, appears first) -->
+                    <button class="tab-btn mode-participant-only" role="tab" aria-selected="false" data-tab="submissions">Submissions</button>
+
+                    <!-- Discovery/Participant mode tabs -->
+                    <button class="tab-btn active mode-discovery-participant" role="tab" aria-selected="true" data-tab="overview">Overview</button>
+                    <button class="tab-btn mode-discovery-participant" role="tab" aria-selected="false" data-tab="task-data">Task & Data</button>
+                    <button class="tab-btn mode-discovery-participant" role="tab" aria-selected="false" data-tab="evaluation">Evaluation</button>
+                    <button class="tab-btn mode-discovery-participant" role="tab" aria-selected="false" data-tab="getting-started">Getting Started</button>
+                    <button class="tab-btn mode-discovery-participant" role="tab" aria-selected="false" data-tab="rules-timeline">Rules & Timeline</button>
+
+                    <!-- Admin/Sponsor mode tabs -->
+                    <button class="tab-btn mode-sponsor-only" role="tab" aria-selected="false" data-tab="admin-overview">Overview</button>
+                    <button class="tab-btn mode-sponsor-only" role="tab" aria-selected="false" data-tab="admin-config">Configuration</button>
+                    <button class="tab-btn mode-sponsor-only" role="tab" aria-selected="false" data-tab="admin-data">Data</button>
+                    <button class="tab-btn mode-sponsor-only" role="tab" aria-selected="false" data-tab="admin-monitoring">Monitoring</button>
+                    <button class="tab-btn mode-sponsor-only" role="tab" aria-selected="false" data-tab="admin-rules">Rules & Timeline</button>
+                    <button class="tab-btn mode-sponsor-only" role="tab" aria-selected="false" data-tab="admin-discussions">Discussions</button>
+                </nav>
+
+                <!-- Tab Panels - Stable width container for all tab content -->
+                <div class="tab-panels" data-testid="competition-tabs-shell">
+
+                    <!-- Submissions Tab (participant mode only) -->
+                    <section class="tab-panel mode-participant-only" id="panel-submissions" role="tabpanel">
+                        <div class="panel-content">
+                            <div class="submissions-layout">
+                                <!-- Upload Section -->
+                                <div class="submission-upload">
+                                    <h2>Submit Predictions</h2>
+                                    <div class="upload-zone" id="upload-zone">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                            <polyline points="17 8 12 3 7 8"/>
+                                            <line x1="12" y1="3" x2="12" y2="15"/>
+                                        </svg>
+                                        <p class="upload-text">Drop your CSV file here or <button class="upload-browse">browse</button></p>
+                                        <p class="upload-hint">submission.csv with customer_id and churn_probability columns</p>
+                                    </div>
+                                    <div class="submission-info">
+                                        <p><strong>2 of 5</strong> submissions remaining today</p>
+                                        <p class="submission-reset">Resets in 8 hours</p>
+                                    </div>
+                                </div>
+
+                                <!-- Recent Submissions -->
+                                <div class="recent-submissions">
+                                    <h2>Your Submissions</h2>
+                                    <div class="submissions-list" id="submissions-list">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Overview Tab -->
+                    <section class="tab-panel active mode-discovery-participant" id="panel-overview" role="tabpanel">
+                        <div class="panel-content">
+                            <div class="overview-grid">
+                                <div class="overview-main">
+                                    <h2>The Challenge</h2>
+                                    <p>Customer churn—when customers stop doing business with us—is one of the most critical challenges facing our subscription business. The Retention Team currently uses simple rule-based heuristics (e.g., "no login in 30 days"), but these miss many at-risk customers while flagging many who won't churn.</p>
+                                    <p>Your challenge is to build a predictive model that identifies which customers will churn in the next 30 days, using historical transaction, engagement, and demographic data.</p>
+
+                                    <h3>What You'll Work With</h3>
+                                    <ul class="feature-highlights">
+                                        <li><strong>50,000 customers</strong> observed over 12 months</li>
+                                        <li><strong>47 features</strong> including tenure, engagement, transactions, demographics</li>
+                                        <li><strong>~8% churn rate</strong> (imbalanced classification)</li>
+                                    </ul>
+                                </div>
+                                <aside class="overview-sidebar">
+                                    <div class="info-card">
+                                        <h4>At a Glance</h4>
+                                        <dl class="glance-list">
+                                            <div class="glance-item">
+                                                <dt>Input</dt>
+                                                <dd>Customer features (47 columns)</dd>
+                                            </div>
+                                            <div class="glance-item">
+                                                <dt>Output</dt>
+                                                <dd>Churn probability (0–1)</dd>
+                                            </div>
+                                            <div class="glance-item">
+                                                <dt>Baseline to beat</dt>
+                                                <dd>AUC 0.70</dd>
+                                            </div>
+                                            <div class="glance-item">
+                                                <dt>Expected winning range</dt>
+                                                <dd>AUC 0.85–0.90</dd>
+                                            </div>
+                                        </dl>
+                                    </div>
+
+                                    <!-- Mini leaderboard (participant mode) -->
+                                    <div class="info-card mini-leaderboard mode-participant-only">
+                                        <h4>Around You</h4>
+                                        <ol class="leaderboard-mini-list" id="mini-leaderboard">
+                                            <!-- Populated by JS -->
+                                        </ol>
+                                        <a href="#" class="view-full-leaderboard">View full leaderboard →</a>
+                                    </div>
+
+                                    <div class="info-card">
+                                        <h4>Resources</h4>
+                                        <ul class="resource-links">
+                                            <li><a href="#">Discussion Forum</a></li>
+                                            <li><a href="#">Leaderboard</a></li>
+                                            <li><a href="#">FAQ</a></li>
+                                        </ul>
+                                    </div>
+                                </aside>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Task & Data Tab -->
+                    <section class="tab-panel mode-discovery-participant" id="panel-task-data" role="tabpanel">
+                        <div class="panel-content">
+                            <div class="split-layout">
+                                <!-- Task Section -->
+                                <div class="split-section">
+                                    <h2>The Task</h2>
+                                    <p>Build a binary classification model that predicts whether a customer will churn (cancel their subscription or become inactive) within the next 30 days.</p>
+
+                                    <div class="spec-box">
+                                        <div class="spec-item">
+                                            <h4>Input</h4>
+                                            <p>For each customer: account info, engagement metrics, transaction history, and demographic data.</p>
+                                        </div>
+                                        <div class="spec-item">
+                                            <h4>Output</h4>
+                                            <p>A CSV with <code>customer_id</code> and <code>churn_probability</code> (value between 0 and 1).</p>
+                                        </div>
+                                    </div>
+
+                                    <details class="expandable">
+                                        <summary>View submission format example</summary>
+                                        <div class="expandable-content">
+                                            <div class="code-block">
+                                                <div class="code-header">submission.csv</div>
+                                                <pre><code>customer_id,churn_probability
+CUST_00001,0.82
+CUST_00002,0.15
+CUST_00003,0.67
+...</code></pre>
+                                            </div>
+                                        </div>
+                                    </details>
+                                </div>
+
+                                <!-- Data Section -->
+                                <div class="split-section">
+                                    <h2>Data Files</h2>
+                                    <p>Download these files to get started. All data has been anonymized.</p>
+
+                                    <div class="file-list">
+                                        <div class="file-item">
+                                            <div class="file-info">
+                                                <span class="file-name">train.csv</span>
+                                                <span class="file-desc">40,000 customers with labels</span>
+                                            </div>
+                                            <span class="file-size">124 MB</span>
+                                            <button class="btn-icon" title="Download">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="7,10 12,15 17,10"/>
+                                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="file-item">
+                                            <div class="file-info">
+                                                <span class="file-name">test.csv</span>
+                                                <span class="file-desc">10,000 customers without labels</span>
+                                            </div>
+                                            <span class="file-size">31 MB</span>
+                                            <button class="btn-icon" title="Download">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="7,10 12,15 17,10"/>
+                                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="file-item">
+                                            <div class="file-info">
+                                                <span class="file-name">data_dictionary.pdf</span>
+                                                <span class="file-desc">All 47 features explained</span>
+                                            </div>
+                                            <span class="file-size">2.1 MB</span>
+                                            <button class="btn-icon" title="Download">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="7,10 12,15 17,10"/>
+                                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div class="file-item">
+                                            <div class="file-info">
+                                                <span class="file-name">sample_submission.csv</span>
+                                                <span class="file-desc">Example with correct format</span>
+                                            </div>
+                                            <span class="file-size">245 KB</span>
+                                            <button class="btn-icon" title="Download">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="7,10 12,15 17,10"/>
+                                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <details class="expandable">
+                                        <summary>View key features</summary>
+                                        <div class="expandable-content">
+                                            <table class="feature-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Feature</th>
+                                                        <th>Type</th>
+                                                        <th>Description</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td><code>tenure_months</code></td>
+                                                        <td>numeric</td>
+                                                        <td>Months since account creation</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><code>monthly_charges</code></td>
+                                                        <td>numeric</td>
+                                                        <td>Current monthly subscription</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><code>login_frequency_30d</code></td>
+                                                        <td>numeric</td>
+                                                        <td>Logins in past 30 days</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><code>support_tickets_90d</code></td>
+                                                        <td>numeric</td>
+                                                        <td>Support tickets in 90 days</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><code>contract_type</code></td>
+                                                        <td>categorical</td>
+                                                        <td>Monthly, Annual, Multi-year</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                            <p class="table-note">See data_dictionary.pdf for all 47 features.</p>
+                                        </div>
+                                    </details>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Evaluation Tab -->
+                    <section class="tab-panel mode-discovery-participant" id="panel-evaluation" role="tabpanel">
+                        <div class="panel-content">
+                            <div class="content-narrow">
+                            <h2>Evaluation Metric</h2>
+                            <p>Submissions are scored using <strong>Area Under the ROC Curve (AUC-ROC)</strong>, which measures how well your model ranks customers by churn risk across all classification thresholds.</p>
+
+                            <div class="metric-scale">
+                                <div class="scale-bar">
+                                    <div class="scale-marker" style="left: 0%">
+                                        <span class="marker-value">0.5</span>
+                                        <span class="marker-label">Random</span>
+                                    </div>
+                                    <div class="scale-marker baseline" style="left: 40%">
+                                        <span class="marker-value">0.70</span>
+                                        <span class="marker-label">Baseline</span>
+                                    </div>
+                                    <div class="scale-marker good" style="left: 60%">
+                                        <span class="marker-value">0.80</span>
+                                        <span class="marker-label">Good</span>
+                                    </div>
+                                    <div class="scale-marker target" style="left: 80%">
+                                        <span class="marker-value">0.90</span>
+                                        <span class="marker-label">Excellent</span>
+                                    </div>
+                                    <div class="scale-marker" style="left: 100%">
+                                        <span class="marker-value">1.0</span>
+                                        <span class="marker-label">Perfect</span>
+                                    </div>
+                                    <div class="scale-track"></div>
+                                </div>
+                            </div>
+
+                            <details class="expandable">
+                                <summary>Why AUC-ROC?</summary>
+                                <div class="expandable-content">
+                                    <ul>
+                                        <li><strong>Ranking quality:</strong> Measures how well you separate high-risk from low-risk customers</li>
+                                        <li><strong>Threshold-independent:</strong> Gives the Retention Team flexibility in how they use predictions</li>
+                                        <li><strong>Handles imbalance:</strong> Works better than accuracy when only ~8% of customers churn</li>
+                                    </ul>
+                                </div>
+                            </details>
+
+                            <div class="success-box">
+                                <h3>What Success Looks Like</h3>
+                                <p>The current rule-based system achieves <strong>AUC 0.70</strong>. Based on similar problems, we expect top solutions to reach <strong>0.85–0.90</strong>.</p>
+                            </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Getting Started Tab -->
+                    <section class="tab-panel mode-discovery-participant" id="panel-getting-started" role="tabpanel">
+                        <div class="panel-content">
+                            <div class="content-narrow">
+                            <h2>How to Participate</h2>
+                            <p>Daggle hosts the competition and evaluates submissions. You build and train models in your own environment.</p>
+
+                            <ol class="steps-list">
+                                <li>
+                                    <strong>Join the competition</strong>
+                                    <p>Click "Join Competition" to register and unlock data downloads.</p>
+                                </li>
+                                <li>
+                                    <strong>Download the data</strong>
+                                    <p>Get the training set, test set, and data dictionary from the Task & Data tab.</p>
+                                </li>
+                                <li>
+                                    <strong>Build your model</strong>
+                                    <p>Work in whatever environment you prefer—see setup guides below.</p>
+                                </li>
+                                <li>
+                                    <strong>Submit predictions</strong>
+                                    <p>Upload a CSV with your predictions for the test set. You can submit up to 5 times per day.</p>
+                                </li>
+                            </ol>
+
+                            <div class="environment-section">
+                                <h3>Recommended Environments</h3>
+                                <p>Choose the setup that works best for you:</p>
+
+                                <div class="env-options">
+                                    <details class="env-option">
+                                        <summary>
+                                            <span class="env-name">SageMaker Studio</span>
+                                            <span class="env-tag">Recommended for large datasets</span>
+                                        </summary>
+                                        <div class="env-content">
+                                            <p>Access SageMaker through your AWS console. The ml.m5.xlarge instance type is sufficient for this dataset.</p>
+                                            <a href="#" class="env-link">View SageMaker setup guide →</a>
+                                        </div>
+                                    </details>
+
+                                    <details class="env-option">
+                                        <summary>
+                                            <span class="env-name">Databricks</span>
+                                            <span class="env-tag">Good for Spark-based workflows</span>
+                                        </summary>
+                                        <div class="env-content">
+                                            <p>Use your team's Databricks workspace. A single-node cluster with 16GB RAM is recommended.</p>
+                                            <a href="#" class="env-link">View Databricks setup guide →</a>
+                                        </div>
+                                    </details>
+
+                                    <details class="env-option">
+                                        <summary>
+                                            <span class="env-name">Local Setup</span>
+                                            <span class="env-tag">Python + Jupyter</span>
+                                        </summary>
+                                        <div class="env-content">
+                                            <p>Works well if you have 8GB+ RAM available. Use Python 3.9+ with pandas, scikit-learn, and your preferred ML library.</p>
+                                            <a href="#" class="env-link">View local setup guide →</a>
+                                        </div>
+                                    </details>
+                                </div>
+                            </div>
+
+                            <div class="help-note">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                <p><strong>Need help?</strong> Check the <a href="#">Discussion Forum</a> for tips and Q&A with other participants.</p>
+                            </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Rules & Timeline Tab -->
+                    <section class="tab-panel mode-discovery-participant" id="panel-rules-timeline" role="tabpanel">
+                        <div class="panel-content">
+                            <div class="split-layout">
+                                <div class="split-section">
+                                    <h2>Timeline</h2>
+                                    <div class="timeline-compact">
+                                        <div class="timeline-item completed">
+                                            <div class="timeline-dot"></div>
+                                            <div class="timeline-content">
+                                                <span class="timeline-date">Jan 10</span>
+                                                <span class="timeline-label">Competition launched</span>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item current">
+                                            <div class="timeline-dot"></div>
+                                            <div class="timeline-content">
+                                                <span class="timeline-date">Feb 5</span>
+                                                <span class="timeline-label">Submission deadline</span>
+                                                <span class="timeline-note">12 days left</span>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-dot"></div>
+                                            <div class="timeline-content">
+                                                <span class="timeline-date">Feb 7</span>
+                                                <span class="timeline-label">Results announced</span>
+                                            </div>
+                                        </div>
+                                        <div class="timeline-item">
+                                            <div class="timeline-dot"></div>
+                                            <div class="timeline-content">
+                                                <span class="timeline-date">Feb 14</span>
+                                                <span class="timeline-label">Winner presentations</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="split-section">
+                                    <h2>Rules</h2>
+                                    <ul class="rules-list">
+                                        <li>
+                                            <strong>Submissions</strong>
+                                            <span>5 per day maximum. Best score counts.</span>
+                                        </li>
+                                        <li>
+                                            <strong>Teams</strong>
+                                            <span>Up to 3 people. Mergers allowed until 7 days before deadline.</span>
+                                        </li>
+                                        <li>
+                                            <strong>External data</strong>
+                                            <span>Allowed if publicly available and disclosed.</span>
+                                        </li>
+                                        <li>
+                                            <strong>Code sharing</strong>
+                                            <span>Encouraged. No plagiarism of private code.</span>
+                                        </li>
+                                        <li>
+                                            <strong>Fair play</strong>
+                                            <span>No reverse-engineering test labels.</span>
+                                        </li>
+                                        <li>
+                                            <strong>Writeups</strong>
+                                            <span>Top 10 must submit approach summary within 3 days.</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- ===================================
+                         Admin/Sponsor Mode Tab Panels
+                         =================================== -->
+
+                    <!-- Admin Overview Tab -->
+                    <section class="tab-panel mode-sponsor-only" id="panel-admin-overview" role="tabpanel">
+                        <div class="panel-content">
+                            <h2>Competition Health</h2>
+                            <div class="admin-health-metrics">
+                                <div class="admin-metric-card">
+                                    <div class="metric-value" id="metric-enrolled">234</div>
+                                    <div class="metric-label">enrolled</div>
+                                </div>
+                                <div class="admin-metric-card">
+                                    <div class="metric-value" id="metric-total-submissions">1,847</div>
+                                    <div class="metric-label">total submissions</div>
+                                </div>
+                                <div class="admin-metric-card">
+                                    <div class="metric-value" id="metric-success-rate">98.2%</div>
+                                    <div class="metric-label">success rate</div>
+                                </div>
+                                <div class="admin-metric-card">
+                                    <div class="metric-value" id="metric-days-remaining">12</div>
+                                    <div class="metric-label">days remaining</div>
+                                </div>
+                            </div>
+
+                            <div class="admin-overview-grid">
+                                <div class="admin-overview-main">
+                                    <div class="admin-timeline-section">
+                                        <h3>Timeline</h3>
+                                        <div id="admin-timeline">
+                                            <!-- Populated by JS -->
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <aside class="admin-overview-sidebar">
+                                    <div class="quick-actions">
+                                        <h4>Quick Actions</h4>
+                                        <div class="quick-actions-list">
+                                            <button class="quick-action-btn">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                                </svg>
+                                                Announce update
+                                            </button>
+                                            <button class="quick-action-btn">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                                    <polyline points="7 10 12 15 17 10"/>
+                                                    <line x1="12" y1="15" x2="12" y2="3"/>
+                                                </svg>
+                                                Download submissions
+                                            </button>
+                                            <button class="quick-action-btn">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                                    <polyline points="14 2 14 8 20 8"/>
+                                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                                </svg>
+                                                Export leaderboard
+                                            </button>
+                                            <button class="quick-action-btn">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                                    <polyline points="22,6 12,13 2,6"/>
+                                                </svg>
+                                                Contact participants
+                                            </button>
+                                        </div>
+                                    </div>
+                                </aside>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Admin Configuration Tab -->
+                    <section class="tab-panel mode-sponsor-only" id="panel-admin-config" role="tabpanel">
+                        <div class="panel-content">
+                            <div class="config-layout">
+                                <div class="config-form">
+                                    <h2>Competition Settings</h2>
+
+                                    <div class="form-group">
+                                        <label for="config-title">Title</label>
+                                        <input type="text" id="config-title" value="Customer Churn Prediction">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="config-description">Description</label>
+                                        <textarea id="config-description">Help the Retention Team identify customers likely to cancel in the next 30 days. A 5% accuracy improvement could save an estimated $2.4M annually.</textarea>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="config-difficulty">Difficulty</label>
+                                        <select id="config-difficulty">
+                                            <option value="beginner">Beginner</option>
+                                            <option value="intermediate" selected>Intermediate</option>
+                                            <option value="advanced">Advanced</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="config-metric">Evaluation Metric</label>
+                                        <select id="config-metric">
+                                            <option value="auc-roc" selected>AUC-ROC</option>
+                                            <option value="accuracy">Accuracy</option>
+                                            <option value="f1">F1 Score</option>
+                                            <option value="rmse">RMSE</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="config-tags">Tags</label>
+                                        <input type="text" id="config-tags" value="classification, churn, tabular">
+                                    </div>
+
+                                    <div class="form-actions">
+                                        <button class="btn btn-secondary">Discard Changes</button>
+                                        <button class="btn btn-primary">Save Changes</button>
+                                    </div>
+                                </div>
+
+                                <div class="config-preview">
+                                    <h3>Participant Preview</h3>
+                                    <div class="preview-card">
+                                        <div class="preview-title">Customer Churn Prediction</div>
+                                        <div class="preview-summary">Help the Retention Team identify customers likely to cancel in the next 30 days.</div>
+                                        <div class="preview-meta">
+                                            <span>Intermediate</span>
+                                            <span>AUC-ROC</span>
+                                            <span>234 participants</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Admin Data Tab -->
+                    <section class="tab-panel mode-sponsor-only" id="panel-admin-data" role="tabpanel">
+                        <div class="panel-content">
+                            <div class="data-section">
+                                <h2>Current Dataset</h2>
+                                <div class="current-dataset">
+                                    <div class="dataset-file">
+                                        <span class="file-name">train.csv</span>
+                                        <div class="file-meta">
+                                            <span>v3 (current)</span>
+                                            <span>Jan 10, 2025</span>
+                                            <span>124 MB</span>
+                                        </div>
+                                    </div>
+                                    <div class="dataset-file">
+                                        <span class="file-name">test.csv</span>
+                                        <div class="file-meta">
+                                            <span>v3 (current)</span>
+                                            <span>Jan 10, 2025</span>
+                                            <span>31 MB</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-secondary">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    Upload New Version
+                                </button>
+
+                                <div class="data-warning">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                        <line x1="12" y1="9" x2="12" y2="13"/>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                    </svg>
+                                    <p><strong>Warning:</strong> Changing data during an active competition will notify all participants and may affect scores.</p>
+                                </div>
+                            </div>
+
+                            <div class="version-history">
+                                <h3>Version History</h3>
+                                <div id="data-versions-list">
+                                    <!-- Populated by JS -->
+                                </div>
+                            </div>
+
+                            <div class="data-dictionary">
+                                <h3>Data Dictionary</h3>
+                                <div class="dictionary-file">
+                                    <div class="file-info">
+                                        <span class="file-name">data_dictionary.pdf</span>
+                                        <span class="file-size">(2.1 MB)</span>
+                                    </div>
+                                    <div class="dictionary-actions">
+                                        <button class="btn btn-secondary btn-small">Replace</button>
+                                        <button class="btn btn-secondary btn-small">Download</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Admin Monitoring Tab -->
+                    <section class="tab-panel mode-sponsor-only" id="panel-admin-monitoring" role="tabpanel">
+                        <div class="panel-content">
+                            <div class="monitoring-section">
+                                <h2>Submission Activity (Last 7 Days)</h2>
+                                <div class="monitoring-chart">
+                                    <div id="activity-chart">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="monitoring-grid">
+                                <div class="monitoring-card">
+                                    <h3>Error Breakdown</h3>
+                                    <div id="error-breakdown">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+
+                                <div class="monitoring-card">
+                                    <h3>Limit Usage</h3>
+                                    <div class="limit-usage">
+                                        <p><strong>67%</strong> of participants used all 5 daily submissions at least once</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Admin Rules & Timeline Tab -->
+                    <section class="tab-panel mode-sponsor-only" id="panel-admin-rules" role="tabpanel">
+                        <div class="panel-content">
+                            <div class="change-warning">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                                    <line x1="12" y1="9" x2="12" y2="13"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                                </svg>
+                                <p>Changes to rules or timeline will notify all participants. Edit carefully.</p>
+                            </div>
+
+                            <div class="admin-rules-layout">
+                                <div class="admin-rules-section">
+                                    <h2>Timeline</h2>
+                                    <div class="editable-timeline">
+                                        <div class="editable-timeline-item">
+                                            <input type="text" class="date-input" value="Jan 10">
+                                            <input type="text" class="label-input" value="Competition launched">
+                                            <button class="btn-small">Edit</button>
+                                        </div>
+                                        <div class="editable-timeline-item">
+                                            <input type="text" class="date-input" value="Feb 5">
+                                            <input type="text" class="label-input" value="Submission deadline">
+                                            <button class="btn-small">Edit</button>
+                                        </div>
+                                        <div class="editable-timeline-item">
+                                            <input type="text" class="date-input" value="Feb 7">
+                                            <input type="text" class="label-input" value="Results announced">
+                                            <button class="btn-small">Edit</button>
+                                        </div>
+                                        <div class="editable-timeline-item">
+                                            <input type="text" class="date-input" value="Feb 14">
+                                            <input type="text" class="label-input" value="Winner presentations">
+                                            <button class="btn-small">Edit</button>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-secondary" style="margin-top: var(--space-md);">
+                                        + Add Event
+                                    </button>
+                                </div>
+
+                                <div class="admin-rules-section">
+                                    <h2>Rules</h2>
+                                    <div class="editable-rules-list">
+                                        <div class="editable-rule-item">
+                                            <div class="rule-content">
+                                                <div class="rule-title">Submissions</div>
+                                                <div class="rule-desc">5 per day maximum. Best score counts.</div>
+                                            </div>
+                                            <div class="rule-actions">
+                                                <button class="btn-small">Edit</button>
+                                                <button class="btn-small btn-danger">Delete</button>
+                                            </div>
+                                        </div>
+                                        <div class="editable-rule-item">
+                                            <div class="rule-content">
+                                                <div class="rule-title">Teams</div>
+                                                <div class="rule-desc">Up to 3 people. Mergers allowed until 7 days before deadline.</div>
+                                            </div>
+                                            <div class="rule-actions">
+                                                <button class="btn-small">Edit</button>
+                                                <button class="btn-small btn-danger">Delete</button>
+                                            </div>
+                                        </div>
+                                        <div class="editable-rule-item">
+                                            <div class="rule-content">
+                                                <div class="rule-title">External data</div>
+                                                <div class="rule-desc">Allowed if publicly available and disclosed.</div>
+                                            </div>
+                                            <div class="rule-actions">
+                                                <button class="btn-small">Edit</button>
+                                                <button class="btn-small btn-danger">Delete</button>
+                                            </div>
+                                        </div>
+                                        <div class="editable-rule-item">
+                                            <div class="rule-content">
+                                                <div class="rule-title">Code sharing</div>
+                                                <div class="rule-desc">Encouraged. No plagiarism of private code.</div>
+                                            </div>
+                                            <div class="rule-actions">
+                                                <button class="btn-small">Edit</button>
+                                                <button class="btn-small btn-danger">Delete</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-secondary" style="margin-top: var(--space-md);">
+                                        + Add Rule
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Admin Discussions Tab -->
+                    <section class="tab-panel mode-sponsor-only" id="panel-admin-discussions" role="tabpanel">
+                        <div class="panel-content">
+                            <div class="discussions-header">
+                                <h2>Discussion Threads (23 total)</h2>
+                                <select class="discussions-filter">
+                                    <option>All Threads</option>
+                                    <option>Pinned</option>
+                                    <option>Locked</option>
+                                    <option>Flagged</option>
+                                </select>
+                            </div>
+
+                            <div id="discussions-list">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Contact Footer -->
+            <footer class="competition-footer">
+                <div class="footer-contact">
+                    <span>Questions about this competition?</span>
+                    <a href="#" class="contact-link">
+                        <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus" alt="">
+                        <span>Contact Marcus Johnson (Retention Team)</span>
+                    </a>
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Mode Toggle (for demo/testing purposes) -->
+    <div class="mode-toggle-demo">
+        <div class="toggle-title">View Mode</div>
+        <div class="toggle-options">
+            <label>
+                <input type="radio" name="demo-mode" value="discovery" checked>
+                <span>Discovery</span>
+            </label>
+            <label>
+                <input type="radio" name="demo-mode" value="participant">
+                <span>Participant</span>
+            </label>
+            <label>
+                <input type="radio" name="demo-mode" value="sponsor">
+                <span>Admin</span>
+            </label>
+        </div>
+    </div>
+
+    <script src="competition-mode.js"></script>
+</body>
+</html>
