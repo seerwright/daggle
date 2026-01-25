@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = "INFO"
 
+    # File uploads
+    upload_dir: str = "/tmp/daggle/uploads"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

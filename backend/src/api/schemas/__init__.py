@@ -12,14 +12,24 @@ from src.api.schemas.competition import (
     CompetitionResponse,
     CompetitionUpdate,
 )
+from src.api.schemas.submission import (
+    LeaderboardEntry,
+    LeaderboardResponse,
+    SubmissionListResponse,
+    SubmissionResponse,
+)
 
 __all__ = [
     "CompetitionCreate",
     "CompetitionListResponse",
     "CompetitionResponse",
     "CompetitionUpdate",
+    "LeaderboardEntry",
+    "LeaderboardResponse",
     "LoginRequest",
     "RegisterRequest",
+    "SubmissionListResponse",
+    "SubmissionResponse",
     "TokenResponse",
     "UserResponse",
 ]
