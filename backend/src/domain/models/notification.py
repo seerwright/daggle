@@ -19,6 +19,10 @@ class NotificationType(enum.Enum):
     COMPETITION_ENDING = "competition_ending"
     DISCUSSION_REPLY = "discussion_reply"
     DISCUSSION_MENTION = "discussion_mention"
+    TEAM_INVITATION = "team_invitation"
+    TEAM_MEMBER_JOINED = "team_member_joined"
+    TEAM_REMOVED = "team_removed"
+    TEAM_LEADERSHIP = "team_leadership"
     SYSTEM = "system"
 
 

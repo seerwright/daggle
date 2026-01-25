@@ -63,6 +63,16 @@ class User(Base, TimestampMixin):
         back_populates="user",
         lazy="selectin",
     )
+    sent_invitations: Mapped[list["TeamInvitation"]] = relationship(  # noqa: F821
+        back_populates="inviter",
+        foreign_keys="TeamInvitation.inviter_id",
+        lazy="selectin",
+    )
+    received_invitations: Mapped[list["TeamInvitation"]] = relationship(  # noqa: F821
+        back_populates="invitee",
+        foreign_keys="TeamInvitation.invitee_id",
+        lazy="selectin",
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, username={self.username})>"

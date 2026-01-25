@@ -277,9 +277,10 @@ docker compose --profile async up
 
 ## Phase 5: Higher-Coupling Features
 
-### Milestone 5.1: Teams
+### Milestone 5.1: Teams ✅
 
-**Branch:** `feature/19-teams`
+**Branch:** `feature/19-teams` (merged)
+**Completed:** 2026-01-25
 
 **Scope:**
 - Team formation for competitions
@@ -287,21 +288,43 @@ docker compose --profile async up
 - Team leaderboard representation
 
 **Key Deliverables:**
-- `Team` model: name, competition, members, captain
-- `TeamMembership` model
-- Team invitation/join flow
-- Submissions attributed to team
-- Leaderboard shows teams instead of users (when applicable)
+- `Team` model with name, competition, members, leader
+- `TeamMember` model with role (leader/member)
+- `TeamInvitation` model for invitation flow
+- `TeamService` with full team management:
+  - Create team (user becomes leader)
+  - Invite member (leader only)
+  - Accept/decline invitation
+  - Leave team (leader leaving promotes another member)
+  - Remove member (leader only)
+  - Transfer leadership
+- API endpoints:
+  - `GET /competitions/{slug}/teams` - list teams
+  - `POST /competitions/{slug}/teams` - create team
+  - `GET /competitions/{slug}/teams/{id}` - get team details
+  - `GET /competitions/{slug}/my-team` - get user's team
+  - `POST /teams/{id}/invite` - invite member
+  - `GET /invitations` - list pending invitations
+  - `POST /invitations/{id}/accept` - accept invitation
+  - `POST /invitations/{id}/decline` - decline invitation
+  - `POST /teams/{id}/leave` - leave team
+  - `DELETE /teams/{id}/members/{user_id}` - remove member
+  - `POST /teams/{id}/transfer-leadership` - transfer leadership
+- Leaderboard updated to support team mode:
+  - Solo competitions show user rankings
+  - Team competitions show team rankings
+- Team notification types added
 
 **Definition of Done:**
-- [ ] Team CRUD API
-- [ ] Team-based submissions
-- [ ] Leaderboard supports team mode
-- [ ] Frontend team management UI
+- [x] Team CRUD API
+- [x] Team invitation flow with notifications
+- [x] Leaderboard supports team mode
+- [x] Integration tests (15 tests)
+- [ ] Frontend team management UI (future work)
 
 **Dependencies:**
 - Leaderboard (Milestone 1.2)
-- Notifications helpful for invites
+- Notifications (Milestone 4.1)
 
 ---
 
@@ -343,7 +366,7 @@ docker compose --profile async up
 | Notifications | feature/16-notifications | 4 | ✅ Done | None |
 | Profiles | feature/17-profiles | 4 | ✅ Done | None |
 | Dashboard | feature/18-dashboard | 4 | ✅ Done | Notifications |
-| Teams | feature/19-teams | 5 | Pending | Leaderboard |
+| Teams | feature/19-teams | 5 | ✅ Done | Leaderboard |
 | Admin | feature/20-admin | 5 | Pending | Discussions |
 
 ---

@@ -225,16 +225,20 @@ class SubmissionService:
 
     async def get_leaderboard(
         self, competition: Competition, limit: int = 100
-    ) -> list[dict]:
+    ) -> tuple[list[dict], bool]:
         """Get competition leaderboard.
 
         Rankings are determined by:
         1. Best score (direction depends on metric - lower is better for RMSE/MAE)
         2. Tie-break: earliest submission time wins
+
+        Returns:
+            Tuple of (leaderboard entries, is_team_competition)
         """
         from src.domain.scoring.metrics import is_lower_better
 
         lower_better = is_lower_better(competition.evaluation_metric)
+        is_team_competition = competition.max_team_size > 1
 
         # For lower-is-better metrics, use min; otherwise use max
         if lower_better:
@@ -242,8 +246,24 @@ class SubmissionService:
         else:
             best_score_agg = func.max(Submission.public_score)
 
+        if is_team_competition:
+            return await self._get_team_leaderboard(
+                competition, best_score_agg, lower_better, limit
+            ), True
+        else:
+            return await self._get_user_leaderboard(
+                competition, best_score_agg, lower_better, limit
+            ), False
+
+    async def _get_user_leaderboard(
+        self,
+        competition: Competition,
+        best_score_agg,
+        lower_better: bool,
+        limit: int,
+    ) -> list[dict]:
+        """Get user-based leaderboard for solo competitions."""
         # Query for best scores per user
-        # Include earliest submission time for the best score (for tie-breaking)
         stmt = (
             select(
                 Submission.user_id,
@@ -258,7 +278,6 @@ class SubmissionService:
         )
 
         # Order by score (ascending for lower-is-better, descending otherwise)
-        # Tie-break by earliest first submission
         if lower_better:
             stmt = stmt.order_by(
                 best_score_agg.asc(),
@@ -288,9 +307,128 @@ class SubmissionService:
                     "user_id": row.user_id,
                     "username": user.username,
                     "display_name": user.display_name,
+                    "team_id": None,
+                    "team_name": None,
                     "best_score": row.best_score,
                     "submission_count": row.submission_count,
                     "last_submission": row.last_submission,
                 })
+
+        return leaderboard
+
+    async def _get_team_leaderboard(
+        self,
+        competition: Competition,
+        best_score_agg,
+        lower_better: bool,
+        limit: int,
+    ) -> list[dict]:
+        """Get team-based leaderboard for team competitions.
+
+        For team competitions:
+        - Individual users without a team are shown with their user info
+        - Users on teams are grouped by team
+        """
+        from src.domain.models.team import Team
+        from src.infrastructure.repositories.user import UserRepository
+        from src.infrastructure.repositories.team import TeamRepository
+
+        user_repo = UserRepository(self.session)
+        team_repo = TeamRepository(self.session)
+
+        # Query for best scores - group by team_id for team submissions, user_id for solo
+        # We need two separate queries and merge them
+
+        # 1. Team submissions
+        team_stmt = (
+            select(
+                Submission.team_id,
+                best_score_agg.label("best_score"),
+                func.count(Submission.id).label("submission_count"),
+                func.max(Submission.created_at).label("last_submission"),
+                func.min(Submission.created_at).label("first_submission"),
+            )
+            .where(Submission.competition_id == competition.id)
+            .where(Submission.status == SubmissionStatus.SCORED)
+            .where(Submission.team_id.isnot(None))
+            .group_by(Submission.team_id)
+        )
+
+        team_result = await self.session.execute(team_stmt)
+        team_rows = team_result.all()
+
+        # 2. Individual (non-team) submissions
+        solo_stmt = (
+            select(
+                Submission.user_id,
+                best_score_agg.label("best_score"),
+                func.count(Submission.id).label("submission_count"),
+                func.max(Submission.created_at).label("last_submission"),
+                func.min(Submission.created_at).label("first_submission"),
+            )
+            .where(Submission.competition_id == competition.id)
+            .where(Submission.status == SubmissionStatus.SCORED)
+            .where(Submission.team_id.is_(None))
+            .group_by(Submission.user_id)
+        )
+
+        solo_result = await self.session.execute(solo_stmt)
+        solo_rows = solo_result.all()
+
+        # Combine and sort
+        entries = []
+
+        for row in team_rows:
+            team = await team_repo.get_by_id(row.team_id)
+            if team:
+                entries.append({
+                    "type": "team",
+                    "team_id": row.team_id,
+                    "team_name": team.name,
+                    "user_id": None,
+                    "username": None,
+                    "display_name": team.name,
+                    "best_score": row.best_score,
+                    "submission_count": row.submission_count,
+                    "last_submission": row.last_submission,
+                    "first_submission": row.first_submission,
+                })
+
+        for row in solo_rows:
+            user = await user_repo.get_by_id(row.user_id)
+            if user:
+                entries.append({
+                    "type": "user",
+                    "team_id": None,
+                    "team_name": None,
+                    "user_id": row.user_id,
+                    "username": user.username,
+                    "display_name": user.display_name,
+                    "best_score": row.best_score,
+                    "submission_count": row.submission_count,
+                    "last_submission": row.last_submission,
+                    "first_submission": row.first_submission,
+                })
+
+        # Sort by score and tie-break by first submission
+        if lower_better:
+            entries.sort(key=lambda x: (x["best_score"], x["first_submission"]))
+        else:
+            entries.sort(key=lambda x: (-x["best_score"], x["first_submission"]))
+
+        # Add ranks and trim
+        leaderboard = []
+        for rank, entry in enumerate(entries[:limit], 1):
+            leaderboard.append({
+                "rank": rank,
+                "user_id": entry["user_id"],
+                "username": entry["username"],
+                "display_name": entry["display_name"],
+                "team_id": entry["team_id"],
+                "team_name": entry["team_name"],
+                "best_score": entry["best_score"],
+                "submission_count": entry["submission_count"],
+                "last_submission": entry["last_submission"],
+            })
 
         return leaderboard

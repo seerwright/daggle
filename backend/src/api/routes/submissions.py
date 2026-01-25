@@ -139,11 +139,12 @@ async def get_leaderboard(
         )
 
     sub_service = SubmissionService(db)
-    entries = await sub_service.get_leaderboard(competition, limit=limit)
+    entries, is_team_competition = await sub_service.get_leaderboard(competition, limit=limit)
 
     return LeaderboardResponse(
         competition_id=competition.id,
         competition_title=competition.title,
         entries=entries,
         total_participants=len(entries),
+        is_team_competition=is_team_competition,
     )

@@ -41,9 +41,11 @@ class LeaderboardEntry(BaseModel):
     """Schema for leaderboard entry."""
 
     rank: int
-    user_id: int
-    username: str
+    user_id: int | None  # None for team entries
+    username: str | None  # None for team entries
     display_name: str
+    team_id: int | None = None  # Set for team competitions
+    team_name: str | None = None  # Set for team competitions
     best_score: float
     submission_count: int
     last_submission: datetime
@@ -56,3 +58,4 @@ class LeaderboardResponse(BaseModel):
     competition_title: str
     entries: list[LeaderboardEntry]
     total_participants: int
+    is_team_competition: bool = False
