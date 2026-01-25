@@ -1,6 +1,5 @@
 """Submission service."""
 
-import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -13,6 +12,8 @@ from src.config import settings
 from src.domain.models.competition import Competition, CompetitionStatus
 from src.domain.models.submission import Submission, SubmissionStatus
 from src.domain.models.user import User
+from src.domain.scoring.scorer import create_scorer_for_competition
+from src.domain.scoring.validation import validate_submission
 from src.infrastructure.repositories.submission import SubmissionRepository
 
 
@@ -49,6 +50,21 @@ class SubmissionService:
                 f"Daily submission limit ({competition.daily_submission_limit}) reached"
             )
 
+        # Read file content for validation
+        content = await file.read()
+        await file.seek(0)  # Reset for saving
+
+        # Pre-validate submission format
+        validation = validate_submission(
+            content,
+            id_column="id",
+            prediction_column="prediction",
+        )
+
+        if not validation.valid:
+            error_msgs = [e.message for e in validation.errors[:3]]
+            raise ValueError(f"Invalid submission: {'; '.join(error_msgs)}")
+
         # Save file
         file_path = await self._save_file(competition.id, user.id, file)
 
@@ -63,9 +79,8 @@ class SubmissionService:
 
         submission = await self.repo.create(submission)
 
-        # In a real system, we'd queue this for async scoring
-        # For now, simulate immediate scoring with a random score
-        await self._mock_score(submission)
+        # Score the submission
+        await self._score_submission(submission, competition, content)
 
         return submission
 
@@ -89,11 +104,43 @@ class SubmissionService:
 
         return str(file_path)
 
+    async def _score_submission(
+        self,
+        submission: Submission,
+        competition: Competition,
+        content: bytes,
+    ) -> None:
+        """Score a submission against the competition's solution file."""
+        scorer = create_scorer_for_competition(competition)
+
+        if scorer is None:
+            # No solution file - fall back to mock scoring for demo
+            await self._mock_score(submission)
+            return
+
+        try:
+            result = scorer.score(content)
+
+            if result.success:
+                submission.status = SubmissionStatus.SCORED
+                submission.public_score = result.score
+                # For MVP, use same score for private (in real system, would be different split)
+                submission.private_score = result.score
+                submission.scored_at = datetime.now(timezone.utc)
+            else:
+                submission.status = SubmissionStatus.FAILED
+                submission.error_message = result.error_message
+
+        except Exception as e:
+            submission.status = SubmissionStatus.FAILED
+            submission.error_message = f"Scoring error: {str(e)}"
+
+        await self.repo.update(submission)
+
     async def _mock_score(self, submission: Submission) -> None:
-        """Mock scoring - in production this would be async."""
+        """Mock scoring when no solution file is available."""
         import random
 
-        # Simulate scoring
         submission.status = SubmissionStatus.SCORED
         submission.public_score = round(random.uniform(0.5, 0.95), 4)
         submission.private_score = round(random.uniform(0.5, 0.95), 4)

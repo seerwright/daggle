@@ -71,6 +71,7 @@ class Competition(Base, TimestampMixin):
     train_data_path: Mapped[str | None] = mapped_column(String(500))
     test_data_path: Mapped[str | None] = mapped_column(String(500))
     sample_submission_path: Mapped[str | None] = mapped_column(String(500))
+    solution_path: Mapped[str | None] = mapped_column(String(500))
 
     # Relationships
     submissions: Mapped[list["Submission"]] = relationship(  # noqa: F821
