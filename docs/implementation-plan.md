@@ -1,82 +1,123 @@
-# Daggle Implementation Plan
+# Daggle – Implementation Plan
 
-This document contains concrete decisions and an actionable plan for building the Daggle competition platform. These are commitments, not options.
+This document contains the concrete implementation plan for building the Daggle competition platform using a Python/FastAPI backend with an Angular frontend.
+
+> **Note**: A JavaScript/NestJS variant was also considered but deprecated.
+> See [implementation-plan-js-deprecated.md](./implementation-plan-js-deprecated.md) for that alternative.
+
+---
+
+## Stack Overview
+
+| Aspect | Choice | Notes |
+|--------|--------|-------|
+| Backend | FastAPI + Python 3.11+ | Async-first, excellent OpenAPI support |
+| Frontend | Angular + Angular Material | Mode-based UI (discovery/participant/admin) |
+| Database | PostgreSQL + SQLAlchemy 2.0 | Relational integrity, JSONB flexibility |
+| API Style | REST primary | OpenAPI provides self-documentation; GraphQL optional |
+| Type Sharing | OpenAPI → TypeScript | Frontend types generated from backend spec |
+
+### Python Advantages
+
+1. **Scoring and data processing**: Python's numpy/pandas ecosystem is unmatched for numerical work. Even for MVP, simple scoring calculations are more natural.
+
+2. **Scripting and migrations**: Python's REPL and scripting capabilities make ad-hoc data tasks easier.
+
+3. **Testing**: pytest is exceptionally clean—less boilerplate than Jest/Mocha.
+
+4. **Deployment**: Single Python process is simpler than Node.js in some container scenarios.
+
+### What Becomes Harder
+
+1. **Type sharing with Angular**: This is the primary tradeoff. We lose seamless TypeScript type sharing and must generate client types from OpenAPI specs.
+
+2. **GraphQL ergonomics**: While Strawberry is good, Python's GraphQL ecosystem is less mature than Node's Apollo stack.
+
+3. **Async patterns**: Python's async/await works differently than Node.js. Mixing sync and async code requires care.
+
+### Mitigations
+
+| Challenge | Mitigation |
+|-----------|------------|
+| Type sharing | Generate TypeScript types from OpenAPI spec; run generation in CI |
+| GraphQL complexity | Use REST as primary API; GraphQL optional for specific use cases |
+| Async confusion | Use async consistently throughout; avoid mixing sync ORM calls |
 
 ---
 
 ## 1. Final Stack Decisions
 
-### Backend: Node.js + NestJS + TypeScript
+### Backend: FastAPI + Python 3.11+
 
-**Choice**: NestJS framework on Node.js
-
-**Why**:
-- TypeScript across the entire stack (shared types, consistent tooling)
-- NestJS module system mirrors Angular's—same mental model for both
-- First-class GraphQL support via `@nestjs/graphql`
-- Dependency injection makes testing straightforward
-- Large ecosystem, well-documented, actively maintained
-
-**Not chosen**:
-- Go: Would require context-switching and duplicate type definitions
-- Express alone: Too minimal; we'd rebuild what NestJS provides
-- Python/Django: GraphQL support is weaker, loses TypeScript benefits
-
-### Database: PostgreSQL
-
-**Choice**: PostgreSQL 15+
+**Choice**: FastAPI framework
 
 **Why**:
-- Data is inherently relational: users enroll in competitions, submit to competitions, competitions have leaderboards
-- Foreign key constraints prevent orphaned data (a submission can't reference a deleted competition)
-- JSONB columns provide document flexibility for metadata without sacrificing relational integrity
-- Excellent tooling: pgAdmin, migrations, backups, replication
-- Battle-tested, boring technology—exactly what we want
-
-**How we'll use it**:
-- Relational tables for core entities (users, competitions, enrollments, submissions)
-- JSONB for: competition configuration, submission metadata, user preferences
-- Full-text search via `tsvector` if needed (not for MVP)
-- No ORM magic—we'll use a query builder (Knex) with explicit SQL for complex queries
+- Modern async-first design
+- Automatic OpenAPI documentation (replaces GraphQL's self-documentation benefit)
+- Pydantic for request/response validation with Python type hints
+- Excellent performance for an internal tool
+- Clean dependency injection pattern
+- Large ecosystem, well-documented
 
 **Not chosen**:
-- MongoDB: Loses referential integrity; "flexible schema" becomes "inconsistent data"
-- SQLite: Not suitable for concurrent access in containerized deployment
+- Django: Too opinionated; ORM is heavy; admin panel not needed (we're building our own)
+- Flask: Too minimal; would require assembling many pieces
+- Litestar: Newer, smaller community
 
-### API: GraphQL + REST Escape Hatches
+### Database: PostgreSQL + SQLAlchemy 2.0
 
-**Choice**: GraphQL for data operations, REST for specific endpoints
-
-**GraphQL handles**:
-- All queries (competitions, submissions, users, leaderboards)
-- All mutations (enroll, submit, update competition, etc.)
-- Type-safe, self-documenting API
-- Frontend requests exactly what it needs
-
-**REST handles**:
-- `POST /api/upload` — File uploads (multipart form data)
-- `GET /api/health/live` — Kubernetes liveness probe
-- `GET /api/health/ready` — Kubernetes readiness probe
-- `GET /api/files/:id` — File downloads (if needed)
-
-**Why the split**:
-- GraphQL file uploads work but add complexity (apollo-upload-client, stream handling)
-- Health endpoints are simpler as plain REST
-- Keep GraphQL focused on what it does well
-
-### ORM/Query: Knex + Custom Repository Pattern
-
-**Choice**: Knex.js query builder (not a full ORM)
+**Choice**: SQLAlchemy 2.0 with asyncpg driver
 
 **Why**:
-- Explicit SQL—we see exactly what queries run
-- Migrations built-in
-- TypeScript support
-- No "magic" that hides N+1 queries or generates unexpected SQL
+- SQLAlchemy 2.0 is significantly improved: better typing, cleaner async
+- Can use ORM for simple cases, drop to Core/raw SQL for complex queries
+- Alembic for migrations (mature, reliable)
+- Same PostgreSQL benefits as original plan (relational integrity, JSONB flexibility)
 
-**Not chosen**:
-- TypeORM/Prisma: Too much abstraction; debugging generated queries is frustrating
-- Raw pg client: Too low-level; Knex provides just enough convenience
+**Usage pattern**:
+```python
+# ORM for simple operations
+user = await session.get(User, user_id)
+
+# Core for complex queries where we want explicit SQL
+stmt = select(Submission).where(
+    Submission.competition_id == competition_id
+).order_by(Submission.score.desc())
+```
+
+### API: REST Primary, GraphQL Optional
+
+**Choice**: REST API with OpenAPI specification
+
+**Why this differs from original plan**:
+
+The original plan chose GraphQL primarily for:
+1. Self-documenting API → FastAPI's OpenAPI provides this
+2. Frontend requests exactly what it needs → Less critical for internal tool with known use cases
+3. Type safety → Achieved via OpenAPI + TypeScript generation
+
+For Python, REST provides:
+- Simpler implementation and debugging
+- Better tooling (httpx, requests, OpenAPI generators)
+- Clearer HTTP semantics for operations like file upload
+- Lower cognitive overhead for the team
+
+**GraphQL escape hatch**:
+If specific features benefit from GraphQL (e.g., complex dashboard queries), we can add Strawberry endpoints alongside REST. This is additive, not a rewrite.
+
+### Type Generation: OpenAPI → TypeScript
+
+**Approach**:
+1. FastAPI generates OpenAPI spec automatically
+2. CI runs `openapi-typescript` to generate TypeScript types
+3. Angular app imports generated types
+
+```bash
+# In CI or as npm script
+npx openapi-typescript http://localhost:8000/openapi.json -o src/api/types.ts
+```
+
+This creates a contract: if the Python API changes, TypeScript compilation fails until the frontend adapts.
 
 ---
 
@@ -86,89 +127,14 @@ This document contains concrete decisions and an actionable plan for building th
 
 ```
 daggle/
-├── frontend/                    # Angular application
-├── backend/                     # NestJS application
-├── shared/                      # Shared TypeScript types
-├── docker-compose.yml           # Local development
-├── docker-compose.prod.yml      # Production-like local testing
+├── frontend/                    # Angular application (unchanged from original)
+├── backend/                     # FastAPI application
+├── shared/                      # OpenAPI spec, generated types
+├── docker-compose.yml
+├── docker-compose.prod.yml
 ├── Dockerfile.frontend
 ├── Dockerfile.backend
 └── docs/
-    ├── architecture-proposal.md
-    └── implementation-plan.md
-```
-
-### Frontend Structure
-
-```
-frontend/
-├── src/
-│   ├── app/
-│   │   ├── core/                       # Singleton services (one instance app-wide)
-│   │   │   ├── core.module.ts
-│   │   │   ├── auth/
-│   │   │   │   ├── auth.service.ts         # Login, logout, token management
-│   │   │   │   ├── auth.guard.ts           # Route protection
-│   │   │   │   └── auth.interceptor.ts     # Attach JWT to requests
-│   │   │   ├── api/
-│   │   │   │   ├── graphql.module.ts       # Apollo client setup
-│   │   │   │   └── api.service.ts          # GraphQL operations wrapper
-│   │   │   └── error/
-│   │   │       └── error-handler.service.ts
-│   │   │
-│   │   ├── shared/                     # Reusable UI components
-│   │   │   ├── shared.module.ts
-│   │   │   ├── components/
-│   │   │   │   ├── status-pill/
-│   │   │   │   ├── metric-card/
-│   │   │   │   ├── file-upload/
-│   │   │   │   └── confirm-dialog/
-│   │   │   └── pipes/
-│   │   │       ├── time-ago.pipe.ts
-│   │   │       └── score-format.pipe.ts
-│   │   │
-│   │   ├── features/                   # Feature modules (lazy-loaded)
-│   │   │   ├── home/
-│   │   │   │   ├── home.module.ts
-│   │   │   │   └── home.component.ts
-│   │   │   │
-│   │   │   ├── competition/
-│   │   │   │   ├── competition.module.ts
-│   │   │   │   ├── competition-routing.module.ts
-│   │   │   │   │
-│   │   │   │   ├── pages/                  # Route-level components
-│   │   │   │   │   ├── competition-list/
-│   │   │   │   │   ├── competition-detail/     # Discovery + Participant
-│   │   │   │   │   └── competition-manage/     # Admin mode
-│   │   │   │   │
-│   │   │   │   ├── components/             # Feature-specific components
-│   │   │   │   │   ├── overview-tab/
-│   │   │   │   │   ├── submissions-tab/
-│   │   │   │   │   ├── leaderboard/
-│   │   │   │   │   └── admin/
-│   │   │   │   │       ├── admin-overview/
-│   │   │   │   │       ├── admin-config/
-│   │   │   │   │       ├── admin-data/
-│   │   │   │   │       └── admin-monitoring/
-│   │   │   │   │
-│   │   │   │   └── services/
-│   │   │   │       ├── competition.service.ts
-│   │   │   │       └── submission.service.ts
-│   │   │   │
-│   │   │   └── profile/
-│   │   │       └── ...
-│   │   │
-│   │   ├── app.component.ts
-│   │   ├── app.module.ts
-│   │   └── app-routing.module.ts
-│   │
-│   ├── environments/
-│   ├── styles/                         # Global SCSS
-│   └── assets/
-│
-├── angular.json
-├── package.json
-└── tsconfig.json
 ```
 
 ### Backend Structure
@@ -176,1014 +142,1202 @@ frontend/
 ```
 backend/
 ├── src/
-│   ├── main.ts                         # Application entry point
-│   ├── app.module.ts                   # Root module
+│   ├── main.py                         # Application entry point
+│   ├── config.py                       # Configuration from environment
 │   │
-│   ├── graphql/                        # GraphQL layer
-│   │   ├── graphql.module.ts
-│   │   ├── schema.gql                  # Schema-first definitions
-│   │   ├── resolvers/
-│   │   │   ├── competition.resolver.ts
-│   │   │   ├── submission.resolver.ts
-│   │   │   ├── user.resolver.ts
-│   │   │   └── leaderboard.resolver.ts
-│   │   └── scalars/                    # Custom scalars (DateTime, etc.)
+│   ├── api/                            # HTTP layer
+│   │   ├── __init__.py
+│   │   ├── router.py                   # Main router combining all routes
+│   │   ├── deps.py                     # Dependency injection (get_db, get_current_user)
+│   │   │
+│   │   ├── routes/
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py                 # Login, logout, token refresh
+│   │   │   ├── competitions.py         # Competition CRUD
+│   │   │   ├── submissions.py          # Submit, list submissions
+│   │   │   ├── enrollments.py          # Enroll, unenroll
+│   │   │   ├── leaderboard.py          # Leaderboard queries
+│   │   │   ├── admin.py                # Admin-only operations
+│   │   │   ├── upload.py               # File upload handling
+│   │   │   └── health.py               # Health check endpoints
+│   │   │
+│   │   └── schemas/                    # Pydantic request/response models
+│   │       ├── __init__.py
+│   │       ├── competition.py
+│   │       ├── submission.py
+│   │       ├── user.py
+│   │       └── common.py               # Shared schemas (pagination, errors)
 │   │
 │   ├── domain/                         # Business logic layer
+│   │   ├── __init__.py
+│   │   │
 │   │   ├── competition/
-│   │   │   ├── competition.module.ts
-│   │   │   ├── competition.service.ts
-│   │   │   ├── competition.repository.ts
-│   │   │   └── competition.types.ts
+│   │   │   ├── __init__.py
+│   │   │   ├── service.py              # Competition business logic
+│   │   │   ├── repository.py           # Database operations
+│   │   │   └── models.py               # SQLAlchemy models
 │   │   │
 │   │   ├── submission/
-│   │   │   ├── submission.module.ts
-│   │   │   ├── submission.service.ts
-│   │   │   ├── submission.repository.ts
-│   │   │   ├── scoring.service.ts      # Scoring logic isolated
-│   │   │   └── submission.types.ts
+│   │   │   ├── __init__.py
+│   │   │   ├── service.py
+│   │   │   ├── repository.py
+│   │   │   ├── models.py
+│   │   │   ├── scoring.py              # Scoring algorithms
+│   │   │   └── validation.py           # File validation logic
 │   │   │
 │   │   ├── enrollment/
-│   │   │   ├── enrollment.module.ts
-│   │   │   ├── enrollment.service.ts
-│   │   │   └── enrollment.repository.ts
+│   │   │   ├── __init__.py
+│   │   │   ├── service.py
+│   │   │   ├── repository.py
+│   │   │   └── models.py
 │   │   │
 │   │   └── user/
-│   │       ├── user.module.ts
-│   │       ├── user.service.ts
-│   │       ├── user.repository.ts
-│   │       └── user.types.ts
+│   │       ├── __init__.py
+│   │       ├── service.py
+│   │       ├── repository.py
+│   │       └── models.py
 │   │
 │   ├── infrastructure/                 # Technical concerns
+│   │   ├── __init__.py
+│   │   │
 │   │   ├── database/
-│   │   │   ├── database.module.ts
-│   │   │   ├── knex.provider.ts
-│   │   │   └── migrations/
+│   │   │   ├── __init__.py
+│   │   │   ├── session.py              # Async session management
+│   │   │   └── base.py                 # SQLAlchemy base model
 │   │   │
 │   │   ├── auth/
-│   │   │   ├── auth.module.ts
-│   │   │   ├── auth.service.ts
-│   │   │   ├── jwt.strategy.ts
-│   │   │   └── auth.guard.ts
+│   │   │   ├── __init__.py
+│   │   │   ├── jwt.py                  # JWT creation and validation
+│   │   │   ├── password.py             # Password hashing
+│   │   │   └── permissions.py          # Role/permission checking
 │   │   │
 │   │   ├── storage/
-│   │   │   ├── storage.module.ts
-│   │   │   └── storage.service.ts      # File storage abstraction
+│   │   │   ├── __init__.py
+│   │   │   └── file_storage.py         # File storage abstraction
 │   │   │
 │   │   └── logging/
-│   │       ├── logging.module.ts
-│   │       └── logging.interceptor.ts
+│   │       ├── __init__.py
+│   │       └── middleware.py           # Request logging middleware
 │   │
-│   ├── rest/                           # REST endpoints
-│   │   ├── health.controller.ts
-│   │   └── upload.controller.ts
-│   │
-│   └── common/                         # Shared utilities
-│       ├── decorators/
-│       │   └── current-user.decorator.ts
-│       ├── guards/
-│       │   └── roles.guard.ts
-│       └── filters/
-│           └── http-exception.filter.ts
+│   └── common/
+│       ├── __init__.py
+│       ├── exceptions.py               # Custom exception classes
+│       └── types.py                    # Shared type definitions
 │
-├── test/
-│   ├── integration/                    # API + DB tests
-│   └── utils/
-│       └── test-database.ts
+├── alembic/                            # Database migrations
+│   ├── versions/
+│   └── env.py
 │
-├── knexfile.ts                         # Knex configuration
-├── nest-cli.json
-├── package.json
-└── tsconfig.json
+├── tests/
+│   ├── conftest.py                     # pytest fixtures
+│   ├── unit/
+│   │   ├── test_scoring.py
+│   │   └── test_validation.py
+│   ├── integration/
+│   │   ├── test_competitions.py
+│   │   ├── test_submissions.py
+│   │   └── test_permissions.py
+│   └── factories/                      # Test data factories
+│       ├── __init__.py
+│       └── factories.py
+│
+├── alembic.ini
+├── pyproject.toml                      # Project config, dependencies
+├── requirements.txt                    # Pinned dependencies for Docker
+└── pytest.ini
 ```
 
-### Shared Types
+### Frontend Structure
 
-```
-shared/
-├── types/
-│   ├── competition.ts                  # Competition interfaces
-│   ├── submission.ts                   # Submission interfaces
-│   ├── user.ts                         # User interfaces
-│   └── api-responses.ts                # Standardized response shapes
-├── constants/
-│   └── permissions.ts                  # Permission constants
-└── package.json
-```
+Unchanged from original plan. Angular application with:
+- `core/` - Singleton services
+- `shared/` - Reusable components
+- `features/` - Feature modules (competition, home, profile)
 
-### Boundary Rules
+The only difference: TypeScript types are generated from OpenAPI rather than shared from a common package.
 
-| Layer | Can Import From | Cannot Import From |
-|-------|-----------------|-------------------|
-| GraphQL Resolvers | Domain Services, Common | Infrastructure, REST |
-| Domain Services | Repositories, Types | GraphQL, REST, Infrastructure internals |
-| Repositories | Database module, Types | Services, GraphQL |
-| Infrastructure | Nothing domain-specific | Domain, GraphQL |
-| REST Controllers | Domain Services | GraphQL |
+### Layer Boundaries
+
+| Layer | Responsibility | Can Import | Cannot Import |
+|-------|---------------|------------|---------------|
+| `api/routes` | HTTP handling, request validation, response shaping | `domain/services`, `api/schemas` | `domain/repositories`, `infrastructure` internals |
+| `api/schemas` | Pydantic models for API contracts | `common/types` | Domain models directly |
+| `domain/services` | Business logic, orchestration | `domain/repositories`, `infrastructure` interfaces | `api/`, other domain modules |
+| `domain/repositories` | Database access | `domain/models`, `infrastructure/database` | Services, API |
+| `domain/models` | SQLAlchemy model definitions | `infrastructure/database/base` | Everything else |
+| `infrastructure` | Technical implementations | Nothing domain-specific | Domain, API |
 
 ---
 
-## 3. Mode + Permissions Design
+## 3. API Design
+
+### RESTful Resource Structure
+
+```
+Authentication
+POST   /api/auth/login              # Get access + refresh tokens
+POST   /api/auth/refresh            # Refresh access token
+POST   /api/auth/logout             # Invalidate refresh token
+
+Competitions
+GET    /api/competitions            # List competitions
+POST   /api/competitions            # Create competition (becomes sponsor)
+GET    /api/competitions/:id        # Get competition details
+PATCH  /api/competitions/:id        # Update competition (sponsor only)
+
+Enrollments
+POST   /api/competitions/:id/enroll     # Enroll in competition
+DELETE /api/competitions/:id/enroll     # Unenroll from competition
+GET    /api/competitions/:id/enrollment # Get user's enrollment status
+
+Submissions
+GET    /api/competitions/:id/submissions      # List user's submissions
+POST   /api/competitions/:id/submissions      # Submit predictions
+GET    /api/competitions/:id/submissions/:sid # Get submission details
+
+Leaderboard
+GET    /api/competitions/:id/leaderboard           # Full leaderboard
+GET    /api/competitions/:id/leaderboard/around-me # Context around user
+
+Admin (Sponsor) Operations
+GET    /api/competitions/:id/admin/stats           # Competition statistics
+GET    /api/competitions/:id/admin/submissions     # All submissions (admin view)
+GET    /api/competitions/:id/admin/participants    # Participant list
+POST   /api/competitions/:id/admin/announce        # Send announcement
+PATCH  /api/competitions/:id/admin/submissions/:sid # Invalidate submission
+
+File Upload
+POST   /api/upload                  # Upload file, returns file_id
+GET    /api/files/:id               # Download file
+
+Health
+GET    /api/health/live             # Liveness probe
+GET    /api/health/ready            # Readiness probe
+```
+
+### Request/Response Examples
+
+**Get Competition (includes user context)**:
+
+```python
+# GET /api/competitions/abc-123
+
+# Response varies based on user's relationship to competition
+{
+  "id": "abc-123",
+  "title": "Customer Churn Prediction",
+  "description": "...",
+  "status": "active",
+  "deadline": "2025-02-05T23:59:59Z",
+  "metric": "auc_roc",
+  "participantCount": 234,
+
+  # User context - determines UI mode
+  "userContext": {
+    "role": "participant",  # "viewer" | "participant" | "sponsor"
+    "enrolledAt": "2025-01-15T10:30:00Z",
+    "bestScore": 0.8234,
+    "rank": 12,
+    "submissionsToday": 3,
+    "submissionsLimit": 5
+  }
+}
+```
+
+**Submit Predictions**:
+
+```python
+# POST /api/competitions/abc-123/submissions
+# Content-Type: multipart/form-data
+# file: predictions.csv
+
+# Success Response
+{
+  "id": "sub-456",
+  "status": "scored",
+  "score": 0.8234,
+  "rank": 12,
+  "previousRank": 15,
+  "submittedAt": "2025-01-24T14:30:00Z",
+  "validationErrors": null
+}
+
+# Validation Error Response (400)
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Submission file is invalid",
+    "details": [
+      {"field": "churn_probability", "error": "Values must be between 0 and 1"},
+      {"field": "customer_id", "error": "Missing 47 expected IDs"}
+    ]
+  }
+}
+
+# Rate Limit Response (429)
+{
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Daily submission limit reached",
+    "details": {
+      "limit": 5,
+      "used": 5,
+      "resetsAt": "2025-01-25T00:00:00Z"
+    }
+  }
+}
+```
+
+### Pydantic Schema Design
+
+```python
+# api/schemas/competition.py
+
+from pydantic import BaseModel
+from datetime import datetime
+from enum import Enum
+
+class CompetitionStatus(str, Enum):
+    DRAFT = "draft"
+    ACTIVE = "active"
+    ENDED = "ended"
+
+class UserRole(str, Enum):
+    VIEWER = "viewer"
+    PARTICIPANT = "participant"
+    SPONSOR = "sponsor"
+
+class UserContext(BaseModel):
+    role: UserRole
+    enrolled_at: datetime | None = None
+    best_score: float | None = None
+    rank: int | None = None
+    submissions_today: int = 0
+    submissions_limit: int = 5
+
+class CompetitionResponse(BaseModel):
+    id: str
+    title: str
+    description: str
+    status: CompetitionStatus
+    deadline: datetime
+    metric: str
+    participant_count: int
+    user_context: UserContext
+
+    class Config:
+        from_attributes = True  # Allow ORM model conversion
+```
+
+---
+
+## 4. Permissions & Mode Handling
 
 ### Permission Model
 
-```typescript
-// shared/constants/permissions.ts
+Same conceptual model as original plan:
 
-export enum Role {
-  USER = 'USER',           // Authenticated but not enrolled
-  PARTICIPANT = 'PARTICIPANT', // Enrolled in a competition
-  SPONSOR = 'SPONSOR',     // Created/owns a competition
-  ADMIN = 'ADMIN',         // Platform admin (future)
+```python
+# infrastructure/auth/permissions.py
+
+from enum import Enum
+
+class Role(str, Enum):
+    VIEWER = "viewer"           # Authenticated, not enrolled
+    PARTICIPANT = "participant" # Enrolled in competition
+    SPONSOR = "sponsor"         # Created/owns competition
+    ADMIN = "admin"             # Platform admin (future)
+
+# Role hierarchy for permission checks
+ROLE_HIERARCHY = {
+    Role.VIEWER: 0,
+    Role.PARTICIPANT: 1,
+    Role.SPONSOR: 2,
+    Role.ADMIN: 3,
 }
 
-// Context-specific: role relative to a competition
-export interface CompetitionContext {
-  competitionId: string;
-  role: Role;
-  enrolledAt?: Date;
-}
+def has_permission(user_role: Role, required_role: Role) -> bool:
+    return ROLE_HIERARCHY[user_role] >= ROLE_HIERARCHY[required_role]
 ```
 
-### How Modes Map to Routes and Permissions
+### Determining User Role
 
-```
-Route                           Mode          Required Permission
-─────────────────────────────────────────────────────────────────
-/competitions                   (list)        USER (authenticated)
-/competitions/:id               Discovery     USER
-/competitions/:id               Participant   PARTICIPANT (enrolled)
-/competitions/:id/submit        Participant   PARTICIPANT
-/competitions/:id/manage        Admin         SPONSOR
-/competitions/:id/manage/*      Admin         SPONSOR
-/competitions/new               Create        USER (becomes SPONSOR)
-```
+```python
+# domain/enrollment/service.py
 
-### Frontend: Route Guards Determine Mode
+class EnrollmentService:
+    def __init__(self, enrollment_repo: EnrollmentRepository, competition_repo: CompetitionRepository):
+        self.enrollment_repo = enrollment_repo
+        self.competition_repo = competition_repo
 
-```typescript
-// competition-routing.module.ts
+    async def get_user_role(self, user_id: str, competition_id: str) -> Role:
+        """Determine user's role for a specific competition."""
 
-const routes: Routes = [
-  {
-    path: ':id',
-    component: CompetitionDetailComponent,
-    // No guard—anyone authenticated can view
-    // Component checks enrollment status to show participant features
-  },
-  {
-    path: ':id/submit',
-    component: SubmissionComponent,
-    canActivate: [ParticipantGuard],  // Must be enrolled
-  },
-  {
-    path: ':id/manage',
-    component: CompetitionManageComponent,
-    canActivate: [SponsorGuard],      // Must be sponsor
-    children: [
-      { path: '', redirectTo: 'overview', pathMatch: 'full' },
-      { path: 'overview', component: AdminOverviewComponent },
-      { path: 'config', component: AdminConfigComponent },
-      { path: 'data', component: AdminDataComponent },
-      { path: 'monitoring', component: AdminMonitoringComponent },
-      { path: 'rules', component: AdminRulesComponent },
-      { path: 'discussions', component: AdminDiscussionsComponent },
-    ]
-  },
-];
+        # Check if user is the sponsor
+        competition = await self.competition_repo.get_by_id(competition_id)
+        if competition.sponsor_id == user_id:
+            return Role.SPONSOR
+
+        # Check if user is enrolled
+        enrollment = await self.enrollment_repo.get_enrollment(user_id, competition_id)
+        if enrollment:
+            return Role.PARTICIPANT
+
+        return Role.VIEWER
+
+    async def get_user_context(self, user_id: str, competition_id: str) -> UserContext:
+        """Get full user context for a competition."""
+        role = await self.get_user_role(user_id, competition_id)
+
+        context = UserContext(role=role)
+
+        if role in (Role.PARTICIPANT, Role.SPONSOR):
+            enrollment = await self.enrollment_repo.get_enrollment(user_id, competition_id)
+            context.enrolled_at = enrollment.created_at
+
+            # Get submission stats
+            stats = await self.submission_repo.get_user_stats(user_id, competition_id)
+            context.best_score = stats.best_score
+            context.rank = stats.rank
+            context.submissions_today = stats.submissions_today
+
+        return context
 ```
 
-### Frontend: Component Adapts Based on User Context
+### Enforcing Permissions in Routes
 
-```typescript
-// competition-detail.component.ts
+```python
+# api/deps.py
 
-@Component({ ... })
-export class CompetitionDetailComponent implements OnInit {
-  competition$: Observable<Competition>;
-  userContext$: Observable<CompetitionContext>;
+from fastapi import Depends, HTTPException, status
+from infrastructure.auth.permissions import Role, has_permission
 
-  // Template uses these to show/hide sections
-  isEnrolled$: Observable<boolean>;
-  canManage$: Observable<boolean>;
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
+    """Extract and validate current user from JWT."""
+    # ... JWT validation logic
+    return user
 
-  constructor(
-    private route: ActivatedRoute,
-    private competitionService: CompetitionService,
-    private authService: AuthService
-  ) {}
+async def get_competition_context(
+    competition_id: str,
+    current_user: User = Depends(get_current_user),
+    enrollment_service: EnrollmentService = Depends(get_enrollment_service)
+) -> tuple[Competition, Role]:
+    """Get competition and user's role for it."""
+    competition = await competition_service.get_by_id(competition_id)
+    if not competition:
+        raise HTTPException(status_code=404, detail="Competition not found")
 
-  ngOnInit() {
-    const competitionId = this.route.snapshot.params['id'];
+    role = await enrollment_service.get_user_role(current_user.id, competition_id)
+    return competition, role
 
-    this.competition$ = this.competitionService.getCompetition(competitionId);
-
-    this.userContext$ = this.competitionService.getUserContext(competitionId);
-
-    this.isEnrolled$ = this.userContext$.pipe(
-      map(ctx => ctx.role === Role.PARTICIPANT || ctx.role === Role.SPONSOR)
-    );
-
-    this.canManage$ = this.userContext$.pipe(
-      map(ctx => ctx.role === Role.SPONSOR)
-    );
-  }
-}
+def require_role(required: Role):
+    """Dependency that enforces a minimum role."""
+    async def checker(
+        context: tuple[Competition, Role] = Depends(get_competition_context)
+    ) -> tuple[Competition, Role]:
+        competition, role = context
+        if not has_permission(role, required):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Requires {required.value} role"
+            )
+        return context
+    return checker
 ```
 
-```html
-<!-- competition-detail.component.html -->
+### Using Permission Dependencies in Routes
 
-<!-- Enrollment CTA (discovery mode) -->
-<button *ngIf="!(isEnrolled$ | async)" (click)="enroll()">
-  Join Competition
-</button>
+```python
+# api/routes/submissions.py
 
-<!-- Participant features -->
-<ng-container *ngIf="isEnrolled$ | async">
-  <app-participant-status [competition]="competition$ | async"></app-participant-status>
-  <button routerLink="submit">Make a Submission</button>
-</ng-container>
+from fastapi import APIRouter, Depends, UploadFile
+from api.deps import require_role, get_current_user
+from infrastructure.auth.permissions import Role
 
-<!-- Admin link (sponsors only) -->
-<a *ngIf="canManage$ | async" routerLink="manage">
-  Manage Competition
-</a>
+router = APIRouter(prefix="/competitions/{competition_id}/submissions")
+
+@router.post("")
+async def submit_predictions(
+    competition_id: str,
+    file: UploadFile,
+    current_user: User = Depends(get_current_user),
+    context: tuple = Depends(require_role(Role.PARTICIPANT)),  # Must be enrolled
+    submission_service: SubmissionService = Depends(get_submission_service)
+):
+    """Submit predictions for scoring."""
+    competition, role = context
+    result = await submission_service.submit(
+        user_id=current_user.id,
+        competition_id=competition_id,
+        file=file
+    )
+    return result
+
+# api/routes/admin.py
+
+router = APIRouter(prefix="/competitions/{competition_id}/admin")
+
+@router.get("/stats")
+async def get_competition_stats(
+    competition_id: str,
+    context: tuple = Depends(require_role(Role.SPONSOR)),  # Must be sponsor
+    admin_service: AdminService = Depends(get_admin_service)
+):
+    """Get competition statistics (sponsor only)."""
+    competition, role = context
+    return await admin_service.get_stats(competition_id)
 ```
 
-### Backend: Authorization at Resolver Level
+### Keeping It Clean (Avoiding If-Statement Spaghetti)
 
-```typescript
-// competition.resolver.ts
+Same principles as original plan:
 
-@Resolver('Competition')
-export class CompetitionResolver {
-  constructor(private competitionService: CompetitionService) {}
-
-  @Query()
-  @UseGuards(JwtAuthGuard)  // Must be authenticated
-  async competition(
-    @Args('id') id: string,
-    @CurrentUser() user: User
-  ): Promise<Competition> {
-    return this.competitionService.getById(id);
-  }
-
-  @Mutation()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @RequireRole(Role.SPONSOR, { contextParam: 'competitionId' })
-  async updateCompetition(
-    @Args('competitionId') competitionId: string,
-    @Args('input') input: UpdateCompetitionInput,
-    @CurrentUser() user: User
-  ): Promise<Competition> {
-    return this.competitionService.update(competitionId, input, user);
-  }
-}
-```
-
-### Backend: RolesGuard Checks Context-Specific Permissions
-
-```typescript
-// roles.guard.ts
-
-@Injectable()
-export class RolesGuard implements CanActivate {
-  constructor(
-    private reflector: Reflector,
-    private enrollmentService: EnrollmentService
-  ) {}
-
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredRole = this.reflector.get<Role>('role', context.getHandler());
-    if (!requiredRole) return true;
-
-    const ctx = GqlExecutionContext.create(context);
-    const user = ctx.getContext().user;
-    const args = ctx.getArgs();
-
-    const competitionId = args.competitionId || args.id;
-
-    // Check user's role for this specific competition
-    const userRole = await this.enrollmentService.getUserRole(user.id, competitionId);
-
-    return this.hasRequiredRole(userRole, requiredRole);
-  }
-
-  private hasRequiredRole(userRole: Role, required: Role): boolean {
-    const hierarchy = [Role.USER, Role.PARTICIPANT, Role.SPONSOR, Role.ADMIN];
-    return hierarchy.indexOf(userRole) >= hierarchy.indexOf(required);
-  }
-}
-```
-
-### Avoiding If-Statement Spaghetti
-
-**Principle 1: Route determines mode, not runtime checks**
-
-Don't: Check mode in every component
-```typescript
-// Bad
-if (this.mode === 'admin') {
-  this.showAdminPanel = true;
-}
-```
-
-Do: Use separate routes/components
-```typescript
-// Good - route determines what component loads
-{ path: 'manage', component: AdminShellComponent }
-```
-
-**Principle 2: Permissions checked once at the boundary**
-
-Don't: Check permissions deep in component trees
-```typescript
-// Bad - checking throughout the tree
-if (this.authService.canManage(this.competition)) { ... }
-```
-
-Do: Guard at route level, assume permission in component
-```typescript
-// Good - AdminConfigComponent only loads if user is SPONSOR
-// No permission checks inside AdminConfigComponent
-```
-
-**Principle 3: Backend is the authority**
-
-The frontend hides/shows UI for UX, but the backend enforces permissions. A user who manipulates the frontend cannot bypass authorization.
+1. **Routes determine mode**: `/competitions/:id` vs `/competitions/:id/admin/*`
+2. **Dependencies check permissions once**: `require_role()` at route level
+3. **Services assume authorization passed**: No re-checking inside business logic
+4. **Backend is the authority**: Frontend adapts UI, backend enforces rules
 
 ---
 
-## 4. Testing Strategy
+## 5. Testing Strategy
 
-### Test Distribution
+### Test Organization
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Playwright E2E                           │
-│    User journeys through the real system (10-15 tests)         │
-├─────────────────────────────────────────────────────────────────┤
-│                     Integration Tests                           │
-│   API + Database together (50-80 tests)                        │
-│   - GraphQL operations with real DB                            │
-│   - File upload/download                                       │
-│   - Permission enforcement                                      │
-├─────────────────────────────────────────────────────────────────┤
-│                       Unit Tests                                │
-│   Pure logic in isolation (100+ tests)                         │
-│   - Scoring algorithms                                         │
-│   - Validation rules                                           │
-│   - Permission calculations                                    │
-│   - Date/rank calculations                                     │
-└─────────────────────────────────────────────────────────────────┘
+tests/
+├── conftest.py                 # Shared fixtures
+├── unit/                       # Pure logic tests (no DB, no HTTP)
+│   ├── test_scoring.py
+│   ├── test_validation.py
+│   ├── test_permissions.py
+│   └── test_rank_calculation.py
+├── integration/                # API + Database tests
+│   ├── test_auth.py
+│   ├── test_competitions.py
+│   ├── test_submissions.py
+│   ├── test_enrollments.py
+│   └── test_admin.py
+└── factories/                  # Test data factories
+    └── factories.py
 ```
 
-### Playwright E2E Tests
+### Fixtures and Test Database
 
-**What they cover**: Complete user journeys through the running system
+```python
+# tests/conftest.py
 
-```typescript
-// e2e/journeys/competition-participation.spec.ts
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-test.describe('Competition Participation', () => {
-  test('user discovers, enrolls, and submits', async ({ page }) => {
-    await loginAs(page, 'participant@example.com');
+@pytest.fixture
+async def db_session():
+    """Create a fresh database for each test."""
+    engine = create_async_engine("postgresql+asyncpg://test:test@localhost/daggle_test")
 
-    // Discovery
-    await page.goto('/competitions');
-    await page.click('text=Customer Churn Prediction');
-    await expect(page.locator('[data-testid="competition-title"]'))
-      .toHaveText('Customer Churn Prediction');
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-    // Enrollment
-    await page.click('[data-testid="enroll-button"]');
-    await expect(page.locator('[data-testid="enrolled-badge"]')).toBeVisible();
-    await expect(page.locator('[data-testid="participant-status"]')).toBeVisible();
+    async with AsyncSession(engine) as session:
+        yield session
 
-    // Submission
-    await page.click('[data-testid="submit-button"]');
-    await page.setInputFiles('[data-testid="file-input"]', 'fixtures/valid-submission.csv');
-    await page.click('[data-testid="confirm-submit"]');
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
-    await expect(page.locator('[data-testid="submission-score"]')).toBeVisible();
-    await expect(page.locator('[data-testid="submission-rank"]')).toBeVisible();
-  });
+@pytest.fixture
+async def client(db_session):
+    """Test client with database session."""
+    app.dependency_overrides[get_db] = lambda: db_session
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        yield client
+    app.dependency_overrides.clear()
 
-  test('sponsor creates and manages competition', async ({ page }) => {
-    await loginAs(page, 'sponsor@example.com');
-
-    // Create
-    await page.goto('/competitions/new');
-    await page.fill('[data-testid="title-input"]', 'Test Competition');
-    await page.fill('[data-testid="description-input"]', 'Description');
-    await page.click('[data-testid="create-button"]');
-
-    await expect(page).toHaveURL(/\/competitions\/[\w-]+\/manage/);
-
-    // Manage
-    await page.click('[data-testid="tab-config"]');
-    await page.fill('[data-testid="title-input"]', 'Updated Title');
-    await page.click('[data-testid="save-button"]');
-
-    await expect(page.locator('[data-testid="save-success"]')).toBeVisible();
-  });
-});
-```
-
-**Visual regression tests** (existing pattern):
-
-```typescript
-// e2e/visual/layout-stability.spec.ts
-
-test.describe('Layout Stability', () => {
-  test('tab container width stable across all tabs', async ({ page }) => {
-    await page.goto('/competitions/test-competition');
-    const container = page.locator('.tab-container');
-    const initialBox = await container.boundingBox();
-
-    const tabs = ['overview', 'task-data', 'evaluation', 'rules-timeline'];
-    for (const tab of tabs) {
-      await page.click(`[data-tab="${tab}"]`);
-      const currentBox = await container.boundingBox();
-      expect(currentBox.width).toBe(initialBox.width);
-    }
-  });
-
-  test('mode switching preserves layout', async ({ page }) => {
-    // Test from prototype already exists
-  });
-});
-```
-
-### Integration Tests
-
-**What they cover**: API operations with real database
-
-```typescript
-// test/integration/submission.integration.spec.ts
-
-describe('Submission API', () => {
-  let app: INestApplication;
-  let db: TestDatabase;
-
-  beforeAll(async () => {
-    app = await createTestApp();
-    db = await TestDatabase.create();
-  });
-
-  beforeEach(async () => {
-    await db.clean();
-  });
-
-  describe('submitPredictions mutation', () => {
-    it('accepts valid submission and returns score', async () => {
-      const user = await db.createUser();
-      const competition = await db.createCompetition({ status: 'ACTIVE' });
-      await db.enrollUser(user, competition);
-
-      const result = await graphqlRequest(app, {
-        query: SUBMIT_MUTATION,
-        variables: {
-          competitionId: competition.id,
-          file: createTestFile('valid-predictions.csv'),
-        },
-        user,
-      });
-
-      expect(result.data.submitPredictions.status).toBe('SCORED');
-      expect(result.data.submitPredictions.score).toBeGreaterThan(0);
-      expect(result.data.submitPredictions.rank).toBeDefined();
-    });
-
-    it('rejects submission from non-enrolled user', async () => {
-      const user = await db.createUser();
-      const competition = await db.createCompetition({ status: 'ACTIVE' });
-      // User is NOT enrolled
-
-      const result = await graphqlRequest(app, {
-        query: SUBMIT_MUTATION,
-        variables: {
-          competitionId: competition.id,
-          file: createTestFile('valid-predictions.csv'),
-        },
-        user,
-      });
-
-      expect(result.errors[0].extensions.code).toBe('FORBIDDEN');
-    });
-
-    it('rejects submission when daily limit exceeded', async () => {
-      const user = await db.createUser();
-      const competition = await db.createCompetition({
-        status: 'ACTIVE',
-        dailySubmissionLimit: 5,
-      });
-      await db.enrollUser(user, competition);
-      await db.createSubmissions(user, competition, 5); // At limit
-
-      const result = await graphqlRequest(app, {
-        query: SUBMIT_MUTATION,
-        variables: {
-          competitionId: competition.id,
-          file: createTestFile('valid-predictions.csv'),
-        },
-        user,
-      });
-
-      expect(result.errors[0].extensions.code).toBe('RATE_LIMIT_EXCEEDED');
-    });
-  });
-});
+@pytest.fixture
+async def authenticated_client(client, db_session):
+    """Client with authenticated user."""
+    user = await UserFactory.create(session=db_session)
+    token = create_access_token(user.id)
+    client.headers["Authorization"] = f"Bearer {token}"
+    client.user = user
+    return client
 ```
 
 ### Unit Tests
 
-**What they cover**: Pure logic that doesn't need database or HTTP
+**What to unit test**: Pure functions with no external dependencies
+
+```python
+# tests/unit/test_scoring.py
+
+import pytest
+from domain.submission.scoring import calculate_auc_roc
+
+class TestAucRocCalculation:
+    def test_perfect_predictions_returns_one(self):
+        predictions = [
+            {"id": "1", "probability": 0.9},
+            {"id": "2", "probability": 0.1},
+        ]
+        actuals = [
+            {"id": "1", "churned": True},
+            {"id": "2", "churned": False},
+        ]
+
+        score = calculate_auc_roc(predictions, actuals)
+        assert score == 1.0
+
+    def test_inverse_predictions_returns_zero(self):
+        predictions = [
+            {"id": "1", "probability": 0.1},
+            {"id": "2", "probability": 0.9},
+        ]
+        actuals = [
+            {"id": "1", "churned": True},
+            {"id": "2", "churned": False},
+        ]
+
+        score = calculate_auc_roc(predictions, actuals)
+        assert score == 0.0
+
+    def test_random_predictions_returns_approximately_half(self):
+        # Large sample with random predictions
+        predictions = [{"id": str(i), "probability": 0.5} for i in range(1000)]
+        actuals = [{"id": str(i), "churned": i % 2 == 0} for i in range(1000)]
+
+        score = calculate_auc_roc(predictions, actuals)
+        assert 0.45 <= score <= 0.55
+
+
+# tests/unit/test_validation.py
+
+from domain.submission.validation import validate_submission_file
+
+class TestSubmissionValidation:
+    def test_accepts_valid_csv(self):
+        content = "customer_id,churn_probability\n1,0.5\n2,0.3"
+        result = validate_submission_file(content, expected_ids=["1", "2"])
+
+        assert result.valid is True
+        assert result.errors == []
+
+    def test_rejects_missing_column(self):
+        content = "id,probability\n1,0.5"
+        result = validate_submission_file(content, expected_ids=["1"])
+
+        assert result.valid is False
+        assert any(e.code == "MISSING_COLUMN" for e in result.errors)
+
+    def test_rejects_probability_out_of_range(self):
+        content = "customer_id,churn_probability\n1,1.5"
+        result = validate_submission_file(content, expected_ids=["1"])
+
+        assert result.valid is False
+        assert any(e.code == "VALUE_OUT_OF_RANGE" for e in result.errors)
+```
+
+### Integration Tests
+
+**What to integration test**: API endpoints with real database
+
+```python
+# tests/integration/test_submissions.py
+
+import pytest
+from httpx import AsyncClient
+
+class TestSubmissionAPI:
+    @pytest.mark.asyncio
+    async def test_submit_valid_file_returns_score(
+        self, authenticated_client: AsyncClient, db_session
+    ):
+        # Setup: create competition and enroll user
+        competition = await CompetitionFactory.create(session=db_session, status="active")
+        await EnrollmentFactory.create(
+            session=db_session,
+            user_id=authenticated_client.user.id,
+            competition_id=competition.id
+        )
+
+        # Submit
+        files = {"file": ("predictions.csv", create_valid_csv(), "text/csv")}
+        response = await authenticated_client.post(
+            f"/api/competitions/{competition.id}/submissions",
+            files=files
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "scored"
+        assert "score" in data
+        assert "rank" in data
+
+    @pytest.mark.asyncio
+    async def test_submit_without_enrollment_returns_403(
+        self, authenticated_client: AsyncClient, db_session
+    ):
+        competition = await CompetitionFactory.create(session=db_session, status="active")
+        # User is NOT enrolled
+
+        files = {"file": ("predictions.csv", create_valid_csv(), "text/csv")}
+        response = await authenticated_client.post(
+            f"/api/competitions/{competition.id}/submissions",
+            files=files
+        )
+
+        assert response.status_code == 403
+
+    @pytest.mark.asyncio
+    async def test_submit_exceeding_daily_limit_returns_429(
+        self, authenticated_client: AsyncClient, db_session
+    ):
+        competition = await CompetitionFactory.create(
+            session=db_session,
+            status="active",
+            daily_submission_limit=5
+        )
+        await EnrollmentFactory.create(
+            session=db_session,
+            user_id=authenticated_client.user.id,
+            competition_id=competition.id
+        )
+        # Create 5 submissions (at limit)
+        for _ in range(5):
+            await SubmissionFactory.create(
+                session=db_session,
+                user_id=authenticated_client.user.id,
+                competition_id=competition.id
+            )
+
+        files = {"file": ("predictions.csv", create_valid_csv(), "text/csv")}
+        response = await authenticated_client.post(
+            f"/api/competitions/{competition.id}/submissions",
+            files=files
+        )
+
+        assert response.status_code == 429
+        assert response.json()["error"]["code"] == "RATE_LIMIT_EXCEEDED"
+```
+
+### E2E Tests (Playwright)
+
+**Unchanged from original plan**. Playwright tests remain the primary regression guardrail:
 
 ```typescript
-// domain/submission/scoring.service.spec.ts
+// e2e/journeys/submission-flow.spec.ts
 
-describe('ScoringService', () => {
-  describe('calculateAucRoc', () => {
-    it('returns 1.0 for perfect predictions', () => {
-      const predictions = [
-        { id: '1', probability: 0.9 },
-        { id: '2', probability: 0.1 },
-      ];
-      const actuals = [
-        { id: '1', churned: true },
-        { id: '2', churned: false },
-      ];
+test('enrolled user can submit and see score', async ({ page }) => {
+  await loginAs(page, 'participant@test.com');
+  await page.goto('/competitions/test-competition');
 
-      const score = ScoringService.calculateAucRoc(predictions, actuals);
-      expect(score).toBe(1.0);
-    });
+  // Verify participant mode
+  await expect(page.locator('[data-testid="enrolled-badge"]')).toBeVisible();
 
-    it('returns 0.5 for random predictions', () => {
-      // ...
-    });
+  // Submit
+  await page.click('[data-testid="submit-tab"]');
+  await page.setInputFiles('[data-testid="file-input"]', 'fixtures/valid.csv');
+  await page.click('[data-testid="submit-button"]');
 
-    it('handles edge cases (all positive, all negative)', () => {
-      // ...
-    });
-  });
-});
-
-// domain/submission/validation.service.spec.ts
-
-describe('SubmissionValidation', () => {
-  describe('validateFormat', () => {
-    it('accepts valid CSV with required columns', () => {
-      const csv = 'customer_id,churn_probability\n1,0.5\n2,0.3';
-      const result = ValidationService.validateFormat(csv);
-      expect(result.valid).toBe(true);
-    });
-
-    it('rejects CSV missing required columns', () => {
-      const csv = 'id,probability\n1,0.5';
-      const result = ValidationService.validateFormat(csv);
-      expect(result.valid).toBe(false);
-      expect(result.errors).toContainEqual({
-        code: 'MISSING_COLUMN',
-        column: 'customer_id',
-      });
-    });
-
-    it('rejects probabilities outside 0-1 range', () => {
-      const csv = 'customer_id,churn_probability\n1,1.5';
-      const result = ValidationService.validateFormat(csv);
-      expect(result.valid).toBe(false);
-    });
-  });
+  // Verify result
+  await expect(page.locator('[data-testid="submission-score"]')).toBeVisible();
+  await expect(page.locator('[data-testid="submission-rank"]')).toBeVisible();
 });
 ```
 
-### Must-Have Regression Tests for MVP
+### Must-Have Tests for MVP
 
 ```
-E2E (Playwright)
-├── User can view competition list
-├── User can view competition details (discovery mode)
-├── User can enroll in competition
-├── Enrolled user can submit predictions
-├── Enrolled user sees their rank update
-├── Sponsor can create competition
-├── Sponsor can access admin panel
-├── Sponsor can update competition settings
-├── Layout remains stable during tab switching
-└── Layout remains stable during mode transitions
+Unit Tests
+├── Scoring algorithm: perfect, inverse, random, edge cases
+├── Validation: valid CSV, missing columns, out-of-range values, wrong IDs
+├── Permission hierarchy: viewer < participant < sponsor
+└── Rank calculation: ties, updates, position changes
 
-Integration
-├── Authentication flow (login, token refresh)
-├── Competition CRUD operations
-├── Enrollment creates correct records
-├── Submission processing and scoring
-├── Leaderboard calculation
-├── Permission enforcement (enrolled, sponsor)
-├── Daily submission limit enforcement
-└── File upload handling
+Integration Tests
+├── Auth: login, token refresh, invalid token
+├── Competitions: list, get, create (becomes sponsor), update (sponsor only)
+├── Enrollments: enroll, unenroll, duplicate enrollment
+├── Submissions: submit, validate, rate limit, score storage
+├── Leaderboard: ranking, around-me query
+└── Admin: stats, participant list, submission management
 
-Unit
-├── Scoring algorithm correctness
-├── Submission validation rules
-├── Rank calculation
-├── Permission hierarchy logic
-└── Date/time calculations (deadline, etc.)
+E2E Tests (Playwright)
+├── Discovery: browse competitions, view details
+├── Enrollment: join competition, see participant UI
+├── Submission: upload file, see score and rank
+├── Admin: create competition, update settings
+└── Layout: tab stability, mode switching
 ```
 
 ---
 
-## 5. Iteration Plan (Milestones)
+## 6. Deployment & Runtime
+
+### Docker Configuration
+
+**Backend Dockerfile**:
+
+```dockerfile
+# Dockerfile.backend
+FROM python:3.11-slim
+
+# Create non-root user
+RUN useradd -m -u 1000 appuser
+
+WORKDIR /app
+
+# Install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application
+COPY --chown=appuser:appuser src/ ./src/
+COPY --chown=appuser:appuser alembic/ ./alembic/
+COPY --chown=appuser:appuser alembic.ini .
+
+# Switch to non-root user
+USER appuser
+
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD python -c "import httpx; httpx.get('http://localhost:8000/api/health/live')"
+
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+**Docker Compose for Development**:
+
+```yaml
+# docker-compose.yml
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend/src:/app/src
+    environment:
+      - API_URL=http://backend:8000
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/src:/app/src  # Live reload
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/daggle
+      - JWT_SECRET=dev-secret-change-in-production
+      - LOG_LEVEL=DEBUG
+      - CORS_ORIGINS=http://localhost:4200
+    depends_on:
+      db:
+        condition: service_healthy
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  db:
+    image: postgres:15
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=daggle
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
+```
+
+### Configuration
+
+```python
+# src/config.py
+
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    # Database
+    database_url: str
+
+    # Auth
+    jwt_secret: str
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 7
+
+    # CORS
+    cors_origins: list[str] = ["http://localhost:4200"]
+
+    # Storage
+    upload_dir: str = "/tmp/uploads"
+    max_upload_size_mb: int = 100
+
+    # Logging
+    log_level: str = "INFO"
+    log_format: str = "json"  # "json" or "text"
+
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
+```
+
+### Health Endpoints
+
+```python
+# api/routes/health.py
+
+from fastapi import APIRouter, Depends
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+router = APIRouter(prefix="/api/health")
+
+@router.get("/live")
+async def liveness():
+    """Kubernetes liveness probe - is the process running?"""
+    return {"status": "ok"}
+
+@router.get("/ready")
+async def readiness(db: AsyncSession = Depends(get_db)):
+    """Kubernetes readiness probe - can we serve requests?"""
+    try:
+        await db.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "connected"}
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "error", "database": "disconnected", "detail": str(e)}
+        )
+```
+
+### Structured Logging
+
+```python
+# infrastructure/logging/config.py
+
+import logging
+import json
+import sys
+from datetime import datetime
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record):
+        log_data = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "level": record.levelname,
+            "message": record.getMessage(),
+            "logger": record.name,
+        }
+
+        # Add extra fields if present
+        if hasattr(record, "request_id"):
+            log_data["request_id"] = record.request_id
+        if hasattr(record, "user_id"):
+            log_data["user_id"] = record.user_id
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)
+
+        return json.dumps(log_data)
+
+def setup_logging(level: str = "INFO", format: str = "json"):
+    logger = logging.getLogger()
+    logger.setLevel(getattr(logging, level.upper()))
+
+    handler = logging.StreamHandler(sys.stdout)
+    if format == "json":
+        handler.setFormatter(JsonFormatter())
+    else:
+        handler.setFormatter(logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        ))
+
+    logger.addHandler(handler)
+
+
+# infrastructure/logging/middleware.py
+
+import uuid
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+
+class RequestLoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+
+        # Attach to request state for use in route handlers
+        request.state.request_id = request_id
+
+        logger.info(
+            "Request started",
+            extra={
+                "request_id": request_id,
+                "method": request.method,
+                "path": request.url.path,
+            }
+        )
+
+        response = await call_next(request)
+
+        logger.info(
+            "Request completed",
+            extra={
+                "request_id": request_id,
+                "status_code": response.status_code,
+            }
+        )
+
+        response.headers["X-Request-ID"] = request_id
+        return response
+```
+
+### OpenShift Compatibility
+
+**Key constraints respected**:
+- Non-root user in container
+- All config via environment variables
+- Health endpoints for probes
+- No persistent local storage assumptions
+- Stateless application (session in JWT, files in external storage)
+
+**Kubernetes manifest example** (for reference):
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: daggle-backend
+spec:
+  replicas: 2
+  template:
+    spec:
+      containers:
+        - name: backend
+          image: daggle-backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: daggle-secrets
+                  key: database-url
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: daggle-secrets
+                  key: jwt-secret
+          livenessProbe:
+            httpGet:
+              path: /api/health/live
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health/ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+```
+
+---
+
+## 7. Iteration Plan (Milestones)
+
+Same six milestones as original plan, with Python-specific implementation details.
 
 ### Milestone 1: Foundation
-**Goal**: Running development environment with authentication stub
+**Goal**: Running development environment with authentication
 
 **Deliverables**:
 - [ ] Monorepo structure created
-- [ ] Angular app scaffolded with Material
-- [ ] NestJS app scaffolded with GraphQL
+- [ ] Angular app scaffolded (from prototype)
+- [ ] FastAPI app scaffolded
 - [ ] PostgreSQL in Docker Compose
-- [ ] Basic auth (hardcoded users for dev, JWT tokens)
+- [ ] SQLAlchemy models and Alembic migrations setup
+- [ ] Basic auth endpoints (login, token refresh)
 - [ ] Health endpoints working
-- [ ] One GraphQL query working end-to-end (`me` query returns current user)
+- [ ] OpenAPI spec generating correctly
+- [ ] TypeScript type generation from OpenAPI
 
 **Definition of Done**:
 - `docker-compose up` starts all services
 - Frontend can authenticate and display logged-in user
-- GraphQL playground accessible at `/graphql`
+- OpenAPI docs accessible at `/docs`
 - Health check returns 200
 
 ### Milestone 2: Competition Display
 **Goal**: Discovery mode fully functional
 
 **Deliverables**:
-- [ ] Competition database schema + migrations
-- [ ] Competition list page (Angular)
-- [ ] Competition detail page (discovery mode)
-- [ ] All tabs from prototype working (Overview, Task & Data, Evaluation, Getting Started, Rules)
-- [ ] GraphQL queries: `competitions`, `competition(id)`
+- [ ] Competition database models + migrations
+- [ ] Competition list endpoint
+- [ ] Competition detail endpoint (with user context)
+- [ ] Angular competition pages connected to API
 - [ ] Seeded test data
 
 **Definition of Done**:
 - User can browse competition list
-- User can view all competition details
-- Tab navigation works without layout jumping
-- E2E test: user views competition details
+- User can view competition details
+- User context correctly shows "viewer" role
+- E2E test passing
 
 ### Milestone 3: Enrollment + Participant Mode
 **Goal**: Users can enroll and see participant-specific UI
 
 **Deliverables**:
-- [ ] Enrollment database schema
-- [ ] Enroll mutation
-- [ ] Participant status display (rank, best score, submissions remaining)
-- [ ] Submissions tab (UI only—no actual submission yet)
-- [ ] Mini leaderboard in sidebar
-- [ ] Route guards for participant features
+- [ ] Enrollment models + migrations
+- [ ] Enroll/unenroll endpoints
+- [ ] User context includes enrollment status
+- [ ] Leaderboard endpoint
+- [ ] Angular participant components connected
 
 **Definition of Done**:
 - User can enroll in competition
-- Enrolled user sees participant UI (status bar, submissions tab)
-- Leaderboard shows enrolled users
-- E2E test: user enrolls and sees participant mode
+- User context shows "participant" role after enrollment
+- Leaderboard displays correctly
+- E2E test passing
 
 ### Milestone 4: Submissions + Scoring
 **Goal**: Core functionality—users can submit and get scored
 
 **Deliverables**:
-- [ ] Submission database schema
-- [ ] File upload endpoint (REST)
-- [ ] Submission processing (validation, scoring)
-- [ ] Score storage and rank calculation
-- [ ] Submission history display
+- [ ] Submission models + migrations
+- [ ] File upload endpoint
+- [ ] Submission validation logic
+- [ ] Scoring implementation (AUC-ROC)
+- [ ] Rank calculation and storage
 - [ ] Daily limit enforcement
+- [ ] Angular submission components connected
 
 **Definition of Done**:
 - User can upload CSV submission
 - Submission is validated and scored
-- Score appears in submission history
 - Rank updates on leaderboard
-- Daily limit prevents excess submissions
-- E2E test: complete submission flow
+- Daily limit enforced
+- E2E test passing
 
 ### Milestone 5: Admin Mode
 **Goal**: Sponsors can create and manage competitions
 
 **Deliverables**:
-- [ ] Competition create mutation
-- [ ] Competition update mutation
-- [ ] Admin route (`/competitions/:id/manage`)
-- [ ] Admin tabs: Overview, Configuration, Data, Monitoring, Rules, Discussions
-- [ ] Sponsor permission enforcement
+- [ ] Competition create endpoint (user becomes sponsor)
+- [ ] Competition update endpoint (sponsor only)
+- [ ] Admin statistics endpoint
+- [ ] Admin submission management
 - [ ] Audit logging for admin actions
+- [ ] Angular admin components connected
 
 **Definition of Done**:
-- User can create new competition (becomes sponsor)
-- Sponsor can access admin panel
-- Sponsor can update competition settings
-- Non-sponsors cannot access admin routes
+- User can create competition and becomes sponsor
+- Sponsor can access admin endpoints
+- Non-sponsors get 403
 - Admin actions are logged
-- E2E test: sponsor creates and configures competition
+- E2E test passing
 
 ### Milestone 6: Polish + Deploy Prep
 **Goal**: Production-ready MVP
 
 **Deliverables**:
-- [ ] Error handling polished (user-friendly messages)
-- [ ] Loading states throughout UI
-- [ ] Form validation with clear feedback
-- [ ] Full E2E test suite passing
+- [ ] Error handling polished
+- [ ] Loading states in UI
+- [ ] Form validation with feedback
+- [ ] Full test suite passing
 - [ ] Production Docker builds
-- [ ] Environment configuration documented
 - [ ] OpenShift deployment manifests
 - [ ] README with setup instructions
 
 **Definition of Done**:
 - All E2E tests pass
-- No console errors in normal flows
+- All integration tests pass
 - Application builds for production
 - Can deploy to OpenShift-like environment
-- Another developer can set up locally from README
+- Developer can set up locally from README
 
 ---
 
-## 6. Robustness Baseline
+## 8. Risks and Mitigations
 
-### Logging Approach
+| Risk | Likelihood | Impact | Mitigation |
+|------|------------|--------|------------|
+| Type drift between Python and Angular | Medium | Medium | Generate TS types in CI; fail build on mismatch |
+| Async/sync confusion in SQLAlchemy | Medium | Low | Use async consistently; lint for sync calls |
+| Slower development vs TypeScript E2E | Low | Medium | Python is productive; team likely has Python experience |
+| Scoring performance (synchronous) | Low | Low | NumPy is fast; can optimize later if needed |
+| GraphQL demand from frontend team | Medium | Low | REST meets needs; can add Strawberry endpoints if required |
 
-**Structured JSON logs**:
+### Risk: Type Safety Gap
 
-```typescript
-// infrastructure/logging/logging.interceptor.ts
+**Concern**: Without shared TypeScript types, the frontend might drift from backend expectations.
 
-@Injectable()
-export class LoggingInterceptor implements NestInterceptor {
-  private logger = new Logger('HTTP');
+**Mitigations**:
+1. **Generate types in CI**: Every backend change triggers type regeneration
+2. **Frontend compilation catches mismatches**: TypeScript build fails if types don't match usage
+3. **Integration tests verify contracts**: API tests are the source of truth
+4. **Pydantic enforces backend contracts**: Runtime validation catches issues early
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-    const request = context.switchToHttp().getRequest();
-    const requestId = request.headers['x-request-id'] || uuidv4();
-    const startTime = Date.now();
+### Risk: Python Performance for Scoring
 
-    // Attach requestId to request for use in services
-    request.requestId = requestId;
+**Concern**: Python is slower than Node.js for CPU-bound work.
 
-    return next.handle().pipe(
-      tap(() => {
-        this.logger.log({
-          requestId,
-          method: request.method,
-          path: request.path,
-          userId: request.user?.id,
-          duration: Date.now() - startTime,
-          status: 'success',
-        });
-      }),
-      catchError((error) => {
-        this.logger.error({
-          requestId,
-          method: request.method,
-          path: request.path,
-          userId: request.user?.id,
-          duration: Date.now() - startTime,
-          status: 'error',
-          error: error.message,
-          stack: error.stack,
-        });
-        throw error;
-      }),
-    );
-  }
-}
-```
-
-**Log levels**:
-- `error`: Unexpected failures (uncaught exceptions, database errors)
-- `warn`: Expected failures (validation errors, permission denied)
-- `info`: Significant operations (user enrolled, submission scored)
-- `debug`: Detailed flow (disabled in production)
-
-### Error Handling
-
-**Backend: Consistent error response format**:
-
-```typescript
-// GraphQL error format
-{
-  "errors": [{
-    "message": "You have exceeded your daily submission limit",
-    "extensions": {
-      "code": "RATE_LIMIT_EXCEEDED",
-      "requestId": "abc-123",
-      "details": {
-        "limit": 5,
-        "used": 5,
-        "resetsAt": "2025-01-25T00:00:00Z"
-      }
-    }
-  }]
-}
-```
-
-**Frontend: Global error handler**:
-
-```typescript
-// core/error/error-handler.service.ts
-
-@Injectable()
-export class ErrorHandlerService implements ErrorHandler {
-  constructor(private snackBar: MatSnackBar) {}
-
-  handleError(error: any): void {
-    console.error('Unhandled error:', error);
-
-    // Extract user-friendly message
-    const message = this.extractMessage(error);
-
-    this.snackBar.open(message, 'Dismiss', {
-      duration: 5000,
-      panelClass: 'error-snackbar',
-    });
-
-    // In production, send to error tracking service
-  }
-
-  private extractMessage(error: any): string {
-    if (error.graphQLErrors?.length > 0) {
-      return error.graphQLErrors[0].message;
-    }
-    if (error.message) {
-      return error.message;
-    }
-    return 'An unexpected error occurred';
-  }
-}
-```
-
-### Audit Logging
-
-**What gets recorded**:
-
-| Action | Recorded Fields |
-|--------|-----------------|
-| Competition created | actor, competition_id, initial_config |
-| Competition updated | actor, competition_id, changed_fields, before, after |
-| Deadline extended | actor, competition_id, old_deadline, new_deadline |
-| Data uploaded | actor, competition_id, file_info, version |
-| Participant removed | actor, competition_id, removed_user_id, reason |
-| Submission invalidated | actor, submission_id, reason |
-
-**Audit table schema**:
-
-```sql
-CREATE TABLE audit_log (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  actor_id UUID NOT NULL REFERENCES users(id),
-  action VARCHAR(50) NOT NULL,
-  resource_type VARCHAR(30) NOT NULL,
-  resource_id UUID NOT NULL,
-  changes JSONB,
-  request_id VARCHAR(50),
-  ip_address INET
-);
-
-CREATE INDEX idx_audit_resource ON audit_log(resource_type, resource_id);
-CREATE INDEX idx_audit_actor ON audit_log(actor_id);
-CREATE INDEX idx_audit_created ON audit_log(created_at);
-```
-
-### Security Baseline
-
-**Password hashing**: bcrypt with cost factor 12
-
-```typescript
-import * as bcrypt from 'bcrypt';
-
-const SALT_ROUNDS = 12;
-
-async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, SALT_ROUNDS);
-}
-
-async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
-```
-
-**JWT tokens**:
-- Access token: 15 minutes expiry
-- Refresh token: 7 days expiry, stored in httpOnly cookie
-- Tokens include: userId, email, issuedAt
-- Tokens do NOT include: permissions (fetch fresh on each request)
-
-**Input validation**:
-- All GraphQL inputs validated via class-validator decorators
-- File uploads validated: type, size, content
-
-**CORS**:
-- Explicit origin whitelist (no wildcard in production)
-
-### Container Constraints (OpenShift-friendly)
-
-**Non-root user**:
-
-```dockerfile
-# Dockerfile.backend
-FROM node:18-alpine
-
-# Create non-root user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-WORKDIR /app
-COPY --chown=appuser:appgroup . .
-
-USER appuser
-
-EXPOSE 3000
-CMD ["node", "dist/main.js"]
-```
-
-**Environment variables for all config**:
-
-```typescript
-// Required environment variables
-const config = {
-  port: parseInt(process.env.PORT || '3000'),
-  database: {
-    host: process.env.DB_HOST,
-    port: parseInt(process.env.DB_PORT || '5432'),
-    name: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-  },
-  jwt: {
-    secret: process.env.JWT_SECRET,
-    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
-  },
-  // No file paths, no hardcoded URLs
-};
-```
-
-**Health endpoints**:
-
-```typescript
-// rest/health.controller.ts
-
-@Controller('api/health')
-export class HealthController {
-  constructor(private db: DatabaseService) {}
-
-  @Get('live')
-  liveness() {
-    // Process is running
-    return { status: 'ok' };
-  }
-
-  @Get('ready')
-  async readiness() {
-    // Can serve requests
-    try {
-      await this.db.query('SELECT 1');
-      return { status: 'ok', database: 'connected' };
-    } catch (error) {
-      throw new ServiceUnavailableException({
-        status: 'error',
-        database: 'disconnected',
-      });
-    }
-  }
-}
-```
-
-**Resource limits** (for Kubernetes manifest):
-
-```yaml
-resources:
-  requests:
-    memory: "256Mi"
-    cpu: "100m"
-  limits:
-    memory: "512Mi"
-    cpu: "500m"
-```
+**Reality check**:
+- Scoring a single submission (thousands of rows) takes milliseconds with NumPy
+- MVP has at most hundreds of concurrent users
+- If performance becomes an issue, extract scoring to a worker (not needed for MVP)
 
 ---
 
-## 7. Summary Checklist
+## 9. Summary Checklist
 
 ### Decisions Made
 
-- [x] Backend: NestJS + TypeScript
-- [x] Database: PostgreSQL with Knex query builder
-- [x] API: GraphQL primary, REST for uploads/health
+- [x] Backend: FastAPI + Python 3.11+
+- [x] Database: PostgreSQL + SQLAlchemy 2.0 + Alembic
+- [x] API: REST primary (GraphQL optional via Strawberry)
+- [x] Type sharing: OpenAPI → TypeScript generation
 - [x] Auth: JWT with bcrypt password hashing
 - [x] Container: Non-root, env-based config, health endpoints
 
+### Key Differences from Original Plan
+
+| Aspect | Original | Python Variant |
+|--------|----------|----------------|
+| Backend | NestJS | FastAPI |
+| Type sharing | Native TypeScript | Generated from OpenAPI |
+| API style | GraphQL primary | REST primary |
+| ORM | Knex (query builder) | SQLAlchemy 2.0 (ORM + Core) |
+| DI pattern | Framework-provided | FastAPI Depends() |
+
 ### Implementation Order
 
-1. [ ] **Milestone 1**: Foundation (auth, GraphQL working)
+1. [ ] **Milestone 1**: Foundation (auth, health, type generation)
 2. [ ] **Milestone 2**: Competition display (discovery mode)
 3. [ ] **Milestone 3**: Enrollment + participant mode
 4. [ ] **Milestone 4**: Submissions + scoring
@@ -1192,15 +1346,6 @@ resources:
 
 ### Test Coverage Requirements
 
-- [ ] E2E: 10-15 user journey tests
-- [ ] Integration: 50+ API+DB tests
-- [ ] Unit: 100+ logic tests
-- [ ] Visual: Layout stability tests
-
-### Robustness Requirements
-
-- [ ] Structured JSON logging with request IDs
-- [ ] Consistent error response format
-- [ ] Audit log for admin actions
-- [ ] Health endpoints for Kubernetes
-- [ ] Non-root container execution
+- [ ] Unit: 100+ tests (scoring, validation, permissions)
+- [ ] Integration: 50+ tests (API + DB)
+- [ ] E2E: 10-15 Playwright tests (unchanged from original)
