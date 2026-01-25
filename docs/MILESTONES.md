@@ -81,11 +81,12 @@ This document outlines the sequenced development plan for Daggle's next phase. E
 
 ---
 
-## Phase 2: Platform Primitive
+## Phase 2: Platform Primitive ✅ COMPLETE
 
-### Milestone 2.1: File Storage Abstraction
+### Milestone 2.1: File Storage Abstraction ✅
 
-**Branch:** `feature/14-storage`
+**Branch:** `feature/14-storage` (merged)
+**Completed:** 2026-01-25
 
 **Scope:**
 - Abstract storage interface for files
@@ -95,25 +96,41 @@ This document outlines the sequenced development plan for Daggle's next phase. E
 
 **Key Deliverables:**
 - `StorageBackend` protocol/interface
-- `LocalStorageBackend` implementation
-- `S3StorageBackend` implementation
+- `LocalStorageBackend` implementation using aiofiles
+- `S3StorageBackend` implementation using aioboto3
 - Configuration via environment variables
-- MinIO service in docker-compose for local dev
-- Migrate submission uploads to use abstraction
+- MinIO service in docker-compose (with s3 profile)
+- Submission uploads wired through abstraction
 
 **Definition of Done:**
-- [ ] Storage interface defined
-- [ ] Local backend works (existing behavior preserved)
-- [ ] S3 backend works with MinIO in docker-compose
-- [ ] Submissions use storage abstraction
-- [ ] Integration test with local backend
-- [ ] Documentation on configuring S3
+- [x] Storage interface defined (`StorageBackend` protocol)
+- [x] Local backend works (existing behavior preserved)
+- [x] S3 backend works with MinIO in docker-compose
+- [x] Submissions use storage abstraction
+- [x] Integration tests for local backend (12 tests)
+- [x] S3 tests available (skipped when MinIO not running)
+
+**Configuration:**
+- `STORAGE_BACKEND`: "local" (default) or "s3"
+- `S3_ENDPOINT_URL`: MinIO/S3 endpoint (e.g., "http://minio:9000")
+- `S3_BUCKET`: Bucket name (default: "daggle")
+- `S3_ACCESS_KEY`, `S3_SECRET_KEY`: Credentials
+
+**Usage:**
+```bash
+# Local storage (default)
+docker compose up
+
+# S3/MinIO storage
+docker compose --profile s3 up
+# Then set STORAGE_BACKEND=s3 and other S3_* vars
+```
 
 **Dependencies:**
-- None (can proceed independently)
+- None
 
 **Risks:**
-- Must preserve existing local file paths during migration
+- Existing local file paths preserved via configurable base directory
 
 ---
 
@@ -282,17 +299,17 @@ This document outlines the sequenced development plan for Daggle's next phase. E
 
 ## Summary Table
 
-| Milestone | Branch | Phase | Dependencies |
-|-----------|--------|-------|--------------|
-| Discussions | feature/12-discussions | 1 | None |
-| Leaderboard | feature/13-leaderboard | 1 | None |
-| Storage | feature/14-storage | 2 | None |
-| Async Scoring | feature/15-async-scoring | 3 | Storage (soft) |
-| Notifications | feature/16-notifications | 4 | None |
-| Profiles | feature/17-profiles | 4 | None |
-| Dashboard | feature/18-dashboard | 4 | Notifications |
-| Teams | feature/19-teams | 5 | Leaderboard |
-| Admin | feature/20-admin | 5 | Discussions |
+| Milestone | Branch | Phase | Status | Dependencies |
+|-----------|--------|-------|--------|--------------|
+| Discussions | feature/12-discussions | 1 | ✅ Done | None |
+| Leaderboard | feature/13-leaderboard | 1 | ✅ Done | None |
+| Storage | feature/14-storage | 2 | ✅ Done | None |
+| Async Scoring | feature/15-async-scoring | 3 | Pending | Storage (soft) |
+| Notifications | feature/16-notifications | 4 | Pending | None |
+| Profiles | feature/17-profiles | 4 | Pending | None |
+| Dashboard | feature/18-dashboard | 4 | Pending | Notifications |
+| Teams | feature/19-teams | 5 | Pending | Leaderboard |
+| Admin | feature/20-admin | 5 | Pending | Discussions |
 
 ---
 

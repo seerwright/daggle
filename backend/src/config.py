@@ -27,6 +27,16 @@ class Settings(BaseSettings):
     # File uploads
     upload_dir: str = "/tmp/daggle/uploads"
 
+    # Storage backend: "local" or "s3"
+    storage_backend: str = "local"
+
+    # S3/MinIO settings (used when storage_backend = "s3")
+    s3_endpoint_url: str | None = None  # e.g., "http://minio:9000" for MinIO
+    s3_bucket: str = "daggle"
+    s3_access_key: str = "minioadmin"
+    s3_secret_key: str = "minioadmin"
+    s3_region: str = "us-east-1"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

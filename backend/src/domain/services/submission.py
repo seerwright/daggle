@@ -2,27 +2,31 @@
 
 import uuid
 from datetime import datetime, timezone
-from pathlib import Path
 
 from fastapi import UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.config import settings
 from src.domain.models.competition import Competition, CompetitionStatus
 from src.domain.models.submission import Submission, SubmissionStatus
 from src.domain.models.user import User
 from src.domain.scoring.scorer import create_scorer_for_competition
 from src.domain.scoring.validation import validate_submission
 from src.infrastructure.repositories.submission import SubmissionRepository
+from src.infrastructure.storage import get_storage_backend, StorageBackend
 
 
 class SubmissionService:
     """Service for submission operations."""
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        storage: StorageBackend | None = None,
+    ) -> None:
         self.session = session
         self.repo = SubmissionRepository(session)
+        self.storage = storage or get_storage_backend()
 
     async def submit(
         self,
@@ -87,22 +91,24 @@ class SubmissionService:
     async def _save_file(
         self, competition_id: int, user_id: int, file: UploadFile
     ) -> str:
-        """Save uploaded file and return the path."""
-        # Create directory structure
-        upload_dir = Path(settings.upload_dir) / str(competition_id) / str(user_id)
-        upload_dir.mkdir(parents=True, exist_ok=True)
+        """Save uploaded file using the storage backend.
 
-        # Generate unique filename
-        ext = Path(file.filename or "submission.csv").suffix
-        unique_name = f"{uuid.uuid4()}{ext}"
-        file_path = upload_dir / unique_name
+        Args:
+            competition_id: Competition ID for organizing files
+            user_id: User ID for organizing files
+            file: The uploaded file
 
-        # Save file
+        Returns:
+            The storage path/URI where the file was saved
+        """
+        # Generate storage key
+        ext = file.filename.rsplit(".", 1)[-1] if file.filename and "." in file.filename else "csv"
+        unique_name = f"{uuid.uuid4()}.{ext}"
+        storage_key = f"submissions/{competition_id}/{user_id}/{unique_name}"
+
+        # Read and save file
         content = await file.read()
-        with open(file_path, "wb") as f:
-            f.write(content)
-
-        return str(file_path)
+        return await self.storage.save(storage_key, content)
 
     async def _score_submission(
         self,
