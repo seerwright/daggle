@@ -244,23 +244,34 @@ docker compose --profile async up
 
 ---
 
-### Milestone 4.3: User Dashboard
+### Milestone 4.3: User Dashboard ✅
 
-**Branch:** `feature/18-dashboard`
+**Branch:** `feature/18-dashboard` (merged)
+**Completed:** 2026-01-25
 
 **Scope:**
 - Personal home view for logged-in users
 - Enrolled competitions, recent submissions, notifications
 
 **Key Deliverables:**
-- API endpoint: `GET /dashboard` - aggregated user data
-- Frontend: Dashboard page (home when logged in)
-- Sections: active competitions, recent submissions, notifications feed
+- `DashboardService` with data aggregation across competitions, submissions, notifications
+- API endpoints:
+  - `GET /dashboard` - full dashboard with competitions, submissions, notifications, stats
+  - `GET /dashboard/stats` - lightweight stats summary
+- Dashboard data includes:
+  - Active/enrolled competitions with progress (days remaining, rank, best score)
+  - Recent submissions with scores
+  - Recent notifications feed
+  - Quick stats (total competitions, active, submissions, unread notifications)
+- Frontend: Dashboard page (future work)
 
 **Definition of Done:**
-- [ ] Dashboard API returns user's relevant data
-- [ ] Frontend dashboard with real data
-- [ ] Navigation updates to show dashboard as home
+- [x] Dashboard API returns user's relevant data
+- [x] Competitions prioritized by status (active first)
+- [x] User stats aggregated across all competitions
+- [x] Integration tests (11 tests)
+- [ ] Frontend dashboard with real data (future work)
+- [ ] Navigation updates to show dashboard as home (future work)
 
 ---
 
@@ -331,7 +342,7 @@ docker compose --profile async up
 | Async Scoring | feature/15-async-scoring | 3 | ✅ Done | Storage (soft) |
 | Notifications | feature/16-notifications | 4 | ✅ Done | None |
 | Profiles | feature/17-profiles | 4 | ✅ Done | None |
-| Dashboard | feature/18-dashboard | 4 | Pending | Notifications |
+| Dashboard | feature/18-dashboard | 4 | ✅ Done | Notifications |
 | Teams | feature/19-teams | 5 | Pending | Leaderboard |
 | Admin | feature/20-admin | 5 | Pending | Discussions |
 
