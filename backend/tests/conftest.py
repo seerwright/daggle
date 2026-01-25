@@ -98,14 +98,20 @@ def sample_user_data() -> dict[str, Any]:
 @pytest.fixture
 def sample_competition_data() -> dict[str, Any]:
     """Sample competition creation data."""
+    from datetime import datetime, timedelta, timezone
+
+    now = datetime.now(timezone.utc)
+    start = now - timedelta(days=1)  # Started yesterday
+    end = now + timedelta(days=30)  # Ends in 30 days
+
     return {
         "title": "Test Competition",
         "description": "A test competition for unit testing",
         "short_description": "Test competition",
         "difficulty": "beginner",
         "evaluation_metric": "auc_roc",
-        "start_date": "2025-01-01T00:00:00Z",
-        "end_date": "2025-12-31T23:59:59Z",
+        "start_date": start.isoformat(),
+        "end_date": end.isoformat(),
     }
 
 

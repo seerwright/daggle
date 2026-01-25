@@ -51,6 +51,14 @@ class User(Base, TimestampMixin):
         back_populates="user",
         lazy="selectin",
     )
+    discussion_threads: Mapped[list["DiscussionThread"]] = relationship(  # noqa: F821
+        back_populates="author",
+        lazy="selectin",
+    )
+    discussion_replies: Mapped[list["DiscussionReply"]] = relationship(  # noqa: F821
+        back_populates="author",
+        lazy="selectin",
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, username={self.username})>"

@@ -13,6 +13,7 @@ import { Competition } from '../../../core/models/competition.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { LeaderboardComponent } from '../leaderboard/leaderboard.component';
 import { SubmitComponent } from '../submit/submit.component';
+import { DiscussionsComponent } from '../discussions/discussions.component';
 
 @Component({
   selector: 'app-competition-detail',
@@ -27,6 +28,7 @@ import { SubmitComponent } from '../submit/submit.component';
     MatSnackBarModule,
     LeaderboardComponent,
     SubmitComponent,
+    DiscussionsComponent,
   ],
   template: `
     @if (loading) {
@@ -108,6 +110,12 @@ import { SubmitComponent } from '../submit/submit.component';
             } @else {
               <p class="enroll-prompt">Join this competition to submit predictions.</p>
             }
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Discussions">
+          <div class="tab-content">
+            <app-discussions [slug]="slug" [canPost]="isEnrolled"></app-discussions>
           </div>
         </mat-tab>
       </mat-tab-group>

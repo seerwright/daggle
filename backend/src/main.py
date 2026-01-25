@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import auth, competitions, enrollments, health, submissions
+from src.api.routes import auth, competitions, discussions, enrollments, health, submissions
 from src.config import settings
 
 app = FastAPI(
@@ -27,6 +27,7 @@ app.add_middleware(
 app.include_router(health.router, tags=["Health"])
 app.include_router(auth.router)
 app.include_router(competitions.router)
+app.include_router(discussions.router)
 app.include_router(enrollments.router)
 app.include_router(submissions.router)
 app.include_router(submissions.leaderboard_router)

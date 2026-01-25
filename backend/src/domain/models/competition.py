@@ -86,6 +86,10 @@ class Competition(Base, TimestampMixin):
         back_populates="competition",
         lazy="selectin",
     )
+    discussion_threads: Mapped[list["DiscussionThread"]] = relationship(  # noqa: F821
+        back_populates="competition",
+        lazy="selectin",
+    )
 
     def __repr__(self) -> str:
         return f"<Competition(id={self.id}, title={self.title})>"

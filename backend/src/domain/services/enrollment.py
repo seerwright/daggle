@@ -30,10 +30,20 @@ class EnrollmentService:
             raise ValueError("Competition is not accepting enrollments")
 
         # Check enrollment dates
+        # Handle both timezone-aware and naive datetimes (SQLite returns naive)
         now = datetime.now(timezone.utc)
-        if now < competition.start_date:
+        start_date = competition.start_date
+        end_date = competition.end_date
+
+        # Make dates comparable by ensuring consistent timezone handling
+        if start_date.tzinfo is None:
+            start_date = start_date.replace(tzinfo=timezone.utc)
+        if end_date.tzinfo is None:
+            end_date = end_date.replace(tzinfo=timezone.utc)
+
+        if now < start_date:
             raise ValueError("Competition has not started yet")
-        if now > competition.end_date:
+        if now > end_date:
             raise ValueError("Competition has ended")
 
         # Check if already enrolled
