@@ -6,8 +6,18 @@ from src.api.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
+from src.api.schemas.competition import (
+    CompetitionCreate,
+    CompetitionListResponse,
+    CompetitionResponse,
+    CompetitionUpdate,
+)
 
 __all__ = [
+    "CompetitionCreate",
+    "CompetitionListResponse",
+    "CompetitionResponse",
+    "CompetitionUpdate",
     "LoginRequest",
     "RegisterRequest",
     "TokenResponse",
