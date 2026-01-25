@@ -9,6 +9,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CompetitionService } from '../../../core/services/competition.service';
 import { Competition } from '../../../core/models/competition.model';
 import { AuthService } from '../../../core/services/auth.service';
+import { LeaderboardComponent } from '../leaderboard/leaderboard.component';
+import { SubmitComponent } from '../submit/submit.component';
 
 @Component({
   selector: 'app-competition-detail',
@@ -20,6 +22,8 @@ import { AuthService } from '../../../core/services/auth.service';
     MatButtonModule,
     MatTabsModule,
     MatProgressSpinnerModule,
+    LeaderboardComponent,
+    SubmitComponent,
   ],
   template: `
     @if (loading) {
@@ -84,21 +88,13 @@ import { AuthService } from '../../../core/services/auth.service';
 
         <mat-tab label="Leaderboard">
           <div class="tab-content">
-            <mat-card>
-              <mat-card-content>
-                <p>Leaderboard coming soon...</p>
-              </mat-card-content>
-            </mat-card>
+            <app-leaderboard [slug]="slug"></app-leaderboard>
           </div>
         </mat-tab>
 
         <mat-tab label="Submit" [disabled]="!auth.isAuthenticated()">
           <div class="tab-content">
-            <mat-card>
-              <mat-card-content>
-                <p>Submission form coming soon...</p>
-              </mat-card-content>
-            </mat-card>
+            <app-submit [slug]="slug" [competition]="competition!"></app-submit>
           </div>
         </mat-tab>
       </mat-tab-group>
@@ -161,6 +157,7 @@ import { AuthService } from '../../../core/services/auth.service';
 export class CompetitionDetailComponent implements OnInit {
   competition: Competition | null = null;
   loading = true;
+  slug = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -169,9 +166,9 @@ export class CompetitionDetailComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const slug = this.route.snapshot.paramMap.get('slug');
-    if (slug) {
-      this.competitionService.getBySlug(slug).subscribe({
+    this.slug = this.route.snapshot.paramMap.get('slug') || '';
+    if (this.slug) {
+      this.competitionService.getBySlug(this.slug).subscribe({
         next: (data) => {
           this.competition = data;
           this.loading = false;
