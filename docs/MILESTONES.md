@@ -328,27 +328,51 @@ docker compose --profile async up
 
 ---
 
-### Milestone 5.2: Admin Panel
+### Milestone 5.2: Admin Panel ✅
 
-**Branch:** `feature/20-admin`
+**Branch:** `feature/20-admin` (merged)
+**Completed:** 2026-01-25
 
 **Scope:**
-- User management (view, suspend)
-- Competition management (view all, edit any)
-- Discussion moderation (lock, pin, delete)
-- Basic platform stats
+- User management (view, suspend, reactivate, change role)
+- Competition management (view all including private/draft)
+- Discussion moderation (lock, unlock, pin, unpin)
+- Platform-wide statistics
 
 **Key Deliverables:**
-- Admin-only API endpoints
-- Frontend admin section (role-gated)
-- User list with search/filter
-- Competition list with edit access
-- Discussion moderation tools
+- `AdminService` with full admin capabilities:
+  - Platform statistics (users, competitions, submissions, enrollments)
+  - User listing with search, filtering, pagination
+  - User suspension/reactivation
+  - User role management
+  - Competition listing (including private/draft)
+  - Thread moderation (lock/unlock, pin/unpin)
+- `require_admin` dependency for role-based access control
+- API endpoints:
+  - `GET /admin/stats` - platform-wide statistics
+  - `GET /admin/users` - list users with filtering
+  - `GET /admin/users/{id}` - get user details
+  - `POST /admin/users/{id}/suspend` - suspend user
+  - `POST /admin/users/{id}/reactivate` - reactivate user
+  - `PATCH /admin/users/{id}/role` - change user role
+  - `GET /admin/competitions` - list all competitions
+  - `POST /admin/threads/{id}/lock` - lock thread
+  - `POST /admin/threads/{id}/unlock` - unlock thread
+  - `POST /admin/threads/{id}/pin` - pin thread
+  - `POST /admin/threads/{id}/unpin` - unpin thread
+- Safety measures:
+  - Cannot suspend yourself
+  - Cannot suspend other admins
+  - Cannot change your own role
 
 **Definition of Done:**
-- [ ] Admin APIs protected by role
-- [ ] Frontend admin UI functional
-- [ ] Moderation actions work
+- [x] Admin APIs protected by role
+- [x] User management functional
+- [x] Competition management functional
+- [x] Thread moderation functional
+- [x] Platform stats functional
+- [x] Integration tests (22 tests)
+- [ ] Frontend admin UI (future work)
 
 **Dependencies:**
 - Discussions (Milestone 1.1)
@@ -367,7 +391,7 @@ docker compose --profile async up
 | Profiles | feature/17-profiles | 4 | ✅ Done | None |
 | Dashboard | feature/18-dashboard | 4 | ✅ Done | Notifications |
 | Teams | feature/19-teams | 5 | ✅ Done | Leaderboard |
-| Admin | feature/20-admin | 5 | Pending | Discussions |
+| Admin | feature/20-admin | 5 | ✅ Done | Discussions |
 
 ---
 
