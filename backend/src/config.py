@@ -42,6 +42,13 @@ class Settings(BaseSettings):
     celery_result_backend: str = "redis://localhost:6379/0"
     async_scoring_enabled: bool = False  # Set to True to enable async scoring
 
+    # Admin bootstrap settings
+    # Set these to create an initial admin user on startup
+    admin_email: str | None = None  # e.g., "admin@example.com"
+    admin_password: str | None = None  # Strong password required
+    admin_username: str = "admin"
+    admin_display_name: str = "System Administrator"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

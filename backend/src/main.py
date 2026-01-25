@@ -1,10 +1,36 @@
 """Daggle API - Main application entry point."""
 
+import logging
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.routes import admin, auth, competitions, dashboard, discussions, enrollments, health, notifications, profiles, submissions, teams
 from src.config import settings
+from src.infrastructure.database import async_session_factory
+from src.infrastructure.startup import run_startup_tasks
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan handler for startup and shutdown tasks."""
+    # Startup
+    logger.info("Running startup tasks...")
+    try:
+        async with async_session_factory() as session:
+            await run_startup_tasks(session)
+        logger.info("Startup tasks completed")
+    except Exception as e:
+        logger.warning(f"Startup tasks failed (database may not be ready): {e}")
+
+    yield
+
+    # Shutdown (nothing to do currently)
+    logger.info("Application shutting down")
+
 
 app = FastAPI(
     title=settings.app_name,
@@ -12,6 +38,7 @@ app = FastAPI(
     version="0.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 # CORS middleware
