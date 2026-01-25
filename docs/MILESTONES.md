@@ -216,24 +216,31 @@ docker compose --profile async up
 
 ---
 
-### Milestone 4.2: User Profiles
+### Milestone 4.2: User Profiles ✅
 
-**Branch:** `feature/17-profiles`
+**Branch:** `feature/17-profiles` (merged)
+**Completed:** 2026-01-25
 
 **Scope:**
 - Public user profile page
 - Display participation history and stats
 
 **Key Deliverables:**
-- API endpoint: `GET /users/{username}` - public profile data
+- `ProfileService` with participation aggregation and rank calculation
+- API endpoints:
+  - `GET /users/{username}` - public profile with participations
+  - `GET /users/{username}/stats` - lightweight stats summary
 - Profile data: display name, join date, competitions entered, best ranks
-- Frontend: `/users/{username}` profile page
-- Competition participation list with scores
+- Participation details: competition, enrollment date, submission count, best score, rank
+- Frontend: `/users/{username}` profile page (future work)
 
 **Definition of Done:**
-- [ ] Public profile API (respects privacy)
-- [ ] Frontend profile page with real data
-- [ ] Links from leaderboard/discussions to profiles
+- [x] Public profile API (respects privacy)
+- [x] Profile aggregates user's competition participations
+- [x] Ranks calculated correctly per competition
+- [x] Integration tests (11 tests)
+- [ ] Frontend profile page with real data (future work)
+- [ ] Links from leaderboard/discussions to profiles (future work)
 
 ---
 
@@ -323,7 +330,7 @@ docker compose --profile async up
 | Storage | feature/14-storage | 2 | ✅ Done | None |
 | Async Scoring | feature/15-async-scoring | 3 | ✅ Done | Storage (soft) |
 | Notifications | feature/16-notifications | 4 | ✅ Done | None |
-| Profiles | feature/17-profiles | 4 | Pending | None |
+| Profiles | feature/17-profiles | 4 | ✅ Done | None |
 | Dashboard | feature/18-dashboard | 4 | Pending | Notifications |
 | Teams | feature/19-teams | 5 | Pending | Leaderboard |
 | Admin | feature/20-admin | 5 | Pending | Discussions |
