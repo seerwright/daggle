@@ -15,6 +15,41 @@ services:
       timeout: 5s
       retries: 5
 
+  minio:
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - s3
+
+  # MinIO bucket initialization
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb myminio/daggle --ignore-existing;
+      mc anonymous set download myminio/daggle;
+      exit 0;
+      "
+    profiles:
+      - s3
+
   backend:
     build:
       context: ./backend
@@ -23,6 +58,12 @@ services:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/daggle
       CORS_ORIGINS: '["http://localhost:4200", "http://localhost"]'
       DEBUG: "true"
+      # Storage settings (uncomment to use S3/MinIO)
+      # STORAGE_BACKEND: s3
+      # S3_ENDPOINT_URL: http://minio:9000
+      # S3_BUCKET: daggle
+      # S3_ACCESS_KEY: minioadmin
+      # S3_SECRET_KEY: minioadmin
     ports:
       - "8000:8000"
     depends_on:
@@ -57,3 +98,4 @@ services:
 volumes:
   postgres_data:
   frontend_node_modules:
+  minio_data:
