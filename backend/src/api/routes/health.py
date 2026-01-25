@@ -1,6 +1,10 @@
 """Health check endpoints for container orchestration."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.infrastructure.database import get_db
 
 router = APIRouter()
 
@@ -12,9 +16,13 @@ async def liveness():
 
 
 @router.get("/health/ready")
-async def readiness():
+async def readiness(db: AsyncSession = Depends(get_db)):
     """Readiness probe - is the service ready to accept traffic?
 
-    TODO: Add database connectivity check in feature/02-database-models.
+    Checks database connectivity.
     """
-    return {"status": "ok"}
+    try:
+        await db.execute(text("SELECT 1"))
+        return {"status": "ok", "database": "connected"}
+    except Exception as e:
+        return {"status": "degraded", "database": "disconnected", "error": str(e)}
