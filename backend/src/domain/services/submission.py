@@ -166,21 +166,51 @@ class SubmissionService:
     async def get_leaderboard(
         self, competition: Competition, limit: int = 100
     ) -> list[dict]:
-        """Get competition leaderboard."""
+        """Get competition leaderboard.
+
+        Rankings are determined by:
+        1. Best score (direction depends on metric - lower is better for RMSE/MAE)
+        2. Tie-break: earliest submission time wins
+        """
+        from src.domain.scoring.metrics import is_lower_better
+
+        lower_better = is_lower_better(competition.evaluation_metric)
+
+        # For lower-is-better metrics, use min; otherwise use max
+        if lower_better:
+            best_score_agg = func.min(Submission.public_score)
+        else:
+            best_score_agg = func.max(Submission.public_score)
+
         # Query for best scores per user
+        # Include earliest submission time for the best score (for tie-breaking)
         stmt = (
             select(
                 Submission.user_id,
-                func.max(Submission.public_score).label("best_score"),
+                best_score_agg.label("best_score"),
                 func.count(Submission.id).label("submission_count"),
                 func.max(Submission.created_at).label("last_submission"),
+                func.min(Submission.created_at).label("first_submission"),
             )
             .where(Submission.competition_id == competition.id)
             .where(Submission.status == SubmissionStatus.SCORED)
             .group_by(Submission.user_id)
-            .order_by(func.max(Submission.public_score).desc())
-            .limit(limit)
         )
+
+        # Order by score (ascending for lower-is-better, descending otherwise)
+        # Tie-break by earliest first submission
+        if lower_better:
+            stmt = stmt.order_by(
+                best_score_agg.asc(),
+                func.min(Submission.created_at).asc(),
+            )
+        else:
+            stmt = stmt.order_by(
+                best_score_agg.desc(),
+                func.min(Submission.created_at).asc(),
+            )
+
+        stmt = stmt.limit(limit)
 
         result = await self.session.execute(stmt)
         rows = result.all()
