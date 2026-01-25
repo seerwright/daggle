@@ -1,11 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
   selector: 'app-header',
@@ -17,6 +20,8 @@ import { AuthService } from '../../core/services/auth.service';
     MatButtonModule,
     MatIconModule,
     MatMenuModule,
+    MatBadgeModule,
+    MatDividerModule,
   ],
   template: `
     <mat-toolbar color="primary">
@@ -26,6 +31,20 @@ import { AuthService } from '../../core/services/auth.service';
       <a mat-button routerLink="/competitions">Competitions</a>
 
       @if (auth.isAuthenticated()) {
+        <a mat-button routerLink="/dashboard">Dashboard</a>
+
+        <button
+          mat-icon-button
+          [matBadge]="unreadCount()"
+          [matBadgeHidden]="unreadCount() === 0"
+          matBadgeColor="accent"
+          matBadgeSize="small"
+          routerLink="/dashboard"
+          title="Notifications"
+        >
+          <mat-icon>notifications</mat-icon>
+        </button>
+
         <button mat-icon-button [matMenuTriggerFor]="userMenu">
           <mat-icon>account_circle</mat-icon>
         </button>
@@ -33,10 +52,15 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="user-info">
             {{ auth.currentUser()?.display_name }}
           </div>
-          <button mat-menu-item routerLink="/profile">
+          <button mat-menu-item [routerLink]="['/users', auth.currentUser()?.username]">
             <mat-icon>person</mat-icon>
             Profile
           </button>
+          <button mat-menu-item routerLink="/dashboard">
+            <mat-icon>dashboard</mat-icon>
+            Dashboard
+          </button>
+          <mat-divider></mat-divider>
           <button mat-menu-item (click)="auth.logout()">
             <mat-icon>logout</mat-icon>
             Logout
@@ -65,6 +89,29 @@ import { AuthService } from '../../core/services/auth.service';
     }
   `],
 })
-export class HeaderComponent {
-  constructor(public auth: AuthService) {}
+export class HeaderComponent implements OnInit {
+  unreadCount = signal(0);
+
+  constructor(
+    public auth: AuthService,
+    private notificationService: NotificationService
+  ) {}
+
+  ngOnInit() {
+    // Load unread count when authenticated
+    if (this.auth.isAuthenticated()) {
+      this.loadUnreadCount();
+    }
+  }
+
+  private loadUnreadCount() {
+    this.notificationService.getUnreadCount().subscribe({
+      next: (response) => {
+        this.unreadCount.set(response.unread_count);
+      },
+      error: () => {
+        // Silently fail - not critical
+      },
+    });
+  }
 }

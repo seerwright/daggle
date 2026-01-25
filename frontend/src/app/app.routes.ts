@@ -12,6 +12,13 @@ export const routes: Routes = [
           import('./pages/home/home.component').then((m) => m.HomeComponent),
       },
       {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./pages/dashboard/dashboard.component').then(
+            (m) => m.DashboardComponent
+          ),
+      },
+      {
         path: 'competitions',
         loadComponent: () =>
           import('./pages/competitions/competition-list/competition-list.component').then(
@@ -23,6 +30,13 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./pages/competitions/competition-detail/competition-detail.component').then(
             (m) => m.CompetitionDetailComponent
+          ),
+      },
+      {
+        path: 'users/:username',
+        loadComponent: () =>
+          import('./pages/profile/profile.component').then(
+            (m) => m.ProfileComponent
           ),
       },
       {
