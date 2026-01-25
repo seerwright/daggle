@@ -140,7 +140,7 @@ class SubmissionService:
 
         if scorer is None:
             # No solution file - fall back to mock scoring for demo
-            await self._mock_score(submission)
+            await self._mock_score(submission, competition)
             return
 
         try:
@@ -162,7 +162,10 @@ class SubmissionService:
 
         await self.repo.update(submission)
 
-    async def _mock_score(self, submission: Submission) -> None:
+        # Send notification
+        await self._send_scoring_notification(submission, competition)
+
+    async def _mock_score(self, submission: Submission, competition: Competition) -> None:
         """Mock scoring when no solution file is available."""
         import random
 
@@ -171,6 +174,38 @@ class SubmissionService:
         submission.private_score = round(random.uniform(0.5, 0.95), 4)
         submission.scored_at = datetime.now(timezone.utc)
         await self.repo.update(submission)
+
+        # Send notification
+        await self._send_scoring_notification(submission, competition)
+
+    async def _send_scoring_notification(
+        self, submission: Submission, competition: Competition
+    ) -> None:
+        """Send notification after scoring completes."""
+        from src.domain.services.notification import NotificationService
+
+        try:
+            notification_service = NotificationService(self.session)
+
+            if submission.status == SubmissionStatus.SCORED:
+                await notification_service.notify_submission_scored(
+                    user_id=submission.user_id,
+                    competition_title=competition.title,
+                    competition_slug=competition.slug,
+                    score=submission.public_score,
+                )
+            elif submission.status == SubmissionStatus.FAILED:
+                await notification_service.notify_submission_failed(
+                    user_id=submission.user_id,
+                    competition_title=competition.title,
+                    competition_slug=competition.slug,
+                    error_message=submission.error_message or "Unknown error",
+                )
+
+            logger.info(f"Sent scoring notification for submission {submission.id}")
+        except Exception as e:
+            # Don't fail the submission if notification fails
+            logger.warning(f"Failed to send notification: {e}")
 
     async def get_by_id(self, submission_id: int) -> Submission | None:
         """Get submission by ID."""

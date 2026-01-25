@@ -116,6 +116,11 @@ async def _score_submission_async(submission_id: int) -> dict:
             await submission_repo.update(submission)
             await session.commit()
 
+            # Send notification
+            await _send_scoring_notification(
+                session, submission, competition
+            )
+
             return {
                 "submission_id": submission_id,
                 "status": submission.status.value,
@@ -131,6 +136,42 @@ async def _score_submission_async(submission_id: int) -> dict:
             await session.commit()
             logger.exception(f"Error scoring submission {submission_id}")
             raise
+
+
+async def _send_scoring_notification(session, submission, competition) -> None:
+    """Send notification after scoring completes.
+
+    Args:
+        session: Database session
+        submission: The scored submission
+        competition: The competition
+    """
+    from src.domain.models.submission import SubmissionStatus
+    from src.domain.services.notification import NotificationService
+
+    try:
+        notification_service = NotificationService(session)
+
+        if submission.status == SubmissionStatus.SCORED:
+            await notification_service.notify_submission_scored(
+                user_id=submission.user_id,
+                competition_title=competition.title,
+                competition_slug=competition.slug,
+                score=submission.public_score,
+            )
+        elif submission.status == SubmissionStatus.FAILED:
+            await notification_service.notify_submission_failed(
+                user_id=submission.user_id,
+                competition_title=competition.title,
+                competition_slug=competition.slug,
+                error_message=submission.error_message or "Unknown error",
+            )
+
+        await session.commit()
+        logger.info(f"Sent scoring notification for submission {submission.id}")
+    except Exception as e:
+        # Don't fail the scoring task if notification fails
+        logger.warning(f"Failed to send notification for submission {submission.id}: {e}")
 
 
 @celery_app.task(bind=True, base=ScoringTask, name="score_submission")

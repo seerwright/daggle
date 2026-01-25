@@ -3,7 +3,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import auth, competitions, discussions, enrollments, health, submissions
+from src.api.routes import auth, competitions, discussions, enrollments, health, notifications, submissions
 from src.config import settings
 
 app = FastAPI(
@@ -31,6 +31,7 @@ app.include_router(discussions.router)
 app.include_router(enrollments.router)
 app.include_router(submissions.router)
 app.include_router(submissions.leaderboard_router)
+app.include_router(notifications.router)
 
 
 @app.get("/")
