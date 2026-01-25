@@ -12,11 +12,12 @@ This document outlines the sequenced development plan for Daggle's next phase. E
 
 ---
 
-## Phase 1: Core Loop Value
+## Phase 1: Core Loop Value ✅ COMPLETE
 
-### Milestone 1.1: Discussions
+### Milestone 1.1: Discussions ✅
 
-**Branch:** `feature/12-discussions`
+**Branch:** `feature/12-discussions` (merged)
+**Completed:** 2026-01-25
 
 **Scope:**
 - Per-competition discussion threads (Q&A style)
@@ -36,11 +37,11 @@ This document outlines the sequenced development plan for Daggle's next phase. E
 - Thread list view, thread detail view with reply form
 
 **Definition of Done:**
-- [ ] Models created with migrations
-- [ ] API endpoints functional
-- [ ] Frontend displays real data (no mocks)
-- [ ] Integration tests for thread/reply CRUD
-- [ ] Enrolled users can create threads; all users can view
+- [x] Models created with migrations
+- [x] API endpoints functional
+- [x] Frontend displays real data (no mocks)
+- [x] Integration tests for thread/reply CRUD (10 tests)
+- [x] Enrolled users can create threads; all users can view
 
 **Assumptions:**
 - No nested replies (flat thread structure)
@@ -49,9 +50,10 @@ This document outlines the sequenced development plan for Daggle's next phase. E
 
 ---
 
-### Milestone 1.2: Leaderboard
+### Milestone 1.2: Leaderboard ✅
 
-**Branch:** `feature/13-leaderboard`
+**Branch:** `feature/13-leaderboard` (merged)
+**Completed:** 2026-01-25
 
 **Scope:**
 - Ranking based on best submission score per user
@@ -67,11 +69,11 @@ This document outlines the sequenced development plan for Daggle's next phase. E
 - Highlight current user's row if enrolled
 
 **Definition of Done:**
-- [ ] Leaderboard API returns ranked entries
-- [ ] Handles tie-breaks (earlier submission wins)
-- [ ] Respects metric direction (higher/lower is better)
-- [ ] Frontend displays leaderboard with real data
-- [ ] Integration tests for ranking logic
+- [x] Leaderboard API returns ranked entries
+- [x] Handles tie-breaks (earlier submission wins)
+- [x] Respects metric direction (higher/lower is better)
+- [x] Frontend displays leaderboard with real data (already existed)
+- [x] Integration tests for ranking logic (7 tests)
 
 **Assumptions:**
 - Single-user leaderboard (teams come later)
