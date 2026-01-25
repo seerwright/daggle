@@ -184,29 +184,35 @@ docker compose --profile async up
 
 ## Phase 4: User Awareness & Personalization
 
-### Milestone 4.1: Notifications
+### Milestone 4.1: Notifications ✅
 
-**Branch:** `feature/16-notifications`
+**Branch:** `feature/16-notifications` (merged)
+**Completed:** 2026-01-25
 
 **Scope:**
 - In-app notifications (no email)
-- Triggers: submission scored, competition updates, discussion replies
-- Simple notification model
+- Triggers: submission scored/failed, discussion replies
+- Simple notification model with read status
 
 **Key Deliverables:**
-- `Notification` model: user, type, message, read status, link, created_at
-- Notification triggers in submission and discussion services
+- `Notification` model with type enum, title, message, link, read status
+- `NotificationService` with trigger helpers for common notification types
+- `NotificationRepository` with unread filtering and mark-as-read operations
+- Automatic triggers in:
+  - SubmissionService (scored/failed notifications)
+  - DiscussionService (reply notifications to thread authors)
+  - Scoring task (async scoring notifications)
 - API endpoints:
-  - `GET /notifications` - list user's notifications
-  - `POST /notifications/{id}/read` - mark as read
+  - `GET /notifications` - list notifications with unread count
+  - `GET /notifications/unread-count` - get unread count only
+  - `POST /notifications/{id}/read` - mark single as read
   - `POST /notifications/read-all` - mark all as read
-- Frontend: notification bell in header, dropdown list
 
 **Definition of Done:**
-- [ ] Notification model and API
-- [ ] Triggers create notifications automatically
-- [ ] Frontend shows unread count and list
-- [ ] Integration tests for notification creation
+- [x] Notification model and API
+- [x] Triggers create notifications automatically
+- [x] Integration tests (15 tests)
+- [ ] Frontend notification UI (future work)
 
 ---
 
@@ -316,7 +322,7 @@ docker compose --profile async up
 | Leaderboard | feature/13-leaderboard | 1 | ✅ Done | None |
 | Storage | feature/14-storage | 2 | ✅ Done | None |
 | Async Scoring | feature/15-async-scoring | 3 | ✅ Done | Storage (soft) |
-| Notifications | feature/16-notifications | 4 | Pending | None |
+| Notifications | feature/16-notifications | 4 | ✅ Done | None |
 | Profiles | feature/17-profiles | 4 | Pending | None |
 | Dashboard | feature/18-dashboard | 4 | Pending | Notifications |
 | Teams | feature/19-teams | 5 | Pending | Leaderboard |

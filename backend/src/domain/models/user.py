@@ -59,6 +59,10 @@ class User(Base, TimestampMixin):
         back_populates="author",
         lazy="selectin",
     )
+    notifications: Mapped[list["Notification"]] = relationship(  # noqa: F821
+        back_populates="user",
+        lazy="selectin",
+    )
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, username={self.username})>"

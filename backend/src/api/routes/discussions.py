@@ -224,6 +224,7 @@ async def create_reply(
             thread_id=thread_id,
             author_id=current_user.id,
             content=data.content,
+            replier_name=current_user.display_name or current_user.username,
         )
     except ValueError as e:
         raise HTTPException(
