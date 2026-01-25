@@ -11,6 +11,7 @@ from src.api.schemas.submission import (
 )
 from src.domain.models.user import User
 from src.domain.services.competition import CompetitionService
+from src.domain.services.enrollment import EnrollmentService
 from src.domain.services.submission import SubmissionService
 from src.infrastructure.database import get_db
 
@@ -33,6 +34,14 @@ async def create_submission(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Competition not found",
+        )
+
+    # Check enrollment
+    enrollment_service = EnrollmentService(db)
+    if not await enrollment_service.is_enrolled(current_user.id, competition.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You must be enrolled in the competition to submit",
         )
 
     # Validate file type

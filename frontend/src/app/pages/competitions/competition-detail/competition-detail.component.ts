@@ -6,7 +6,9 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { CompetitionService } from '../../../core/services/competition.service';
+import { EnrollmentService } from '../../../core/services/enrollment.service';
 import { Competition } from '../../../core/models/competition.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { LeaderboardComponent } from '../leaderboard/leaderboard.component';
@@ -22,6 +24,7 @@ import { SubmitComponent } from '../submit/submit.component';
     MatButtonModule,
     MatTabsModule,
     MatProgressSpinnerModule,
+    MatSnackBarModule,
     LeaderboardComponent,
     SubmitComponent,
   ],
@@ -46,9 +49,15 @@ import { SubmitComponent } from '../submit/submit.component';
           </mat-chip-set>
         </div>
         @if (auth.isAuthenticated()) {
-          <button mat-flat-button color="primary">
-            Join Competition
-          </button>
+          @if (isEnrolled) {
+            <button mat-stroked-button color="warn" (click)="leave()" [disabled]="enrolling">
+              Leave Competition
+            </button>
+          } @else {
+            <button mat-flat-button color="primary" (click)="join()" [disabled]="enrolling">
+              {{ enrolling ? 'Joining...' : 'Join Competition' }}
+            </button>
+          }
         }
       </div>
 
@@ -92,9 +101,13 @@ import { SubmitComponent } from '../submit/submit.component';
           </div>
         </mat-tab>
 
-        <mat-tab label="Submit" [disabled]="!auth.isAuthenticated()">
+        <mat-tab label="Submit" [disabled]="!isEnrolled">
           <div class="tab-content">
-            <app-submit [slug]="slug" [competition]="competition!"></app-submit>
+            @if (isEnrolled) {
+              <app-submit [slug]="slug" [competition]="competition!"></app-submit>
+            } @else {
+              <p class="enroll-prompt">Join this competition to submit predictions.</p>
+            }
           </div>
         </mat-tab>
       </mat-tab-group>
@@ -152,16 +165,25 @@ import { SubmitComponent } from '../submit/submit.component';
     .difficulty-advanced {
       background-color: #e57373 !important;
     }
+    .enroll-prompt {
+      text-align: center;
+      color: #666;
+      padding: 48px;
+    }
   `],
 })
 export class CompetitionDetailComponent implements OnInit {
   competition: Competition | null = null;
   loading = true;
   slug = '';
+  isEnrolled = false;
+  enrolling = false;
 
   constructor(
     private route: ActivatedRoute,
     private competitionService: CompetitionService,
+    private enrollmentService: EnrollmentService,
+    private snackBar: MatSnackBar,
     public auth: AuthService
   ) {}
 
@@ -172,11 +194,64 @@ export class CompetitionDetailComponent implements OnInit {
         next: (data) => {
           this.competition = data;
           this.loading = false;
+          this.checkEnrollment();
         },
         error: () => {
           this.loading = false;
         },
       });
     }
+  }
+
+  checkEnrollment(): void {
+    if (!this.auth.isAuthenticated()) return;
+
+    this.enrollmentService.getStatus(this.slug).subscribe({
+      next: (status) => {
+        this.isEnrolled = status.enrolled;
+      },
+    });
+  }
+
+  join(): void {
+    this.enrolling = true;
+    this.enrollmentService.enroll(this.slug).subscribe({
+      next: () => {
+        this.isEnrolled = true;
+        this.enrolling = false;
+        this.snackBar.open('Successfully joined the competition!', 'Close', {
+          duration: 3000,
+        });
+      },
+      error: (err) => {
+        this.enrolling = false;
+        this.snackBar.open(
+          err.error?.detail || 'Failed to join competition',
+          'Close',
+          { duration: 5000 }
+        );
+      },
+    });
+  }
+
+  leave(): void {
+    this.enrolling = true;
+    this.enrollmentService.unenroll(this.slug).subscribe({
+      next: () => {
+        this.isEnrolled = false;
+        this.enrolling = false;
+        this.snackBar.open('Left the competition', 'Close', {
+          duration: 3000,
+        });
+      },
+      error: (err) => {
+        this.enrolling = false;
+        this.snackBar.open(
+          err.error?.detail || 'Failed to leave competition',
+          'Close',
+          { duration: 5000 }
+        );
+      },
+    });
   }
 }
