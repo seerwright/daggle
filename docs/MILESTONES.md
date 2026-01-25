@@ -134,40 +134,51 @@ docker compose --profile s3 up
 
 ---
 
-## Phase 3: Async Processing
+## Phase 3: Async Processing ✅ COMPLETE
 
-### Milestone 3.1: Background Jobs for Scoring
+### Milestone 3.1: Background Jobs for Scoring ✅
 
-**Branch:** `feature/15-async-scoring`
+**Branch:** `feature/15-async-scoring` (merged)
+**Completed:** 2026-01-25
 
 **Scope:**
 - Async job execution with Celery + Redis
-- Submission lifecycle: pending → scoring → scored/failed
+- Submission lifecycle: pending → processing → scored/failed
 - Idempotent scoring jobs
 - Synchronous fallback for simple deployments
 
 **Key Deliverables:**
-- Celery worker configuration
-- Redis service in docker-compose
-- `score_submission` task
-- Submission status field: `pending`, `scoring`, `scored`, `failed`
-- API returns submission status; frontend polls or shows status
-- Error capture and retry logic
+- Celery application configuration (`src/infrastructure/tasks/`)
+- Redis service in docker-compose (with async profile)
+- `score_submission_task` Celery task
+- Submission status: PENDING → PROCESSING → SCORED/FAILED
+- Async scoring enabled via `ASYNC_SCORING_ENABLED` config
+- Error capture and automatic retry logic (3 retries with backoff)
 
 **Definition of Done:**
-- [ ] Celery worker runs in docker-compose
-- [ ] Submissions queued and processed asynchronously
-- [ ] Status updates reflected in API
-- [ ] Failed jobs have error messages
-- [ ] Synchronous scoring still works when Celery disabled
-- [ ] Integration test for async flow
+- [x] Celery worker runs in docker-compose (`--profile async`)
+- [x] Submissions queued via `score_submission_task.delay()`
+- [x] Status updates (PROCESSING while scoring)
+- [x] Failed jobs have error messages stored
+- [x] Synchronous scoring works when `ASYNC_SCORING_ENABLED=false`
+- [x] Integration tests for async flow (10 tests)
+
+**Configuration:**
+- `ASYNC_SCORING_ENABLED`: "false" (default) or "true"
+- `CELERY_BROKER_URL`: Redis URL (default: "redis://localhost:6379/0")
+- `CELERY_RESULT_BACKEND`: Redis URL for results
+
+**Usage:**
+```bash
+# Synchronous scoring (default)
+docker compose up
+
+# Async scoring with Celery + Redis
+docker compose --profile async up
+```
 
 **Dependencies:**
-- Storage abstraction (Milestone 2.1) helpful but not blocking
-
-**Risks:**
-- Increased infrastructure complexity
-- Must handle worker failures gracefully
+- Storage abstraction (Milestone 2.1) - for file loading in background task
 
 ---
 
@@ -304,7 +315,7 @@ docker compose --profile s3 up
 | Discussions | feature/12-discussions | 1 | ✅ Done | None |
 | Leaderboard | feature/13-leaderboard | 1 | ✅ Done | None |
 | Storage | feature/14-storage | 2 | ✅ Done | None |
-| Async Scoring | feature/15-async-scoring | 3 | Pending | Storage (soft) |
+| Async Scoring | feature/15-async-scoring | 3 | ✅ Done | Storage (soft) |
 | Notifications | feature/16-notifications | 4 | Pending | None |
 | Profiles | feature/17-profiles | 4 | Pending | None |
 | Dashboard | feature/18-dashboard | 4 | Pending | Notifications |
