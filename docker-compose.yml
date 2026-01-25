@@ -58,6 +58,10 @@ services:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/daggle
       CORS_ORIGINS: '["http://localhost:4200", "http://localhost"]'
       DEBUG: "true"
+      # Async scoring (set to true when using --profile async)
+      # ASYNC_SCORING_ENABLED: "true"
+      # CELERY_BROKER_URL: redis://redis:6379/0
+      # CELERY_RESULT_BACKEND: redis://redis:6379/0
       # Storage settings (uncomment to use S3/MinIO)
       # STORAGE_BACKEND: s3
       # S3_ENDPOINT_URL: http://minio:9000
@@ -72,6 +76,31 @@ services:
     volumes:
       - ./backend:/app
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Backend with async scoring enabled
+  backend-async:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/daggle
+      CORS_ORIGINS: '["http://localhost:4200", "http://localhost"]'
+      DEBUG: "true"
+      ASYNC_SCORING_ENABLED: "true"
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+    profiles:
+      - async
 
   frontend:
     build:
@@ -95,7 +124,50 @@ services:
     profiles:
       - dev
 
+  # Redis for Celery task queue
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    profiles:
+      - async
+
+  # Celery worker for async task processing
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/daggle
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      ASYNC_SCORING_ENABLED: "true"
+      # Storage settings (match backend if using S3)
+      # STORAGE_BACKEND: s3
+      # S3_ENDPOINT_URL: http://minio:9000
+      # S3_BUCKET: daggle
+      # S3_ACCESS_KEY: minioadmin
+      # S3_SECRET_KEY: minioadmin
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: celery -A src.infrastructure.tasks.celery_app worker --loglevel=info
+    profiles:
+      - async
+
 volumes:
   postgres_data:
   frontend_node_modules:
   minio_data:
+  redis_data:

@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     s3_secret_key: str = "minioadmin"
     s3_region: str = "us-east-1"
 
+    # Celery/Redis settings
+    celery_broker_url: str = "redis://localhost:6379/0"
+    celery_result_backend: str = "redis://localhost:6379/0"
+    async_scoring_enabled: bool = False  # Set to True to enable async scoring
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

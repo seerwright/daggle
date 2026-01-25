@@ -1,5 +1,6 @@
 """Submission service."""
 
+import logging
 import uuid
 from datetime import datetime, timezone
 
@@ -7,6 +8,7 @@ from fastapi import UploadFile
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.domain.models.competition import Competition, CompetitionStatus
 from src.domain.models.submission import Submission, SubmissionStatus
 from src.domain.models.user import User
@@ -14,6 +16,8 @@ from src.domain.scoring.scorer import create_scorer_for_competition
 from src.domain.scoring.validation import validate_submission
 from src.infrastructure.repositories.submission import SubmissionRepository
 from src.infrastructure.storage import get_storage_backend, StorageBackend
+
+logger = logging.getLogger(__name__)
 
 
 class SubmissionService:
@@ -83,10 +87,25 @@ class SubmissionService:
 
         submission = await self.repo.create(submission)
 
-        # Score the submission
-        await self._score_submission(submission, competition, content)
+        # Score the submission (sync or async based on config)
+        if settings.async_scoring_enabled:
+            await self._queue_scoring(submission)
+        else:
+            await self._score_submission(submission, competition, content)
 
         return submission
+
+    async def _queue_scoring(self, submission: Submission) -> None:
+        """Queue submission for async scoring via Celery.
+
+        Args:
+            submission: The submission to score
+        """
+        from src.infrastructure.tasks import score_submission_task
+
+        # Queue the scoring task
+        score_submission_task.delay(submission.id)
+        logger.info(f"Queued submission {submission.id} for async scoring")
 
     async def _save_file(
         self, competition_id: int, user_id: int, file: UploadFile
