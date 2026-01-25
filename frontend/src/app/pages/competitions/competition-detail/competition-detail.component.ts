@@ -1,0 +1,185 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
+import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { CompetitionService } from '../../../core/services/competition.service';
+import { Competition } from '../../../core/models/competition.model';
+import { AuthService } from '../../../core/services/auth.service';
+
+@Component({
+  selector: 'app-competition-detail',
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatCardModule,
+    MatChipsModule,
+    MatButtonModule,
+    MatTabsModule,
+    MatProgressSpinnerModule,
+  ],
+  template: `
+    @if (loading) {
+      <div class="loading">
+        <mat-spinner></mat-spinner>
+      </div>
+    } @else if (!competition) {
+      <p class="error">Competition not found.</p>
+    } @else {
+      <div class="competition-header">
+        <div class="header-content">
+          <h1>{{ competition.title }}</h1>
+          <mat-chip-set>
+            <mat-chip [class]="'status-' + competition.status">
+              {{ competition.status }}
+            </mat-chip>
+            <mat-chip [class]="'difficulty-' + competition.difficulty">
+              {{ competition.difficulty }}
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+        @if (auth.isAuthenticated()) {
+          <button mat-flat-button color="primary">
+            Join Competition
+          </button>
+        }
+      </div>
+
+      <mat-tab-group>
+        <mat-tab label="Overview">
+          <div class="tab-content">
+            <mat-card>
+              <mat-card-content>
+                <div class="description">{{ competition.description }}</div>
+
+                <div class="meta-grid">
+                  <div class="meta-item">
+                    <strong>Evaluation Metric</strong>
+                    <span>{{ competition.evaluation_metric }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <strong>Max Team Size</strong>
+                    <span>{{ competition.max_team_size }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <strong>Daily Submissions</strong>
+                    <span>{{ competition.daily_submission_limit }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <strong>Start Date</strong>
+                    <span>{{ competition.start_date | date:'medium' }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <strong>End Date</strong>
+                    <span>{{ competition.end_date | date:'medium' }}</span>
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Leaderboard">
+          <div class="tab-content">
+            <mat-card>
+              <mat-card-content>
+                <p>Leaderboard coming soon...</p>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+
+        <mat-tab label="Submit" [disabled]="!auth.isAuthenticated()">
+          <div class="tab-content">
+            <mat-card>
+              <mat-card-content>
+                <p>Submission form coming soon...</p>
+              </mat-card-content>
+            </mat-card>
+          </div>
+        </mat-tab>
+      </mat-tab-group>
+    }
+  `,
+  styles: [`
+    .loading, .error {
+      text-align: center;
+      padding: 64px;
+    }
+    .competition-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+    .header-content h1 {
+      margin-bottom: 8px;
+    }
+    .tab-content {
+      padding: 24px 0;
+    }
+    .description {
+      white-space: pre-wrap;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .meta-item strong {
+      font-size: 0.875rem;
+      color: #666;
+    }
+    .status-active {
+      background-color: #4caf50 !important;
+      color: white !important;
+    }
+    .status-draft {
+      background-color: #9e9e9e !important;
+    }
+    .difficulty-beginner {
+      background-color: #81c784 !important;
+    }
+    .difficulty-intermediate {
+      background-color: #ffb74d !important;
+    }
+    .difficulty-advanced {
+      background-color: #e57373 !important;
+    }
+  `],
+})
+export class CompetitionDetailComponent implements OnInit {
+  competition: Competition | null = null;
+  loading = true;
+
+  constructor(
+    private route: ActivatedRoute,
+    private competitionService: CompetitionService,
+    public auth: AuthService
+  ) {}
+
+  ngOnInit(): void {
+    const slug = this.route.snapshot.paramMap.get('slug');
+    if (slug) {
+      this.competitionService.getBySlug(slug).subscribe({
+        next: (data) => {
+          this.competition = data;
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+        },
+      });
+    }
+  }
+}
