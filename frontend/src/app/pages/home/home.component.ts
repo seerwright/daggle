@@ -2,11 +2,12 @@ import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [RouterLink, MatButtonModule, MatCardModule],
+  imports: [RouterLink, MatButtonModule, MatCardModule, MatIconModule],
   template: `
     <div class="hero">
       <h1>Welcome to Daggle</h1>
@@ -18,28 +19,25 @@ import { MatCardModule } from '@angular/material/card';
 
     <div class="features">
       <mat-card>
-        <mat-card-header>
-          <mat-card-title>Compete</mat-card-title>
-        </mat-card-header>
         <mat-card-content>
+          <mat-icon class="feature-icon">emoji_events</mat-icon>
+          <h3>Compete</h3>
           <p>Join competitions and test your machine learning skills against colleagues.</p>
         </mat-card-content>
       </mat-card>
 
       <mat-card>
-        <mat-card-header>
-          <mat-card-title>Learn</mat-card-title>
-        </mat-card-header>
         <mat-card-content>
+          <mat-icon class="feature-icon">school</mat-icon>
+          <h3>Learn</h3>
           <p>Improve your skills by working on real-world datasets and problems.</p>
         </mat-card-content>
       </mat-card>
 
       <mat-card>
-        <mat-card-header>
-          <mat-card-title>Collaborate</mat-card-title>
-        </mat-card-header>
         <mat-card-content>
+          <mat-icon class="feature-icon">groups</mat-icon>
+          <h3>Collaborate</h3>
           <p>Form teams and work together to build better models.</p>
         </mat-card-content>
       </mat-card>
@@ -64,6 +62,25 @@ import { MatCardModule } from '@angular/material/card';
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 24px;
       margin-top: 48px;
+    }
+    .features mat-card-content {
+      text-align: center;
+      padding: 24px 16px;
+    }
+    .feature-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: #1976d2;
+      margin-bottom: 16px;
+    }
+    .features h3 {
+      margin: 0 0 8px;
+      font-size: 1.25rem;
+    }
+    .features p {
+      color: #666;
+      margin: 0;
     }
   `],
 })
