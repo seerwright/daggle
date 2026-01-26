@@ -368,6 +368,43 @@ import { AuthService } from '../../../core/services/auth.service';
         background-color: var(--color-surface-muted);
         border-radius: var(--radius-md);
       }
+
+      .loading {
+        display: flex;
+        justify-content: center;
+        padding: var(--space-8);
+      }
+
+      /* Responsive */
+      @media (max-width: 640px) {
+        .discussions-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: var(--space-3);
+        }
+
+        .discussions-header button {
+          width: 100%;
+        }
+
+        .reply-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: var(--space-1);
+        }
+
+        .thread-meta {
+          flex-wrap: wrap;
+        }
+
+        .form-actions {
+          flex-direction: column-reverse;
+        }
+
+        .form-actions button {
+          width: 100%;
+        }
+      }
     `,
   ],
 })

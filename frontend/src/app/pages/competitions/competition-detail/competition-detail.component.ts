@@ -158,6 +158,51 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
       display: block;
     }
 
+    .competition-detail {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: var(--space-8) var(--space-6);
+    }
+
+    .competition-loading,
+    .competition-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 400px;
+      padding: var(--space-12);
+      text-align: center;
+    }
+
+    .loading-text {
+      margin-top: var(--space-4);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+
+    .empty-icon {
+      font-size: 56px;
+      width: 56px;
+      height: 56px;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-4);
+    }
+
+    .empty-title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-2);
+    }
+
+    .empty-description {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0 0 var(--space-6);
+    }
+
     .competition-header {
       margin-bottom: var(--space-6);
     }
@@ -177,6 +222,57 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
       align-items: center;
       gap: var(--space-3);
       margin-bottom: var(--space-4);
+    }
+
+    .status-badge,
+    .difficulty-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--space-1) var(--space-2);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      text-transform: capitalize;
+    }
+
+    .status-active {
+      background-color: var(--color-success-light);
+      color: var(--color-success);
+    }
+
+    .status-draft {
+      background-color: var(--color-surface-muted);
+      color: var(--color-text-muted);
+    }
+
+    .status-evaluation {
+      background-color: var(--color-warning-light);
+      color: var(--color-warning);
+    }
+
+    .status-completed {
+      background-color: var(--color-accent-light);
+      color: var(--color-accent);
+    }
+
+    .status-archived {
+      background-color: var(--color-surface-muted);
+      color: var(--color-text-muted);
+    }
+
+    .difficulty-beginner {
+      background-color: var(--color-success-light);
+      color: var(--color-success);
+    }
+
+    .difficulty-intermediate {
+      background-color: var(--color-warning-light);
+      color: var(--color-warning);
+    }
+
+    .difficulty-advanced {
+      background-color: var(--color-error-light);
+      color: var(--color-error);
     }
 
     .competition-meta-item {
@@ -212,6 +308,9 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
     }
 
     .competition-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       text-align: center;
 
       .stat-value {
@@ -220,9 +319,11 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
         font-weight: 700;
         color: var(--color-text-primary);
         line-height: 1;
+        text-transform: uppercase;
       }
 
       .stat-label {
+        display: block;
         font-size: var(--text-xs);
         color: var(--color-text-muted);
         margin-top: var(--space-1);
@@ -259,6 +360,7 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
       align-items: center;
       justify-content: center;
       padding: var(--space-2) var(--space-4);
+      font-family: var(--font-body);
       font-size: var(--text-sm);
       font-weight: 500;
       text-decoration: none;
@@ -299,6 +401,74 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
 
       &:hover:not(:disabled) {
         background-color: var(--color-error-light);
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .competition-detail {
+        padding: var(--space-6) var(--space-4);
+      }
+
+      .competition-title {
+        font-size: var(--text-2xl);
+      }
+
+      .competition-meta {
+        gap: var(--space-2);
+      }
+
+      .competition-meta-item {
+        width: 100%;
+      }
+
+      .competition-actions {
+        width: 100%;
+      }
+
+      .competition-actions .btn {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .competition-detail {
+        padding: var(--space-4);
+      }
+
+      .competition-stats {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+        padding: var(--space-4);
+      }
+
+      .competition-stat {
+        flex-direction: row;
+        justify-content: space-between;
+        padding: var(--space-2) 0;
+        border-bottom: 1px solid var(--color-border);
+
+        &:last-child {
+          border-bottom: 0;
+        }
+
+        .stat-label {
+          margin-top: 0;
+          order: -1;
+        }
+      }
+
+      .tab-content {
+        padding: var(--space-4) 0;
+      }
+
+      .competition-actions {
+        flex-direction: column;
+      }
+
+      .competition-actions .btn {
+        width: 100%;
       }
     }
   `],

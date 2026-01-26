@@ -29,7 +29,8 @@ import { NotificationService } from '../../core/services/notification.service';
       <a routerLink="/" class="navbar-brand">Daggle</a>
       <span class="navbar-spacer"></span>
 
-      <nav class="navbar-nav">
+      <!-- Desktop Navigation -->
+      <nav class="navbar-nav desktop-nav">
         <a routerLink="/competitions" routerLinkActive="active" class="navbar-link">
           Competitions
         </a>
@@ -46,7 +47,7 @@ import { NotificationService } from '../../core/services/notification.service';
         }
       </nav>
 
-      <div class="navbar-actions">
+      <div class="navbar-actions desktop-actions">
         @if (auth.isAuthenticated()) {
           <button
             mat-icon-button
@@ -89,7 +90,116 @@ import { NotificationService } from '../../core/services/notification.service';
           <a routerLink="/register" class="btn btn-primary btn-sm">Sign Up</a>
         }
       </div>
+
+      <!-- Mobile Menu Button -->
+      <button
+        class="mobile-menu-btn"
+        (click)="toggleMobileMenu()"
+        [attr.aria-expanded]="mobileMenuOpen()"
+        aria-label="Toggle navigation menu"
+      >
+        <span class="hamburger" [class.open]="mobileMenuOpen()">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      </button>
     </header>
+
+    <!-- Mobile Navigation Drawer -->
+    @if (mobileMenuOpen()) {
+      <div class="mobile-backdrop" (click)="closeMobileMenu()"></div>
+      <nav class="mobile-nav" [class.open]="mobileMenuOpen()">
+        <div class="mobile-nav-header">
+          @if (auth.isAuthenticated()) {
+            <div class="mobile-user-info">
+              <div class="mobile-avatar">
+                <mat-icon>account_circle</mat-icon>
+              </div>
+              <div class="mobile-user-details">
+                <span class="mobile-user-name">{{ auth.currentUser()?.display_name }}</span>
+                <span class="mobile-user-email">{{ auth.currentUser()?.email }}</span>
+              </div>
+            </div>
+          } @else {
+            <span class="mobile-nav-title">Menu</span>
+          }
+        </div>
+
+        <div class="mobile-nav-links">
+          <a
+            routerLink="/competitions"
+            routerLinkActive="active"
+            class="mobile-nav-link"
+            (click)="closeMobileMenu()"
+          >
+            <mat-icon>emoji_events</mat-icon>
+            Competitions
+          </a>
+
+          @if (auth.isAuthenticated()) {
+            <a
+              routerLink="/dashboard"
+              routerLinkActive="active"
+              class="mobile-nav-link"
+              (click)="closeMobileMenu()"
+            >
+              <mat-icon>dashboard</mat-icon>
+              Dashboard
+            </a>
+
+            <a
+              [routerLink]="['/users', auth.currentUser()?.username]"
+              routerLinkActive="active"
+              class="mobile-nav-link"
+              (click)="closeMobileMenu()"
+            >
+              <mat-icon>person_outline</mat-icon>
+              Profile
+            </a>
+
+            @if (canCreateCompetition()) {
+              <a
+                routerLink="/competitions/create"
+                routerLinkActive="active"
+                class="mobile-nav-link"
+                (click)="closeMobileMenu()"
+              >
+                <mat-icon>add_circle_outline</mat-icon>
+                Create Competition
+              </a>
+            }
+
+            <div class="mobile-nav-divider"></div>
+
+            <button class="mobile-nav-link logout" (click)="handleLogout()">
+              <mat-icon>logout</mat-icon>
+              Sign out
+            </button>
+          } @else {
+            <div class="mobile-nav-divider"></div>
+
+            <a
+              routerLink="/login"
+              class="mobile-nav-link"
+              (click)="closeMobileMenu()"
+            >
+              <mat-icon>login</mat-icon>
+              Login
+            </a>
+
+            <a
+              routerLink="/register"
+              class="mobile-nav-link highlight"
+              (click)="closeMobileMenu()"
+            >
+              <mat-icon>person_add</mat-icon>
+              Sign Up
+            </a>
+          }
+        </div>
+      </nav>
+    }
   `,
   styles: [`
     .navbar {
@@ -211,10 +321,261 @@ import { NotificationService } from '../../core/services/notification.service';
       padding: var(--space-2) var(--space-3);
       font-size: var(--text-xs);
     }
+
+    /* Mobile Menu Button */
+    .mobile-menu-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-radius: var(--radius-md);
+      transition: background-color 150ms ease;
+
+      &:hover {
+        background-color: var(--color-surface-muted);
+      }
+    }
+
+    .hamburger {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      width: 20px;
+      height: 20px;
+      position: relative;
+
+      span {
+        display: block;
+        width: 18px;
+        height: 2px;
+        background-color: var(--color-text-primary);
+        border-radius: 1px;
+        position: absolute;
+        transition: all 200ms ease;
+
+        &:nth-child(1) {
+          transform: translateY(-6px);
+        }
+
+        &:nth-child(2) {
+          transform: translateY(0);
+        }
+
+        &:nth-child(3) {
+          transform: translateY(6px);
+        }
+      }
+
+      &.open span {
+        &:nth-child(1) {
+          transform: rotate(45deg);
+        }
+
+        &:nth-child(2) {
+          opacity: 0;
+        }
+
+        &:nth-child(3) {
+          transform: rotate(-45deg);
+        }
+      }
+    }
+
+    /* Mobile Backdrop */
+    .mobile-backdrop {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 299;
+      animation: fadeIn 200ms ease-out;
+    }
+
+    /* Mobile Navigation Drawer */
+    .mobile-nav {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 280px;
+      max-width: calc(100vw - 60px);
+      background-color: var(--color-surface);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-xl);
+      animation: slideInRight 250ms ease-out;
+    }
+
+    .mobile-nav-header {
+      padding: var(--space-5);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .mobile-nav-title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .mobile-user-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .mobile-avatar {
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--color-surface-muted);
+      border-radius: var(--radius-full);
+
+      mat-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+        color: var(--color-text-muted);
+      }
+    }
+
+    .mobile-user-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mobile-user-name {
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .mobile-user-email {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+
+    .mobile-nav-links {
+      flex: 1;
+      padding: var(--space-3);
+      overflow-y: auto;
+    }
+
+    .mobile-nav-link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      background: none;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 150ms ease;
+      text-align: left;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        color: var(--color-text-muted);
+        transition: color 150ms ease;
+      }
+
+      &:hover {
+        color: var(--color-text-primary);
+        background-color: var(--color-surface-muted);
+
+        mat-icon {
+          color: var(--color-text-secondary);
+        }
+      }
+
+      &.active {
+        color: var(--color-accent);
+        background-color: var(--color-accent-light);
+
+        mat-icon {
+          color: var(--color-accent);
+        }
+      }
+
+      &.highlight {
+        color: var(--color-accent);
+
+        mat-icon {
+          color: var(--color-accent);
+        }
+      }
+
+      &.logout {
+        color: var(--color-error);
+
+        mat-icon {
+          color: var(--color-error);
+        }
+
+        &:hover {
+          background-color: var(--color-error-light);
+        }
+      }
+    }
+
+    .mobile-nav-divider {
+      height: 1px;
+      background-color: var(--color-border);
+      margin: var(--space-2) var(--space-4);
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Responsive - Hide desktop nav on mobile */
+    @media (max-width: 767px) {
+      .navbar {
+        padding: 0 var(--space-4);
+      }
+
+      .desktop-nav,
+      .desktop-actions {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: flex;
+      }
+    }
   `],
 })
 export class HeaderComponent implements OnInit {
   unreadCount = signal(0);
+  mobileMenuOpen = signal(false);
 
   constructor(
     public auth: AuthService,
@@ -242,5 +603,18 @@ export class HeaderComponent implements OnInit {
   canCreateCompetition(): boolean {
     const user = this.auth.currentUser();
     return user !== null && (user.role === 'sponsor' || user.role === 'admin');
+  }
+
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen.update(open => !open);
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen.set(false);
+  }
+
+  handleLogout(): void {
+    this.closeMobileMenu();
+    this.auth.logout();
   }
 }

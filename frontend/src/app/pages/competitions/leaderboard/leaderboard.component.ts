@@ -81,15 +81,55 @@ import { LeaderboardEntry } from '../../../core/models/submission.model';
       display: block;
     }
 
+    .competition-loading,
+    .competition-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-10);
+      text-align: center;
+    }
+
+    .loading-text {
+      margin-top: var(--space-3);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-3);
+    }
+
+    .empty-title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-1);
+    }
+
+    .empty-description {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+
     .table-container {
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
-      overflow: hidden;
+      overflow-x: auto;
       background-color: var(--color-surface);
+      -webkit-overflow-scrolling: touch;
     }
 
     .leaderboard-table {
       width: 100%;
+      min-width: 600px;
     }
 
     .rank-cell {
@@ -146,11 +186,13 @@ import { LeaderboardEntry } from '../../../core/models/submission.model';
       justify-content: center;
       font-weight: 600;
       font-size: var(--text-xs);
+      flex-shrink: 0;
     }
 
     .user-name {
       font-weight: 500;
       color: var(--color-text-primary);
+      white-space: nowrap;
     }
 
     .user-team {
@@ -163,12 +205,14 @@ import { LeaderboardEntry } from '../../../core/models/submission.model';
       font-weight: 600;
       color: var(--color-accent);
       font-size: var(--text-base);
+      white-space: nowrap;
     }
 
     .entries-cell,
     .date-cell {
       color: var(--color-text-muted);
       font-size: var(--text-sm);
+      white-space: nowrap;
     }
 
     tr.rank-1 {
@@ -181,6 +225,31 @@ import { LeaderboardEntry } from '../../../core/models/submission.model';
 
     tr.rank-3 {
       background-color: rgba(194, 133, 90, 0.08);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .table-container {
+        margin: 0 calc(var(--space-4) * -1);
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+
+      .rank-cell {
+        width: 60px;
+      }
+
+      .rank-display {
+        width: 28px;
+        height: 28px;
+        font-size: var(--text-xs);
+      }
+
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+      }
     }
   `],
 })
