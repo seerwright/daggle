@@ -1,40 +1,286 @@
+// =============================================================================
+// Daggle - Main Stylesheet
+// =============================================================================
 
-// Custom Theming for Angular Material
-// For more information: https://material.angular.io/guide/theming
+// ---------------------------------------------------------------------------
+// Angular Material Theme
+// ---------------------------------------------------------------------------
 @use '@angular/material' as mat;
-// Plus imports for other components in your app.
 
-// Include the common styles for Angular Material. We include this here so that you only
-// have to load a single css file for Angular Material in your app.
-// Be sure that you only ever include this mixin once!
+// Include the common styles for Angular Material
 @include mat.core();
 
-// Define the theme object.
-$frontend-theme: mat.define-theme((
+// Define custom Daggle color palette based on amber accent
+$daggle-primary: (
+  50: #fef3c7,
+  100: #fde68a,
+  200: #fcd34d,
+  300: #fbbf24,
+  400: #f59e0b,
+  500: #b45309,  // Main accent
+  600: #92400e,
+  700: #78350f,
+  800: #633112,
+  900: #522c0f,
+  contrast: (
+    50: #1a1917,
+    100: #1a1917,
+    200: #1a1917,
+    300: #1a1917,
+    400: #1a1917,
+    500: #ffffff,
+    600: #ffffff,
+    700: #ffffff,
+    800: #ffffff,
+    900: #ffffff,
+  )
+);
+
+$daggle-accent: (
+  50: #faf9f7,
+  100: #f3f2ee,
+  200: #e6e4de,
+  300: #d4d1c7,
+  400: #a8a396,
+  500: #7c7768,
+  600: #5c5850,
+  700: #433f39,
+  800: #2a2824,
+  900: #1a1917,
+  contrast: (
+    50: #1a1917,
+    100: #1a1917,
+    200: #1a1917,
+    300: #1a1917,
+    400: #1a1917,
+    500: #ffffff,
+    600: #ffffff,
+    700: #ffffff,
+    800: #ffffff,
+    900: #ffffff,
+  )
+);
+
+// Define the theme using Angular Material's M3 theme system
+$daggle-theme: mat.define-theme((
   color: (
     theme-type: light,
-    primary: mat.$azure-palette,
-    tertiary: mat.$blue-palette,
+    primary: mat.$orange-palette,
+    tertiary: mat.$orange-palette,
   ),
   density: (
     scale: 0,
   )
 ));
 
-// Include theme styles for core and each component used in your app.
-// Alternatively, you can import and @include the theme mixins for each component
-// that you are using.
+// Apply the theme to all Material components
 :root {
-  @include mat.all-component-themes($frontend-theme);
+  @include mat.all-component-themes($daggle-theme);
 }
 
-// Comment out the line below if you want to use the pre-defined typography utility classes.
-// For more information: https://material.angular.io/guide/typography#using-typography-styles-in-your-application.
-// @include mat.typography-hierarchy($frontend-theme);
+// ---------------------------------------------------------------------------
+// Design System Imports
+// ---------------------------------------------------------------------------
+@import 'styles/variables';
+@import 'styles/reset';
+@import 'styles/typography';
+@import 'styles/utilities';
 
-// Comment out the line below if you want to use the deprecated `color` inputs.
-// @include mat.color-variants-backwards-compatibility($frontend-theme);
-/* You can add global styles to this file, and also import other style files */
+// ---------------------------------------------------------------------------
+// Global Layout
+// ---------------------------------------------------------------------------
+html, body {
+  height: 100%;
+}
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+// ---------------------------------------------------------------------------
+// Angular Material Overrides
+// ---------------------------------------------------------------------------
+
+// Override Material toolbar to use Daggle design
+.mat-toolbar {
+  background-color: var(--color-surface) !important;
+  color: var(--color-text-primary) !important;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mat-mdc-toolbar {
+  background-color: var(--color-surface) !important;
+  color: var(--color-text-primary) !important;
+  border-bottom: 1px solid var(--color-border);
+}
+
+// Override Material buttons
+.mat-mdc-button,
+.mat-mdc-outlined-button {
+  font-family: var(--font-body);
+  font-weight: var(--font-medium);
+  letter-spacing: 0;
+  border-radius: var(--radius-md) !important;
+}
+
+.mat-mdc-raised-button,
+.mat-mdc-flat-button,
+.mat-mdc-unelevated-button {
+  font-family: var(--font-body);
+  font-weight: var(--font-medium);
+  letter-spacing: 0;
+  border-radius: var(--radius-md) !important;
+}
+
+// Primary button override
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-flat-button.mat-primary {
+  background-color: var(--color-accent) !important;
+  color: var(--color-text-inverse) !important;
+
+  &:hover {
+    background-color: var(--color-accent-hover) !important;
+  }
+}
+
+// Override Material cards
+.mat-mdc-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg) !important;
+  box-shadow: var(--shadow-sm) !important;
+
+  &:hover {
+    box-shadow: var(--shadow-md) !important;
+  }
+}
+
+.mat-mdc-card-title {
+  font-family: var(--font-display);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+}
+
+.mat-mdc-card-subtitle {
+  color: var(--color-text-secondary);
+}
+
+// Override Material form fields
+.mat-mdc-form-field {
+  font-family: var(--font-body);
+}
+
+.mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__leading,
+.mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__notch,
+.mdc-text-field--outlined:not(.mdc-text-field--disabled) .mdc-notched-outline__trailing {
+  border-color: var(--color-border);
+}
+
+.mdc-text-field--outlined:not(.mdc-text-field--disabled):not(.mdc-text-field--focused):hover .mdc-notched-outline .mdc-notched-outline__leading,
+.mdc-text-field--outlined:not(.mdc-text-field--disabled):not(.mdc-text-field--focused):hover .mdc-notched-outline .mdc-notched-outline__notch,
+.mdc-text-field--outlined:not(.mdc-text-field--disabled):not(.mdc-text-field--focused):hover .mdc-notched-outline .mdc-notched-outline__trailing {
+  border-color: var(--color-border-strong);
+}
+
+.mdc-text-field--focused:not(.mdc-text-field--disabled) .mdc-notched-outline__leading,
+.mdc-text-field--focused:not(.mdc-text-field--disabled) .mdc-notched-outline__notch,
+.mdc-text-field--focused:not(.mdc-text-field--disabled) .mdc-notched-outline__trailing {
+  border-color: var(--color-accent) !important;
+}
+
+// Override Material chips
+.mat-mdc-chip {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-full) !important;
+}
+
+// Override Material menu
+.mat-mdc-menu-panel {
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.mat-mdc-menu-item {
+  font-family: var(--font-body);
+}
+
+// Override Material tabs
+.mat-mdc-tab-group {
+  font-family: var(--font-body);
+}
+
+.mat-mdc-tab:not(.mat-mdc-tab-disabled) .mdc-tab__text-label {
+  color: var(--color-text-secondary);
+}
+
+.mat-mdc-tab:not(.mat-mdc-tab-disabled).mdc-tab--active .mdc-tab__text-label {
+  color: var(--color-accent);
+}
+
+.mat-mdc-tab-indicator .mdc-tab-indicator__content--underline {
+  border-color: var(--color-accent);
+}
+
+// Override Material spinner
+.mat-mdc-progress-spinner circle {
+  stroke: var(--color-accent) !important;
+}
+
+// Override Material snackbar
+.mat-mdc-snack-bar-container {
+  font-family: var(--font-body);
+  border-radius: var(--radius-md);
+
+  .mdc-snackbar__surface {
+    background-color: var(--color-gray-800) !important;
+  }
+
+  .mdc-snackbar__label {
+    color: var(--color-text-inverse) !important;
+  }
+}
+
+// Override Material dialog
+.mat-mdc-dialog-container {
+  border-radius: var(--radius-xl) !important;
+
+  .mdc-dialog__surface {
+    border-radius: var(--radius-xl) !important;
+  }
+}
+
+.mat-mdc-dialog-title {
+  font-family: var(--font-display) !important;
+  font-weight: var(--font-semibold) !important;
+}
+
+// Override Material select
+.mat-mdc-select {
+  font-family: var(--font-body);
+}
+
+.mat-mdc-select-panel {
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid var(--color-border);
+}
+
+// Override Material table
+.mat-mdc-table {
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+}
+
+.mat-mdc-header-cell {
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-muted);
+}
+
+.mat-mdc-row:hover {
+  background-color: var(--color-surface-muted);
+}
+
+// Override Material paginator
+.mat-mdc-paginator {
+  font-family: var(--font-body);
+  background-color: transparent;
+}
