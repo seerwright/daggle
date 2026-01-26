@@ -2,7 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { UserProfile, ProfileStatsResponse } from '../models/profile.model';
+import { UserProfile, ProfileStatsResponse, ProfileUpdate } from '../models/profile.model';
+import { User } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root',
@@ -20,5 +21,9 @@ export class ProfileService {
     return this.http.get<ProfileStatsResponse>(
       `${this.baseUrl}/users/${username}/stats`
     );
+  }
+
+  updateMyProfile(data: ProfileUpdate): Observable<User> {
+    return this.http.patch<User>(`${this.baseUrl}/users/me`, data);
   }
 }

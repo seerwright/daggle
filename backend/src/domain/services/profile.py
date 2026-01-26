@@ -50,6 +50,23 @@ class ProfileService:
         self.session = session
         self.user_repo = UserRepository(session)
 
+    async def update_profile(self, user: User, display_name: str | None = None) -> User:
+        """Update user profile.
+
+        Args:
+            user: The user to update
+            display_name: New display name (if provided)
+
+        Returns:
+            Updated user
+        """
+        if display_name is not None:
+            user.display_name = display_name
+
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
     async def get_profile(self, username: str) -> UserProfile | None:
         """Get public profile for a user.
 

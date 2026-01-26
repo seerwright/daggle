@@ -31,3 +31,16 @@ export interface CompetitionListItem {
   difficulty: Difficulty;
   is_public: boolean;
 }
+
+export interface CompetitionCreate {
+  title: string;
+  description: string;
+  short_description: string;
+  start_date: string;
+  end_date: string;
+  difficulty: Difficulty;
+  max_team_size: number;
+  daily_submission_limit: number;
+  evaluation_metric: string;
+  is_public: boolean;
+}

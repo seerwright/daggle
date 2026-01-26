@@ -29,3 +29,7 @@ export interface ProfileStatsResponse {
   display_name: string;
   stats: ProfileStats;
 }
+
+export interface ProfileUpdate {
+  display_name?: string;
+}

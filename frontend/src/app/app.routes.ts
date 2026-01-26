@@ -26,10 +26,24 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'competitions/create',
+        loadComponent: () =>
+          import('./pages/competitions/competition-create/competition-create.component').then(
+            (m) => m.CompetitionCreateComponent
+          ),
+      },
+      {
         path: 'competitions/:slug',
         loadComponent: () =>
           import('./pages/competitions/competition-detail/competition-detail.component').then(
             (m) => m.CompetitionDetailComponent
+          ),
+      },
+      {
+        path: 'profile/edit',
+        loadComponent: () =>
+          import('./pages/profile/profile-edit/profile-edit.component').then(
+            (m) => m.ProfileEditComponent
           ),
       },
       {

@@ -25,9 +25,6 @@ module.exports = defineConfig({
 
   /* Shared settings for all the projects below */
   use: {
-    /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: 'http://localhost:3000',
-
     /* Collect trace when retrying the failed test */
     trace: 'on-first-retry',
 
@@ -35,18 +32,32 @@ module.exports = defineConfig({
     screenshot: 'only-on-failure',
   },
 
-  /* Configure projects for major browsers */
+  /* Configure projects for different test scenarios */
   projects: [
+    // Static prototype tests (port 3000)
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: 'prototype',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:3000',
+      },
+      testMatch: /tab-width-stability\.spec\.js/,
+    },
+    // Angular app e2e tests (port 4200 via Docker)
+    {
+      name: 'angular',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:4200',
+      },
+      testMatch: /auth\.spec\.ts|e2e\.spec\.ts|profile-edit\.spec\.ts|competition-create\.spec\.ts/,
     },
   ],
 
-  /* Run local dev server before starting the tests */
-  webServer: {
-    command: 'npx serve -l 3000',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-  },
+  /* Web server configs - uncomment the one you need or run manually */
+  // webServer: {
+  //   command: 'npx serve -l 3000',
+  //   url: 'http://localhost:3000',
+  //   reuseExistingServer: !process.env.CI,
+  // },
 });

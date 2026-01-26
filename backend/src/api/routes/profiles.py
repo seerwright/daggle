@@ -3,16 +3,38 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.api.dependencies import get_current_user
+from src.api.schemas.auth import UserResponse
 from src.api.schemas.profile import (
     UserProfileResponse,
     CompetitionParticipationResponse,
     ProfileStatsResponse,
+    ProfileUpdate,
 )
 from src.domain.models.competition import CompetitionStatus
+from src.domain.models.user import User
 from src.domain.services.profile import ProfileService
 from src.infrastructure.database import get_db
 
 router = APIRouter(prefix="/users", tags=["profiles"])
+
+
+@router.patch("/me", response_model=UserResponse)
+async def update_my_profile(
+    data: ProfileUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update the current user's profile.
+
+    Requires authentication. Updates only the fields provided.
+    """
+    service = ProfileService(db)
+    updated_user = await service.update_profile(
+        user=current_user,
+        display_name=data.display_name,
+    )
+    return updated_user
 
 
 @router.get("/{username}", response_model=UserProfileResponse)

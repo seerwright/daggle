@@ -2,9 +2,15 @@
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.domain.models.competition import CompetitionStatus
+
+
+class ProfileUpdate(BaseModel):
+    """Schema for updating user profile."""
+
+    display_name: str | None = Field(default=None, min_length=1, max_length=255)
 
 
 class CompetitionParticipationResponse(BaseModel):

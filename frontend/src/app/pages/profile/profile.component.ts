@@ -9,6 +9,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 
 import { ProfileService } from '../../core/services/profile.service';
+import { AuthService } from '../../core/services/auth.service';
 import { UserProfile, ProfileParticipation } from '../../core/models/profile.model';
 
 @Component({
@@ -54,6 +55,12 @@ import { UserProfile, ProfileParticipation } from '../../core/models/profile.mod
               <mat-icon>calendar_today</mat-icon>
               Joined {{ profile.created_at | date:'MMMM yyyy' }}
             </p>
+            @if (isOwnProfile()) {
+              <a mat-stroked-button routerLink="/profile/edit" class="edit-button">
+                <mat-icon>edit</mat-icon>
+                Edit Profile
+              </a>
+            }
           </div>
         </header>
 
@@ -217,6 +224,17 @@ import { UserProfile, ProfileParticipation } from '../../core/models/profile.mod
       height: 16px;
     }
 
+    .edit-button {
+      margin-top: 1rem;
+    }
+
+    .edit-button mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      margin-right: 4px;
+    }
+
     /* Stats Grid */
     .stats-grid {
       display: grid;
@@ -368,7 +386,8 @@ export class ProfileComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private profileService: ProfileService
+    private profileService: ProfileService,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
@@ -420,5 +439,11 @@ export class ProfileComponent implements OnInit {
     if (!this.profile) return 0;
     return this.profile.participations.filter((p) => p.submission_count > 0)
       .length;
+  }
+
+  isOwnProfile(): boolean {
+    const currentUser = this.authService.currentUser();
+    return currentUser !== null && this.profile !== null &&
+      currentUser.username === this.profile.username;
   }
 }

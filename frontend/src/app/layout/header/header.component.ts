@@ -32,6 +32,9 @@ import { NotificationService } from '../../core/services/notification.service';
 
       @if (auth.isAuthenticated()) {
         <a mat-button routerLink="/dashboard">Dashboard</a>
+        @if (canCreateCompetition()) {
+          <a mat-button routerLink="/competitions/create">Create Competition</a>
+        }
 
         <button
           mat-icon-button
@@ -113,5 +116,10 @@ export class HeaderComponent implements OnInit {
         // Silently fail - not critical
       },
     });
+  }
+
+  canCreateCompetition(): boolean {
+    const user = this.auth.currentUser();
+    return user !== null && (user.role === 'sponsor' || user.role === 'admin');
   }
 }
