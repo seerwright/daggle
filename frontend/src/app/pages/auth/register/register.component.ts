@@ -23,102 +23,280 @@ import { AuthService } from '../../../core/services/auth.service';
     MatProgressSpinnerModule,
   ],
   template: `
-    <div class="auth-container">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Create Account</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <form [formGroup]="form" (ngSubmit)="onSubmit()">
-            <mat-form-field appearance="outline">
-              <mat-label>Display Name</mat-label>
-              <input matInput formControlName="display_name" />
-              @if (form.get('display_name')?.hasError('required')) {
-                <mat-error>Display name is required</mat-error>
-              }
-            </mat-form-field>
+    <div class="auth-page">
+      <div class="auth-card">
+        <div class="auth-header">
+          <h1 class="auth-title">Create your account</h1>
+          <p class="auth-subtitle">Join Daggle and start competing</p>
+        </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Username</mat-label>
-              <input matInput formControlName="username" />
-              @if (form.get('username')?.hasError('required')) {
-                <mat-error>Username is required</mat-error>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="display_name">Display Name</label>
+              <input
+                id="display_name"
+                type="text"
+                class="form-input"
+                formControlName="display_name"
+                placeholder="John Doe"
+                [class.error]="form.get('display_name')?.invalid && form.get('display_name')?.touched"
+              />
+              @if (form.get('display_name')?.hasError('required') && form.get('display_name')?.touched) {
+                <span class="form-error">Display name is required</span>
               }
-              @if (form.get('username')?.hasError('pattern')) {
-                <mat-error>Only letters, numbers, _ and - allowed</mat-error>
-              }
-            </mat-form-field>
+            </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Email</mat-label>
-              <input matInput formControlName="email" type="email" />
-              @if (form.get('email')?.hasError('required')) {
-                <mat-error>Email is required</mat-error>
+            <div class="form-group">
+              <label class="form-label" for="username">Username</label>
+              <input
+                id="username"
+                type="text"
+                class="form-input"
+                formControlName="username"
+                placeholder="johndoe"
+                [class.error]="form.get('username')?.invalid && form.get('username')?.touched"
+              />
+              @if (form.get('username')?.hasError('required') && form.get('username')?.touched) {
+                <span class="form-error">Username is required</span>
               }
-              @if (form.get('email')?.hasError('email')) {
-                <mat-error>Invalid email format</mat-error>
+              @if (form.get('username')?.hasError('pattern') && form.get('username')?.touched) {
+                <span class="form-error">Only letters, numbers, _ and - allowed</span>
               }
-            </mat-form-field>
+            </div>
+          </div>
 
-            <mat-form-field appearance="outline">
-              <mat-label>Password</mat-label>
-              <input matInput formControlName="password" type="password" />
-              @if (form.get('password')?.hasError('required')) {
-                <mat-error>Password is required</mat-error>
-              }
-              @if (form.get('password')?.hasError('minlength')) {
-                <mat-error>Password must be at least 8 characters</mat-error>
-              }
-            </mat-form-field>
-
-            @if (error) {
-              <p class="error">{{ error }}</p>
+          <div class="form-group">
+            <label class="form-label" for="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              class="form-input"
+              formControlName="email"
+              placeholder="you@company.com"
+              [class.error]="form.get('email')?.invalid && form.get('email')?.touched"
+            />
+            @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
+              <span class="form-error">Email is required</span>
             }
+            @if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
+              <span class="form-error">Please enter a valid email</span>
+            }
+          </div>
 
-            <button
-              mat-flat-button
-              color="primary"
-              type="submit"
-              [disabled]="loading || form.invalid"
-            >
-              @if (loading) {
-                <mat-spinner diameter="20"></mat-spinner>
-              } @else {
-                Sign Up
-              }
-            </button>
-          </form>
+          <div class="form-group">
+            <label class="form-label" for="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              class="form-input"
+              formControlName="password"
+              placeholder="Minimum 8 characters"
+              [class.error]="form.get('password')?.invalid && form.get('password')?.touched"
+            />
+            @if (form.get('password')?.hasError('required') && form.get('password')?.touched) {
+              <span class="form-error">Password is required</span>
+            }
+            @if (form.get('password')?.hasError('minlength') && form.get('password')?.touched) {
+              <span class="form-error">Password must be at least 8 characters</span>
+            }
+          </div>
 
-          <p class="alt-action">
-            Already have an account? <a routerLink="/login">Login</a>
-          </p>
-        </mat-card-content>
-      </mat-card>
+          @if (error) {
+            <div class="alert alert-error">
+              {{ error }}
+            </div>
+          }
+
+          <button
+            type="submit"
+            class="btn btn-primary btn-block"
+            [disabled]="loading || form.invalid"
+          >
+            @if (loading) {
+              <span class="btn-loading-text">Creating account...</span>
+            } @else {
+              Create account
+            }
+          </button>
+        </form>
+
+        <p class="auth-footer">
+          Already have an account? <a routerLink="/login">Sign in</a>
+        </p>
+      </div>
     </div>
   `,
   styles: [`
-    .auth-container {
-      max-width: 400px;
-      margin: 64px auto;
-    }
-    form {
+    .auth-page {
+      min-height: calc(100vh - 200px);
       display: flex;
-      flex-direction: column;
-      gap: 16px;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-6);
     }
-    mat-form-field {
+
+    .auth-card {
       width: 100%;
+      max-width: 480px;
+      padding: var(--space-8);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
     }
-    .error {
-      color: #f44336;
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: var(--space-8);
+    }
+
+    .auth-title {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-2);
+    }
+
+    .auth-subtitle {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
       margin: 0;
     }
-    .alt-action {
-      text-align: center;
-      margin-top: 16px;
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
     }
-    button {
-      height: 48px;
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .form-label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-text-primary);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+
+      &::placeholder {
+        color: var(--color-text-muted);
+      }
+
+      &:hover:not(:disabled):not(:focus) {
+        border-color: var(--color-border-strong);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px var(--color-accent-light);
+      }
+
+      &.error {
+        border-color: var(--color-error);
+
+        &:focus {
+          box-shadow: 0 0 0 3px var(--color-error-light);
+        }
+      }
+    }
+
+    .form-error {
+      font-size: var(--text-xs);
+      color: var(--color-error);
+    }
+
+    .alert {
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+    }
+
+    .alert-error {
+      background-color: var(--color-error-light);
+      color: var(--color-error);
+      border: 1px solid var(--color-error);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-3) var(--space-5);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      font-weight: 500;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 150ms ease;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: white;
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-accent-hover);
+      }
+    }
+
+    .btn-block {
+      width: 100%;
+    }
+
+    .btn-loading-text {
+      opacity: 0.8;
+    }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: var(--space-6);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+
+      a {
+        color: var(--color-accent);
+        text-decoration: none;
+        font-weight: 500;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    @media (max-width: 480px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
     }
   `],
 })

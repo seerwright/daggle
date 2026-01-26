@@ -39,391 +39,713 @@ import { Competition, CompetitionStatus, Difficulty } from '../../../core/models
     MatDividerModule,
   ],
   template: `
-    <div class="edit-container">
+    <div class="edit-page">
       @if (loadingCompetition) {
-        <div class="loading">
-          <mat-spinner></mat-spinner>
+        <div class="loading-state">
+          <mat-spinner diameter="40"></mat-spinner>
+          <span class="loading-text">Loading competition...</span>
         </div>
       } @else if (loadError) {
-        <mat-card>
-          <mat-card-content>
-            <p class="error">{{ loadError }}</p>
-            <a mat-button routerLink="/competitions">Back to Competitions</a>
-          </mat-card-content>
-        </mat-card>
+        <div class="error-state">
+          <mat-icon class="error-icon">error_outline</mat-icon>
+          <h2 class="error-title">Unable to load competition</h2>
+          <p class="error-message">{{ loadError }}</p>
+          <a routerLink="/competitions" class="btn btn-primary">Back to Competitions</a>
+        </div>
       } @else {
-        <mat-card>
-          <mat-card-header>
-            <mat-card-title>Edit Competition</mat-card-title>
-            <mat-card-subtitle>{{ competition?.title }}</mat-card-subtitle>
-          </mat-card-header>
-          <mat-card-content>
-            <form [formGroup]="form" (ngSubmit)="onSubmit()">
-              <mat-form-field appearance="outline">
-                <mat-label>Title</mat-label>
-                <input matInput formControlName="title" />
-                @if (form.get('title')?.hasError('required')) {
-                  <mat-error>Title is required</mat-error>
-                }
-                @if (form.get('title')?.hasError('minlength')) {
-                  <mat-error>Title must be at least 3 characters</mat-error>
-                }
-                @if (form.get('title')?.hasError('maxlength')) {
-                  <mat-error>Title cannot exceed 255 characters</mat-error>
-                }
-              </mat-form-field>
+        <div class="edit-card">
+          <div class="edit-header">
+            <h1 class="edit-title">Edit Competition</h1>
+            <p class="edit-subtitle">{{ competition?.title }}</p>
+          </div>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Short Description</mat-label>
-                <textarea matInput formControlName="short_description" rows="2"></textarea>
-                @if (form.get('short_description')?.hasError('required')) {
-                  <mat-error>Short description is required</mat-error>
-                }
-                @if (form.get('short_description')?.hasError('minlength')) {
-                  <mat-error>Short description must be at least 10 characters</mat-error>
-                }
-                @if (form.get('short_description')?.hasError('maxlength')) {
-                  <mat-error>Short description cannot exceed 500 characters</mat-error>
-                }
-                <mat-hint align="end">{{ form.get('short_description')?.value?.length || 0 }}/500</mat-hint>
-              </mat-form-field>
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" class="edit-form">
+            <div class="form-group">
+              <label class="form-label" for="title">Title</label>
+              <input
+                id="title"
+                type="text"
+                class="form-input"
+                formControlName="title"
+                placeholder="Competition title"
+                [class.error]="form.get('title')?.invalid && form.get('title')?.touched"
+              />
+              @if (form.get('title')?.hasError('required') && form.get('title')?.touched) {
+                <span class="form-error">Title is required</span>
+              }
+              @if (form.get('title')?.hasError('minlength') && form.get('title')?.touched) {
+                <span class="form-error">Title must be at least 3 characters</span>
+              }
+              @if (form.get('title')?.hasError('maxlength') && form.get('title')?.touched) {
+                <span class="form-error">Title cannot exceed 255 characters</span>
+              }
+            </div>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Full Description</mat-label>
-                <textarea matInput formControlName="description" rows="6"></textarea>
-                @if (form.get('description')?.hasError('required')) {
-                  <mat-error>Description is required</mat-error>
+            <div class="form-group">
+              <label class="form-label" for="short_description">Short Description</label>
+              <textarea
+                id="short_description"
+                class="form-input form-textarea"
+                formControlName="short_description"
+                placeholder="Brief summary of the competition"
+                rows="2"
+                [class.error]="form.get('short_description')?.invalid && form.get('short_description')?.touched"
+              ></textarea>
+              <div class="form-hint-row">
+                @if (form.get('short_description')?.hasError('required') && form.get('short_description')?.touched) {
+                  <span class="form-error">Short description is required</span>
+                } @else if (form.get('short_description')?.hasError('minlength') && form.get('short_description')?.touched) {
+                  <span class="form-error">Short description must be at least 10 characters</span>
+                } @else if (form.get('short_description')?.hasError('maxlength') && form.get('short_description')?.touched) {
+                  <span class="form-error">Short description cannot exceed 500 characters</span>
+                } @else {
+                  <span class="form-hint"></span>
                 }
-                @if (form.get('description')?.hasError('minlength')) {
-                  <mat-error>Description must be at least 10 characters</mat-error>
-                }
-              </mat-form-field>
+                <span class="form-counter">{{ form.get('short_description')?.value?.length || 0 }}/500</span>
+              </div>
+            </div>
 
-              <div class="form-row">
-                <mat-form-field appearance="outline">
-                  <mat-label>Status</mat-label>
-                  <mat-select formControlName="status">
-                    <mat-option value="draft">Draft</mat-option>
-                    <mat-option value="active">Active</mat-option>
-                    <mat-option value="evaluation">Evaluation</mat-option>
-                    <mat-option value="completed">Completed</mat-option>
-                    <mat-option value="archived">Archived</mat-option>
-                  </mat-select>
-                </mat-form-field>
+            <div class="form-group">
+              <label class="form-label" for="description">Full Description</label>
+              <textarea
+                id="description"
+                class="form-input form-textarea"
+                formControlName="description"
+                placeholder="Detailed description, rules, evaluation criteria..."
+                rows="6"
+                [class.error]="form.get('description')?.invalid && form.get('description')?.touched"
+              ></textarea>
+              @if (form.get('description')?.hasError('required') && form.get('description')?.touched) {
+                <span class="form-error">Description is required</span>
+              }
+              @if (form.get('description')?.hasError('minlength') && form.get('description')?.touched) {
+                <span class="form-error">Description must be at least 10 characters</span>
+              }
+            </div>
 
-                <mat-form-field appearance="outline">
-                  <mat-label>Difficulty</mat-label>
-                  <mat-select formControlName="difficulty">
-                    <mat-option value="beginner">Beginner</mat-option>
-                    <mat-option value="intermediate">Intermediate</mat-option>
-                    <mat-option value="advanced">Advanced</mat-option>
-                  </mat-select>
-                  @if (form.get('difficulty')?.hasError('required')) {
-                    <mat-error>Difficulty is required</mat-error>
-                  }
-                </mat-form-field>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="status">Status</label>
+                <mat-select
+                  id="status"
+                  formControlName="status"
+                  class="form-select"
+                >
+                  <mat-option value="draft">Draft</mat-option>
+                  <mat-option value="active">Active</mat-option>
+                  <mat-option value="evaluation">Evaluation</mat-option>
+                  <mat-option value="completed">Completed</mat-option>
+                  <mat-option value="archived">Archived</mat-option>
+                </mat-select>
               </div>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Evaluation Metric</mat-label>
-                <input matInput formControlName="evaluation_metric" placeholder="e.g., rmse, accuracy, f1" />
-                @if (form.get('evaluation_metric')?.hasError('required')) {
-                  <mat-error>Evaluation metric is required</mat-error>
-                }
-              </mat-form-field>
+              <div class="form-group">
+                <label class="form-label" for="difficulty">Difficulty</label>
+                <mat-select
+                  id="difficulty"
+                  formControlName="difficulty"
+                  class="form-select"
+                >
+                  <mat-option value="beginner">Beginner</mat-option>
+                  <mat-option value="intermediate">Intermediate</mat-option>
+                  <mat-option value="advanced">Advanced</mat-option>
+                </mat-select>
+              </div>
+            </div>
 
-              <div class="form-row">
-                <mat-form-field appearance="outline">
-                  <mat-label>Start Date</mat-label>
+            <div class="form-group">
+              <label class="form-label" for="evaluation_metric">Evaluation Metric</label>
+              <input
+                id="evaluation_metric"
+                type="text"
+                class="form-input"
+                formControlName="evaluation_metric"
+                placeholder="e.g., rmse, accuracy, f1"
+                [class.error]="form.get('evaluation_metric')?.invalid && form.get('evaluation_metric')?.touched"
+              />
+              @if (form.get('evaluation_metric')?.hasError('required') && form.get('evaluation_metric')?.touched) {
+                <span class="form-error">Evaluation metric is required</span>
+              }
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="start_date">Start Date</label>
+                <mat-form-field appearance="outline" class="date-field">
                   <input matInput [matDatepicker]="startPicker" formControlName="start_date" />
                   <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
                   <mat-datepicker #startPicker></mat-datepicker>
-                  @if (form.get('start_date')?.hasError('required')) {
-                    <mat-error>Start date is required</mat-error>
-                  }
                 </mat-form-field>
+                @if (form.get('start_date')?.hasError('required') && form.get('start_date')?.touched) {
+                  <span class="form-error">Start date is required</span>
+                }
+              </div>
 
-                <mat-form-field appearance="outline">
-                  <mat-label>End Date</mat-label>
+              <div class="form-group">
+                <label class="form-label" for="end_date">End Date</label>
+                <mat-form-field appearance="outline" class="date-field">
                   <input matInput [matDatepicker]="endPicker" formControlName="end_date" />
                   <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
                   <mat-datepicker #endPicker></mat-datepicker>
-                  @if (form.get('end_date')?.hasError('required')) {
-                    <mat-error>End date is required</mat-error>
-                  }
                 </mat-form-field>
+                @if (form.get('end_date')?.hasError('required') && form.get('end_date')?.touched) {
+                  <span class="form-error">End date is required</span>
+                }
+              </div>
+            </div>
+
+            @if (form.hasError('endDateBeforeStart')) {
+              <div class="alert alert-error">
+                End date must be after start date
+              </div>
+            }
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="max_team_size">Max Team Size</label>
+                <input
+                  id="max_team_size"
+                  type="number"
+                  class="form-input"
+                  formControlName="max_team_size"
+                  min="1"
+                  max="10"
+                  [class.error]="form.get('max_team_size')?.invalid && form.get('max_team_size')?.touched"
+                />
+                @if (form.get('max_team_size')?.hasError('min') && form.get('max_team_size')?.touched) {
+                  <span class="form-error">Must be at least 1</span>
+                }
+                @if (form.get('max_team_size')?.hasError('max') && form.get('max_team_size')?.touched) {
+                  <span class="form-error">Cannot exceed 10</span>
+                }
               </div>
 
-              @if (form.hasError('endDateBeforeStart')) {
-                <p class="error">End date must be after start date</p>
-              }
-
-              <div class="form-row">
-                <mat-form-field appearance="outline">
-                  <mat-label>Max Team Size</mat-label>
-                  <input matInput type="number" formControlName="max_team_size" min="1" max="10" />
-                  @if (form.get('max_team_size')?.hasError('min')) {
-                    <mat-error>Must be at least 1</mat-error>
-                  }
-                  @if (form.get('max_team_size')?.hasError('max')) {
-                    <mat-error>Cannot exceed 10</mat-error>
-                  }
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Daily Submission Limit</mat-label>
-                  <input matInput type="number" formControlName="daily_submission_limit" min="1" max="100" />
-                  @if (form.get('daily_submission_limit')?.hasError('min')) {
-                    <mat-error>Must be at least 1</mat-error>
-                  }
-                  @if (form.get('daily_submission_limit')?.hasError('max')) {
-                    <mat-error>Cannot exceed 100</mat-error>
-                  }
-                </mat-form-field>
+              <div class="form-group">
+                <label class="form-label" for="daily_submission_limit">Daily Submission Limit</label>
+                <input
+                  id="daily_submission_limit"
+                  type="number"
+                  class="form-input"
+                  formControlName="daily_submission_limit"
+                  min="1"
+                  max="100"
+                  [class.error]="form.get('daily_submission_limit')?.invalid && form.get('daily_submission_limit')?.touched"
+                />
+                @if (form.get('daily_submission_limit')?.hasError('min') && form.get('daily_submission_limit')?.touched) {
+                  <span class="form-error">Must be at least 1</span>
+                }
+                @if (form.get('daily_submission_limit')?.hasError('max') && form.get('daily_submission_limit')?.touched) {
+                  <span class="form-error">Cannot exceed 100</span>
+                }
               </div>
+            </div>
 
-              <div class="toggle-row">
-                <mat-slide-toggle formControlName="is_public">
-                  Public Competition
-                </mat-slide-toggle>
-                <span class="toggle-hint">Public competitions are visible to all users</span>
+            <div class="toggle-row">
+              <mat-slide-toggle formControlName="is_public">
+                Public Competition
+              </mat-slide-toggle>
+              <span class="toggle-hint">Public competitions are visible to all users</span>
+            </div>
+
+            @if (error) {
+              <div class="alert alert-error">
+                {{ error }}
               </div>
+            }
 
-              @if (error) {
-                <p class="error">{{ error }}</p>
-              }
+            <div class="form-actions">
+              <a [routerLink]="['/competitions', slug]" class="btn btn-secondary">Cancel</a>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="saving || form.invalid"
+              >
+                @if (saving) {
+                  <span class="btn-loading-text">Saving...</span>
+                } @else {
+                  Save Changes
+                }
+              </button>
+            </div>
+          </form>
 
-              <div class="actions">
-                <a mat-button [routerLink]="['/competitions', slug]">Cancel</a>
-                <button
-                  mat-flat-button
-                  color="primary"
-                  type="submit"
-                  [disabled]="saving || form.invalid"
-                >
-                  @if (saving) {
-                    <mat-spinner diameter="20"></mat-spinner>
-                  } @else {
-                    Save Changes
-                  }
-                </button>
-              </div>
-            </form>
-
-            <mat-divider class="section-divider"></mat-divider>
-
-            <!-- Truth Set Upload Section -->
-            <div class="truth-set-section">
-              <h3>Truth Set</h3>
+          <!-- Truth Set Upload Section -->
+          <div class="truth-set-section">
+            <div class="section-header">
+              <h2 class="section-title">Truth Set</h2>
               <p class="section-description">
                 Upload a CSV file with ground truth values for scoring submissions.
                 The file must have 'id' and 'target' columns.
               </p>
+            </div>
 
-              <div class="truth-set-status">
-                @if (competition?.has_truth_set) {
-                  <div class="status-badge uploaded">
-                    <mat-icon>check_circle</mat-icon>
-                    <span>Truth set uploaded</span>
-                  </div>
-                } @else {
-                  <div class="status-badge not-uploaded">
-                    <mat-icon>warning</mat-icon>
-                    <span>No truth set uploaded</span>
-                  </div>
-                }
-              </div>
-
-              <div class="upload-area">
-                <input
-                  type="file"
-                  #fileInput
-                  accept=".csv"
-                  (change)="onFileSelected($event)"
-                  hidden
-                />
-                @if (selectedFile) {
-                  <div class="selected-file">
-                    <mat-icon>description</mat-icon>
-                    <span>{{ selectedFile.name }}</span>
-                    <button mat-icon-button (click)="clearFile()">
-                      <mat-icon>close</mat-icon>
-                    </button>
-                  </div>
-                }
-                <div class="upload-actions">
-                  <button
-                    mat-stroked-button
-                    type="button"
-                    (click)="fileInput.click()"
-                    [disabled]="uploading"
-                  >
-                    <mat-icon>upload_file</mat-icon>
-                    {{ selectedFile ? 'Change File' : 'Select CSV File' }}
-                  </button>
-                  @if (selectedFile) {
-                    <button
-                      mat-flat-button
-                      color="accent"
-                      type="button"
-                      (click)="uploadTruthSet()"
-                      [disabled]="uploading"
-                    >
-                      @if (uploading) {
-                        <mat-spinner diameter="20"></mat-spinner>
-                      } @else {
-                        Upload Truth Set
-                      }
-                    </button>
-                  }
+            <div class="truth-set-status">
+              @if (competition?.has_truth_set) {
+                <div class="truth-badge uploaded">
+                  <mat-icon>check_circle</mat-icon>
+                  <span>Truth set uploaded</span>
                 </div>
-              </div>
-
-              @if (uploadError) {
-                <p class="error">{{ uploadError }}</p>
+              } @else {
+                <div class="truth-badge not-uploaded">
+                  <mat-icon>warning</mat-icon>
+                  <span>No truth set uploaded</span>
+                </div>
               }
             </div>
-          </mat-card-content>
-        </mat-card>
+
+            <div class="upload-area">
+              <input
+                type="file"
+                #fileInput
+                accept=".csv"
+                (change)="onFileSelected($event)"
+                hidden
+              />
+              @if (selectedFile) {
+                <div class="selected-file">
+                  <mat-icon class="file-icon">description</mat-icon>
+                  <span class="file-name">{{ selectedFile.name }}</span>
+                  <button type="button" class="file-remove" (click)="clearFile()">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              }
+              <div class="upload-actions">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  (click)="fileInput.click()"
+                  [disabled]="uploading"
+                >
+                  <mat-icon>upload_file</mat-icon>
+                  {{ selectedFile ? 'Change File' : 'Select CSV File' }}
+                </button>
+                @if (selectedFile) {
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    (click)="uploadTruthSet()"
+                    [disabled]="uploading"
+                  >
+                    @if (uploading) {
+                      <span class="btn-loading-text">Uploading...</span>
+                    } @else {
+                      Upload Truth Set
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (uploadError) {
+              <div class="alert alert-error">
+                {{ uploadError }}
+              </div>
+            }
+          </div>
+        </div>
       }
     </div>
   `,
   styles: [`
-    .edit-container {
-      max-width: 700px;
-      margin: 32px auto;
-      padding: 0 1rem;
-    }
-    .loading {
+    .edit-page {
+      min-height: calc(100vh - 200px);
       display: flex;
+      align-items: flex-start;
       justify-content: center;
-      padding: 64px;
+      padding: var(--space-8) var(--space-6);
     }
-    form {
+
+    .loading-state {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      margin-top: 16px;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-12);
+      color: var(--color-text-muted);
     }
-    mat-form-field {
+
+    .loading-text {
+      margin-top: var(--space-4);
+      font-size: var(--text-sm);
+    }
+
+    .error-state {
+      text-align: center;
+      padding: var(--space-12);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+    }
+
+    .error-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+      color: var(--color-error);
+      margin-bottom: var(--space-4);
+    }
+
+    .error-title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-2);
+    }
+
+    .error-message {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0 0 var(--space-6);
+    }
+
+    .edit-card {
       width: 100%;
+      max-width: 720px;
+      padding: var(--space-8);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
     }
+
+    .edit-header {
+      margin-bottom: var(--space-8);
+    }
+
+    .edit-title {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-2);
+    }
+
+    .edit-subtitle {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+
+    .edit-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+    }
+
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: var(--space-4);
     }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .form-label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-text-primary);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+
+      &::placeholder {
+        color: var(--color-text-muted);
+      }
+
+      &:hover:not(:disabled):not(:focus) {
+        border-color: var(--color-border-strong);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px var(--color-accent-light);
+      }
+
+      &.error {
+        border-color: var(--color-error);
+
+        &:focus {
+          box-shadow: 0 0 0 3px var(--color-error-light);
+        }
+      }
+    }
+
+    .form-textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-hint-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-hint {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+
+    .form-counter {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .form-error {
+      font-size: var(--text-xs);
+      color: var(--color-error);
+    }
+
+    .form-select {
+      width: 100%;
+    }
+
+    .date-field {
+      width: 100%;
+    }
+
     .toggle-row {
       display: flex;
       align-items: center;
-      gap: 16px;
-      padding: 8px 0;
+      gap: var(--space-4);
+      padding: var(--space-3) 0;
     }
+
     .toggle-hint {
-      color: #666;
-      font-size: 0.875rem;
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
     }
-    .error {
-      color: #f44336;
-      margin: 0;
+
+    .alert {
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
     }
-    .actions {
+
+    .alert-error {
+      background-color: var(--color-error-light);
+      color: var(--color-error);
+      border: 1px solid var(--color-error);
+    }
+
+    .form-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 8px;
-      margin-top: 16px;
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+      padding-top: var(--space-5);
+      border-top: 1px solid var(--color-border);
     }
-    button[type="submit"] {
-      height: 48px;
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-5);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      font-weight: 500;
+      text-decoration: none;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 150ms ease;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: white;
       min-width: 160px;
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-accent-hover);
+      }
     }
 
-    .section-divider {
-      margin: 32px 0;
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border-strong);
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-surface-muted);
+      }
     }
 
+    .btn-loading-text {
+      opacity: 0.8;
+    }
+
+    /* Truth Set Section */
     .truth-set-section {
-      margin-top: 24px;
+      margin-top: var(--space-8);
+      padding-top: var(--space-8);
+      border-top: 1px solid var(--color-border);
     }
 
-    .truth-set-section h3 {
-      margin: 0 0 8px 0;
+    .section-header {
+      margin-bottom: var(--space-5);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-2);
     }
 
     .section-description {
-      color: #666;
-      margin: 0 0 16px 0;
-      font-size: 0.875rem;
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0;
     }
 
     .truth-set-status {
-      margin-bottom: 16px;
+      margin-bottom: var(--space-5);
     }
 
-    .status-badge {
+    .truth-badge {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 4px;
-      font-size: 0.875rem;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-weight: 500;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
     }
 
-    .status-badge.uploaded {
-      background-color: #e8f5e9;
-      color: #2e7d32;
+    .truth-badge.uploaded {
+      background-color: var(--color-success-light);
+      color: var(--color-success);
     }
 
-    .status-badge.not-uploaded {
-      background-color: #fff3e0;
-      color: #ef6c00;
-    }
-
-    .status-badge mat-icon {
-      font-size: 20px;
-      height: 20px;
-      width: 20px;
+    .truth-badge.not-uploaded {
+      background-color: var(--color-warning-light);
+      color: var(--color-warning);
     }
 
     .upload-area {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: var(--space-4);
     }
 
     .selected-file {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      background-color: #f5f5f5;
-      border-radius: 4px;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background-color: var(--color-surface-muted);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
     }
 
-    .selected-file span {
+    .file-icon {
+      color: var(--color-accent);
+    }
+
+    .file-name {
       flex: 1;
+      font-size: var(--text-sm);
+      font-family: var(--font-mono);
+      color: var(--color-text-primary);
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .upload-actions {
+    .file-remove {
       display: flex;
-      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-1);
+      background: none;
+      border: none;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+
+      &:hover {
+        color: var(--color-error);
+        background-color: var(--color-error-light);
+      }
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
     }
 
-    .upload-actions button {
-      height: 40px;
+    .upload-actions {
+      display: flex;
+      gap: var(--space-3);
     }
 
     @media (max-width: 600px) {
+      .edit-page {
+        padding: var(--space-4);
+      }
+
+      .edit-card {
+        padding: var(--space-5);
+      }
+
       .form-row {
         grid-template-columns: 1fr;
       }
+
       .toggle-row {
         flex-direction: column;
         align-items: flex-start;
+        gap: var(--space-2);
       }
+
+      .form-actions {
+        flex-direction: column-reverse;
+
+        .btn {
+          width: 100%;
+        }
+      }
+
       .upload-actions {
         flex-direction: column;
       }
