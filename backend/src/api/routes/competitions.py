@@ -1,6 +1,6 @@
 """Competition routes."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.dependencies import get_current_user, require_sponsor
@@ -32,7 +32,7 @@ async def create_competition(
 
     service = CompetitionService(db)
     competition = await service.create(data, current_user)
-    return competition
+    return CompetitionResponse.from_orm_with_truth_set(competition)
 
 
 @router.get("/", response_model=list[CompetitionListResponse])
@@ -75,7 +75,7 @@ async def get_competition(
             detail="Competition not found",
         )
 
-    return competition
+    return CompetitionResponse.from_orm_with_truth_set(competition)
 
 
 @router.patch("/{slug}", response_model=CompetitionResponse)
@@ -110,7 +110,7 @@ async def update_competition(
         )
 
     competition = await service.update(competition, data)
-    return competition
+    return CompetitionResponse.from_orm_with_truth_set(competition)
 
 
 @router.delete("/{slug}", status_code=status.HTTP_204_NO_CONTENT)
@@ -137,3 +137,49 @@ async def delete_competition(
         )
 
     await service.delete(competition)
+
+
+@router.post("/{slug}/truth-set", response_model=CompetitionResponse)
+async def upload_truth_set(
+    slug: str,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload a truth set CSV for scoring submissions.
+
+    Only the sponsor or admin can upload a truth set.
+    The CSV must have 'id' and 'target' columns.
+    """
+    service = CompetitionService(db)
+    competition = await service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to upload a truth set for this competition",
+        )
+
+    # Validate file type
+    if file.filename and not file.filename.endswith(".csv"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be a CSV file",
+        )
+
+    try:
+        competition = await service.upload_truth_set(competition, file)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    return CompetitionResponse.from_orm_with_truth_set(competition)

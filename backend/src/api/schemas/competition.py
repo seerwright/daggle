@@ -55,11 +55,36 @@ class CompetitionResponse(BaseModel):
     daily_submission_limit: int
     evaluation_metric: str
     is_public: bool
+    has_truth_set: bool = False
     created_at: datetime
     updated_at: datetime
 
     class Config:
         from_attributes = True
+
+    @classmethod
+    def from_orm_with_truth_set(cls, obj) -> "CompetitionResponse":
+        """Create response with has_truth_set computed from solution_path."""
+        data = {
+            "id": obj.id,
+            "title": obj.title,
+            "slug": obj.slug,
+            "description": obj.description,
+            "short_description": obj.short_description,
+            "sponsor_id": obj.sponsor_id,
+            "status": obj.status,
+            "start_date": obj.start_date,
+            "end_date": obj.end_date,
+            "difficulty": obj.difficulty,
+            "max_team_size": obj.max_team_size,
+            "daily_submission_limit": obj.daily_submission_limit,
+            "evaluation_metric": obj.evaluation_metric,
+            "is_public": obj.is_public,
+            "has_truth_set": obj.solution_path is not None,
+            "created_at": obj.created_at,
+            "updated_at": obj.updated_at,
+        }
+        return cls(**data)
 
 
 class CompetitionListResponse(BaseModel):

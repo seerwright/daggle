@@ -1,5 +1,9 @@
 """Competition service."""
 
+import csv
+import io
+
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.schemas.competition import CompetitionCreate, CompetitionUpdate
@@ -7,6 +11,7 @@ from src.common.utils import slugify
 from src.domain.models.competition import Competition
 from src.domain.models.user import User
 from src.infrastructure.repositories.competition import CompetitionRepository
+from src.infrastructure.storage.factory import get_storage_backend
 
 
 class CompetitionService:
@@ -89,3 +94,51 @@ class CompetitionService:
     async def delete(self, competition: Competition) -> None:
         """Delete a competition."""
         await self.repo.delete(competition)
+
+    async def upload_truth_set(
+        self, competition: Competition, file: UploadFile
+    ) -> Competition:
+        """Upload a truth set CSV for scoring submissions.
+
+        Args:
+            competition: The competition to upload the truth set for
+            file: The uploaded CSV file
+
+        Returns:
+            Updated competition with solution_path set
+
+        Raises:
+            ValueError: If CSV format is invalid (missing required columns)
+        """
+        # Read and validate file content
+        content = await file.read()
+        await file.seek(0)  # Reset for potential re-read
+
+        # Validate CSV has required columns
+        try:
+            text_content = content.decode("utf-8")
+            reader = csv.DictReader(io.StringIO(text_content))
+            fieldnames = reader.fieldnames or []
+
+            if "id" not in fieldnames or "target" not in fieldnames:
+                raise ValueError(
+                    "CSV must have 'id' and 'target' columns. "
+                    f"Found columns: {', '.join(fieldnames)}"
+                )
+
+            # Verify we can read at least one row
+            rows = list(reader)
+            if not rows:
+                raise ValueError("CSV file is empty (no data rows)")
+
+        except UnicodeDecodeError as e:
+            raise ValueError(f"File must be a valid UTF-8 encoded CSV: {e}")
+
+        # Save file using storage backend
+        storage = get_storage_backend()
+        storage_key = f"truth_sets/{competition.id}/solution.csv"
+        solution_path = await storage.save(storage_key, content)
+
+        # Update competition
+        competition.solution_path = solution_path
+        return await self.repo.update(competition)

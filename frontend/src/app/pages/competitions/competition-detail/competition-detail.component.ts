@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
@@ -20,6 +20,7 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
   standalone: true,
   imports: [
     CommonModule,
+    RouterLink,
     MatCardModule,
     MatChipsModule,
     MatButtonModule,
@@ -50,17 +51,29 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
             </mat-chip>
           </mat-chip-set>
         </div>
-        @if (auth.isAuthenticated()) {
-          @if (isEnrolled) {
-            <button mat-stroked-button color="warn" (click)="leave()" [disabled]="enrolling">
-              Leave Competition
-            </button>
-          } @else {
-            <button mat-flat-button color="primary" (click)="join()" [disabled]="enrolling">
-              {{ enrolling ? 'Joining...' : 'Join Competition' }}
+        <div class="header-actions">
+          @if (canManageCompetition()) {
+            <a mat-stroked-button [routerLink]="['/competitions', slug, 'edit']">
+              Edit Competition
+            </a>
+          }
+          @if (canManageCompetition() && competition.status === 'draft') {
+            <button mat-flat-button color="accent" (click)="activate()" [disabled]="activating">
+              {{ activating ? 'Activating...' : 'Activate Competition' }}
             </button>
           }
-        }
+          @if (auth.isAuthenticated()) {
+            @if (isEnrolled) {
+              <button mat-stroked-button color="warn" (click)="leave()" [disabled]="enrolling">
+                Leave Competition
+              </button>
+            } @else if (competition.status === 'active') {
+              <button mat-flat-button color="primary" (click)="join()" [disabled]="enrolling">
+                {{ enrolling ? 'Joining...' : 'Join Competition' }}
+              </button>
+            }
+          }
+        </div>
       </div>
 
       <mat-tab-group>
@@ -135,6 +148,10 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
     .header-content h1 {
       margin-bottom: 8px;
     }
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
     .tab-content {
       padding: 24px 0;
     }
@@ -186,6 +203,7 @@ export class CompetitionDetailComponent implements OnInit {
   slug = '';
   isEnrolled = false;
   enrolling = false;
+  activating = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -256,6 +274,33 @@ export class CompetitionDetailComponent implements OnInit {
         this.enrolling = false;
         this.snackBar.open(
           err.error?.detail || 'Failed to leave competition',
+          'Close',
+          { duration: 5000 }
+        );
+      },
+    });
+  }
+
+  canManageCompetition(): boolean {
+    const user = this.auth.currentUser();
+    if (!user || !this.competition) return false;
+    return user.id === this.competition.sponsor_id || user.role === 'admin';
+  }
+
+  activate(): void {
+    this.activating = true;
+    this.competitionService.update(this.slug, { status: 'active' }).subscribe({
+      next: (updated) => {
+        this.competition = updated;
+        this.activating = false;
+        this.snackBar.open('Competition activated! Users can now join.', 'Close', {
+          duration: 3000,
+        });
+      },
+      error: (err) => {
+        this.activating = false;
+        this.snackBar.open(
+          err.error?.detail || 'Failed to activate competition',
           'Close',
           { duration: 5000 }
         );

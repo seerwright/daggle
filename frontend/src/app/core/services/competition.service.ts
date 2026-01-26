@@ -30,4 +30,8 @@ export class CompetitionService {
   delete(slug: string): Observable<void> {
     return this.api.delete<void>(`/competitions/${slug}`);
   }
+
+  uploadTruthSet(slug: string, file: File): Observable<Competition> {
+    return this.api.upload<Competition>(`/competitions/${slug}/truth-set`, file);
+  }
 }

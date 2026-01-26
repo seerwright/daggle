@@ -33,6 +33,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'competitions/:slug/edit',
+        loadComponent: () =>
+          import('./pages/competitions/competition-edit/competition-edit.component').then(
+            (m) => m.CompetitionEditComponent
+          ),
+      },
+      {
         path: 'competitions/:slug',
         loadComponent: () =>
           import('./pages/competitions/competition-detail/competition-detail.component').then(

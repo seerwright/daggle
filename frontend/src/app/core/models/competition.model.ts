@@ -16,6 +16,7 @@ export interface Competition {
   daily_submission_limit: number;
   evaluation_metric: string;
   is_public: boolean;
+  has_truth_set: boolean;
   created_at: string;
   updated_at: string;
 }
