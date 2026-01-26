@@ -96,12 +96,12 @@ import { AuthService } from '../../../core/services/auth.service';
     .competitions-page {
       max-width: 1200px;
       margin: 0 auto;
-      padding: var(--space-8) var(--space-6);
+      padding: var(--space-6);
     }
 
     /* Page Header */
     .page-header {
-      margin-bottom: var(--space-6);
+      margin-bottom: var(--space-5);
     }
 
     .page-title {
@@ -122,14 +122,14 @@ import { AuthService } from '../../../core/services/auth.service';
 
     /* Section Header */
     .competitions-section {
-      margin-bottom: var(--space-8);
+      margin-bottom: var(--space-6);
     }
 
     .section-header {
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      margin-bottom: var(--space-5);
+      margin-bottom: var(--space-4);
     }
 
     .section-title {
@@ -152,46 +152,46 @@ import { AuthService } from '../../../core/services/auth.service';
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: var(--space-12);
+      padding: var(--space-10) var(--space-6);
       text-align: center;
       background-color: var(--color-surface);
       border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
+      border-radius: var(--radius-lg);
     }
 
     .loading-text {
-      margin-top: var(--space-4);
-      font-size: var(--text-sm);
+      margin-top: var(--space-3);
+      font-size: 13px;
       color: var(--color-text-muted);
     }
 
     .empty-icon {
-      font-size: 56px;
-      width: 56px;
-      height: 56px;
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
       color: var(--color-text-muted);
-      margin-bottom: var(--space-4);
+      margin-bottom: var(--space-3);
     }
 
     .empty-title {
       font-family: var(--font-body);
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 500;
       color: var(--color-text-primary);
-      margin: 0 0 var(--space-2);
+      margin: 0 0 var(--space-1);
     }
 
     .empty-description {
-      font-size: var(--text-sm);
+      font-size: 14px;
       color: var(--color-text-muted);
-      margin: 0 0 var(--space-5);
+      margin: 0;
     }
 
     /* Competition Grid */
     .competition-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: var(--space-5);
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--space-4);
     }
 
     @media (min-width: 1100px) {
@@ -370,7 +370,7 @@ import { AuthService } from '../../../core/services/auth.service';
     /* Responsive */
     @media (max-width: 768px) {
       .competitions-page {
-        padding: var(--space-6) var(--space-4);
+        padding: var(--space-5) var(--space-4);
       }
 
       .page-title {
@@ -379,7 +379,7 @@ import { AuthService } from '../../../core/services/auth.service';
 
       .competition-grid {
         grid-template-columns: 1fr;
-        gap: var(--space-4);
+        gap: var(--space-3);
       }
     }
 
@@ -389,16 +389,29 @@ import { AuthService } from '../../../core/services/auth.service';
       }
 
       .page-header {
-        margin-bottom: var(--space-5);
+        margin-bottom: var(--space-4);
+      }
+
+      .page-title {
+        font-size: 24px;
+      }
+
+      .page-description {
+        font-size: 14px;
+      }
+
+      .section-title {
+        font-size: 18px;
       }
 
       .thumbnail-letter {
-        font-size: 26px;
+        font-size: 24px;
       }
 
       .page-footer {
         flex-direction: column;
         gap: var(--space-1);
+        padding: var(--space-5) 0;
       }
     }
   `],
