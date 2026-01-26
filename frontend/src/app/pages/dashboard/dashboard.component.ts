@@ -12,10 +12,8 @@ import { DashboardService } from '../../core/services/dashboard.service';
 import { NotificationService } from '../../core/services/notification.service';
 import {
   DashboardResponse,
-  DashboardCompetition,
-  DashboardSubmission,
+  DashboardNotification,
 } from '../../core/models/dashboard.model';
-import { Notification } from '../../core/models/notification.model';
 
 @Component({
   selector: 'app-dashboard',
@@ -31,194 +29,194 @@ import { Notification } from '../../core/models/notification.model';
     MatBadgeModule,
   ],
   template: `
-    <div class="dashboard-container">
+    <div class="dashboard-page">
       <header class="dashboard-header">
-        <h1>Dashboard</h1>
-        <p class="subtitle">Welcome back! Here's an overview of your activity.</p>
+        <h1 class="dashboard-title">Dashboard</h1>
+        <p class="dashboard-subtitle">Welcome back! Here's an overview of your activity.</p>
       </header>
 
       @if (loading) {
-        <div class="loading-container">
+        <div class="loading-state">
           <mat-spinner diameter="40"></mat-spinner>
+          <span class="loading-text">Loading your dashboard...</span>
         </div>
       } @else if (error) {
-        <mat-card class="error-card">
-          <mat-card-content>
-            <mat-icon>error</mat-icon>
-            <p>{{ error }}</p>
-            <button mat-button color="primary" (click)="loadDashboard()">
-              Try Again
-            </button>
-          </mat-card-content>
-        </mat-card>
+        <div class="error-state">
+          <mat-icon class="error-icon">error_outline</mat-icon>
+          <h2 class="error-title">Something went wrong</h2>
+          <p class="error-message">{{ error }}</p>
+          <button class="btn btn-primary" (click)="loadDashboard()">
+            Try Again
+          </button>
+        </div>
       } @else if (dashboard) {
         <!-- Stats Overview -->
         <div class="stats-grid">
-          <mat-card class="stat-card">
-            <mat-card-content>
-              <div class="stat-value">{{ dashboard.stats.total_competitions }}</div>
-              <div class="stat-label">Competitions Joined</div>
-            </mat-card-content>
-          </mat-card>
-          <mat-card class="stat-card">
-            <mat-card-content>
-              <div class="stat-value">{{ dashboard.stats.active_competitions }}</div>
-              <div class="stat-label">Active Competitions</div>
-            </mat-card-content>
-          </mat-card>
-          <mat-card class="stat-card">
-            <mat-card-content>
-              <div class="stat-value">{{ dashboard.stats.total_submissions }}</div>
-              <div class="stat-label">Total Submissions</div>
-            </mat-card-content>
-          </mat-card>
-          <mat-card class="stat-card">
-            <mat-card-content>
-              <div class="stat-value" [matBadge]="dashboard.stats.unread_notifications" matBadgeColor="accent" [matBadgeHidden]="dashboard.stats.unread_notifications === 0">
-                <mat-icon>notifications</mat-icon>
-              </div>
-              <div class="stat-label">Notifications</div>
-            </mat-card-content>
-          </mat-card>
+          <div class="stat-card">
+            <div class="stat-icon">
+              <mat-icon>emoji_events</mat-icon>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value">{{ dashboard.stats.total_competitions }}</span>
+              <span class="stat-label">Competitions Joined</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon active">
+              <mat-icon>play_circle</mat-icon>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value">{{ dashboard.stats.active_competitions }}</span>
+              <span class="stat-label">Active Competitions</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon submissions">
+              <mat-icon>upload_file</mat-icon>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value">{{ dashboard.stats.total_submissions }}</span>
+              <span class="stat-label">Total Submissions</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon notifications" [matBadge]="dashboard.stats.unread_notifications" matBadgeColor="accent" [matBadgeHidden]="dashboard.stats.unread_notifications === 0">
+              <mat-icon>notifications</mat-icon>
+            </div>
+            <div class="stat-content">
+              <span class="stat-value">{{ dashboard.stats.unread_notifications }}</span>
+              <span class="stat-label">Unread Notifications</span>
+            </div>
+          </div>
         </div>
 
         <div class="dashboard-grid">
           <!-- Active Competitions -->
-          <section class="dashboard-section">
+          <section class="dashboard-section competitions-section">
             <div class="section-header">
-              <h2>Your Competitions</h2>
-              <a mat-button routerLink="/competitions" color="primary">
+              <h2 class="section-title">Your Competitions</h2>
+              <a routerLink="/competitions" class="section-link">
                 Browse All
+                <mat-icon>arrow_forward</mat-icon>
               </a>
             </div>
 
-            @if (dashboard.competitions.length === 0) {
-              <mat-card class="empty-card">
-                <mat-card-content>
-                  <mat-icon>emoji_events</mat-icon>
-                  <p>You haven't joined any competitions yet.</p>
-                  <a mat-raised-button color="primary" routerLink="/competitions">
-                    Explore Competitions
-                  </a>
-                </mat-card-content>
-              </mat-card>
+            @if (dashboard.active_competitions.length === 0) {
+              <div class="empty-state">
+                <mat-icon class="empty-icon">emoji_events</mat-icon>
+                <p class="empty-text">No competitions joined yet</p>
+                <p class="empty-description">Join a competition to start competing</p>
+                <a routerLink="/competitions" class="btn btn-primary">
+                  Explore Competitions
+                </a>
+              </div>
             } @else {
               <div class="competitions-list">
-                @for (comp of dashboard.competitions; track comp.id) {
-                  <mat-card class="competition-card" [routerLink]="['/competitions', comp.slug]">
-                    <mat-card-content>
-                      <div class="comp-header">
-                        <h3>{{ comp.title }}</h3>
-                        <mat-chip [class]="'status-' + comp.status">
-                          {{ comp.status }}
-                        </mat-chip>
-                      </div>
-                      <div class="comp-stats">
-                        @if (comp.user_rank) {
-                          <div class="comp-stat">
-                            <span class="value">#{{ comp.user_rank }}</span>
-                            <span class="label">Rank</span>
-                          </div>
-                        }
-                        @if (comp.best_score !== null) {
-                          <div class="comp-stat">
-                            <span class="value">{{ comp.best_score | number:'1.4-4' }}</span>
-                            <span class="label">Best Score</span>
-                          </div>
-                        }
+                @for (comp of dashboard.active_competitions; track comp.id) {
+                  <div class="competition-card" [routerLink]="['/competitions', comp.slug]">
+                    <div class="comp-header">
+                      <h3 class="comp-title">{{ comp.title }}</h3>
+                      <span class="status-badge" [class]="'status-' + comp.status">
+                        {{ comp.status }}
+                      </span>
+                    </div>
+                    <div class="comp-stats">
+                      @if (comp.user_rank) {
                         <div class="comp-stat">
-                          <span class="value">{{ comp.submission_count }}</span>
-                          <span class="label">Submissions</span>
+                          <span class="stat-value">#{{ comp.user_rank }}</span>
+                          <span class="stat-label">Rank</span>
                         </div>
-                        @if (comp.days_remaining !== null && comp.days_remaining > 0) {
-                          <div class="comp-stat">
-                            <span class="value">{{ comp.days_remaining }}</span>
-                            <span class="label">Days Left</span>
-                          </div>
-                        }
+                      }
+                      @if (comp.user_best_score !== null) {
+                        <div class="comp-stat">
+                          <span class="stat-value score">{{ comp.user_best_score | number:'1.4-4' }}</span>
+                          <span class="stat-label">Best Score</span>
+                        </div>
+                      }
+                      <div class="comp-stat">
+                        <span class="stat-value">{{ comp.user_submission_count }}</span>
+                        <span class="stat-label">Submissions</span>
                       </div>
-                    </mat-card-content>
-                  </mat-card>
+                      @if (comp.days_remaining !== null && comp.days_remaining > 0) {
+                        <div class="comp-stat days-left">
+                          <span class="stat-value">{{ comp.days_remaining }}</span>
+                          <span class="stat-label">Days Left</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
                 }
               </div>
             }
           </section>
 
           <!-- Recent Submissions -->
-          <section class="dashboard-section">
+          <section class="dashboard-section submissions-section">
             <div class="section-header">
-              <h2>Recent Submissions</h2>
+              <h2 class="section-title">Recent Submissions</h2>
             </div>
 
             @if (dashboard.recent_submissions.length === 0) {
-              <mat-card class="empty-card">
-                <mat-card-content>
-                  <mat-icon>upload_file</mat-icon>
-                  <p>No submissions yet.</p>
-                </mat-card-content>
-              </mat-card>
+              <div class="empty-state compact">
+                <mat-icon class="empty-icon">upload_file</mat-icon>
+                <p class="empty-text">No submissions yet</p>
+              </div>
             } @else {
               <div class="submissions-list">
                 @for (sub of dashboard.recent_submissions; track sub.id) {
-                  <mat-card class="submission-card" [routerLink]="['/competitions', sub.competition_slug]">
-                    <mat-card-content>
-                      <div class="sub-info">
-                        <span class="comp-title">{{ sub.competition_title }}</span>
-                        <span class="sub-time">{{ sub.created_at | date:'short' }}</span>
-                      </div>
-                      <div class="sub-result">
-                        @if (sub.status === 'scored' && sub.score !== null) {
-                          <span class="score">{{ sub.score | number:'1.4-4' }}</span>
-                        } @else if (sub.status === 'pending' || sub.status === 'processing') {
-                          <mat-chip class="status-pending">Processing</mat-chip>
-                        } @else {
-                          <mat-chip class="status-error">{{ sub.status }}</mat-chip>
-                        }
-                      </div>
-                    </mat-card-content>
-                  </mat-card>
+                  <div class="submission-card" [routerLink]="['/competitions', sub.competition_slug]">
+                    <div class="sub-info">
+                      <span class="sub-comp-title">{{ sub.competition_title }}</span>
+                      <span class="sub-time">{{ sub.submitted_at | date:'MMM d, h:mm a' }}</span>
+                    </div>
+                    <div class="sub-result">
+                      @if (sub.status === 'scored' && sub.public_score !== null) {
+                        <span class="sub-score">{{ sub.public_score | number:'1.4-4' }}</span>
+                      } @else if (sub.status === 'pending' || sub.status === 'processing') {
+                        <span class="status-badge status-pending">Processing</span>
+                      } @else {
+                        <span class="status-badge status-failed">{{ sub.status }}</span>
+                      }
+                    </div>
+                  </div>
                 }
               </div>
             }
           </section>
 
           <!-- Notifications -->
-          <section class="dashboard-section">
+          <section class="dashboard-section notifications-section">
             <div class="section-header">
-              <h2>Recent Notifications</h2>
-              @if (dashboard.recent_notifications.length > 0) {
-                <button mat-button color="primary" (click)="markAllRead()">
+              <h2 class="section-title">Recent Notifications</h2>
+              @if (dashboard.notifications.length > 0) {
+                <button class="section-link" (click)="markAllRead()">
                   Mark All Read
                 </button>
               }
             </div>
 
-            @if (dashboard.recent_notifications.length === 0) {
-              <mat-card class="empty-card">
-                <mat-card-content>
-                  <mat-icon>notifications_none</mat-icon>
-                  <p>No new notifications.</p>
-                </mat-card-content>
-              </mat-card>
+            @if (dashboard.notifications.length === 0) {
+              <div class="empty-state compact">
+                <mat-icon class="empty-icon">notifications_none</mat-icon>
+                <p class="empty-text">No new notifications</p>
+              </div>
             } @else {
               <div class="notifications-list">
-                @for (notif of dashboard.recent_notifications; track notif.id) {
-                  <mat-card
+                @for (notif of dashboard.notifications; track notif.id) {
+                  <div
                     class="notification-card"
                     [class.unread]="!notif.is_read"
                     (click)="onNotificationClick(notif)"
                   >
-                    <mat-card-content>
-                      <mat-icon [class]="'notif-icon ' + notif.type">
-                        {{ getNotificationIcon(notif.type) }}
-                      </mat-icon>
-                      <div class="notif-content">
-                        <span class="notif-title">{{ notif.title }}</span>
-                        <span class="notif-message">{{ notif.message }}</span>
-                        <span class="notif-time">{{ notif.created_at | date:'short' }}</span>
-                      </div>
-                    </mat-card-content>
-                  </mat-card>
+                    <div class="notif-icon-wrap" [class]="notif.type">
+                      <mat-icon>{{ getNotificationIcon(notif.type) }}</mat-icon>
+                    </div>
+                    <div class="notif-content">
+                      <span class="notif-title">{{ notif.title }}</span>
+                      <span class="notif-message">{{ notif.message }}</span>
+                      <span class="notif-time">{{ notif.created_at | date:'MMM d, h:mm a' }}</span>
+                    </div>
+                  </div>
                 }
               </div>
             }
@@ -228,91 +226,168 @@ import { Notification } from '../../core/models/notification.model';
     </div>
   `,
   styles: [`
-    .dashboard-container {
+    :host {
+      display: block;
+    }
+
+    .dashboard-page {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 2rem;
+      padding: var(--space-8) var(--space-6);
     }
 
     .dashboard-header {
-      margin-bottom: 2rem;
+      margin-bottom: var(--space-8);
     }
 
-    .dashboard-header h1 {
-      font-size: 2rem;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
+    .dashboard-title {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-2);
+      letter-spacing: -0.01em;
     }
 
-    .subtitle {
-      color: var(--text-secondary, #666);
+    .dashboard-subtitle {
+      font-size: var(--text-base);
+      color: var(--color-text-muted);
+      margin: 0;
     }
 
-    .loading-container {
-      display: flex;
-      justify-content: center;
-      padding: 4rem;
-    }
-
-    .error-card mat-card-content {
+    .loading-state {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1rem;
-      padding: 2rem;
+      justify-content: center;
+      padding: var(--space-12);
+      color: var(--color-text-muted);
     }
 
-    .error-card mat-icon {
+    .loading-text {
+      margin-top: var(--space-4);
+      font-size: var(--text-sm);
+    }
+
+    .error-state {
+      text-align: center;
+      padding: var(--space-12);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+    }
+
+    .error-icon {
       font-size: 48px;
       width: 48px;
       height: 48px;
-      color: var(--warn-color, #f44336);
+      color: var(--color-error);
+      margin-bottom: var(--space-4);
+    }
+
+    .error-title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-2);
+    }
+
+    .error-message {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0 0 var(--space-6);
     }
 
     /* Stats Grid */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-      margin-bottom: 2rem;
+      gap: var(--space-4);
+      margin-bottom: var(--space-8);
     }
 
     .stat-card {
-      text-align: center;
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-5);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      transition: all var(--transition-fast);
+
+      &:hover {
+        border-color: var(--color-border-strong);
+        box-shadow: var(--shadow-sm);
+      }
     }
 
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 600;
-      color: var(--primary-color, #1976d2);
+    .stat-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      background-color: var(--color-accent-light);
+      color: var(--color-accent);
+
+      mat-icon {
+        font-size: 24px;
+        width: 24px;
+        height: 24px;
+      }
+
+      &.active {
+        background-color: var(--color-success-light);
+        color: var(--color-success);
+      }
+
+      &.submissions {
+        background-color: #e0f2fe;
+        color: #0284c7;
+      }
+
+      &.notifications {
+        background-color: var(--color-warning-light);
+        color: var(--color-warning);
+      }
     }
 
-    .stat-value mat-icon {
-      font-size: 2rem;
-      width: 2rem;
-      height: 2rem;
+    .stat-content {
+      display: flex;
+      flex-direction: column;
     }
 
-    .stat-label {
-      font-size: 0.875rem;
-      color: var(--text-secondary, #666);
-      margin-top: 0.25rem;
+    .stat-content .stat-value {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      line-height: 1;
+    }
+
+    .stat-content .stat-label {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-top: var(--space-1);
     }
 
     /* Dashboard Grid */
     .dashboard-grid {
       display: grid;
       grid-template-columns: 2fr 1fr;
-      gap: 2rem;
+      gap: var(--space-6);
     }
 
     .dashboard-section {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: var(--space-4);
     }
 
-    .dashboard-section:last-child {
+    .notifications-section {
       grid-column: 1 / -1;
     }
 
@@ -322,93 +397,165 @@ import { Notification } from '../../core/models/notification.model';
       align-items: center;
     }
 
-    .section-header h2 {
-      font-size: 1.25rem;
-      font-weight: 500;
+    .section-title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--color-text-primary);
       margin: 0;
     }
 
-    /* Empty State */
-    .empty-card mat-card-content {
+    .section-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-1);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-accent);
+      text-decoration: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: color var(--transition-fast);
+
+      &:hover {
+        color: var(--color-accent-hover);
+      }
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    /* Empty States */
+    .empty-state {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1rem;
-      padding: 2rem;
+      padding: var(--space-10);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
       text-align: center;
+
+      &.compact {
+        padding: var(--space-6);
+      }
     }
 
-    .empty-card mat-icon {
+    .empty-icon {
       font-size: 48px;
       width: 48px;
       height: 48px;
-      opacity: 0.5;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-3);
+    }
+
+    .empty-text {
+      font-size: var(--text-base);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-1);
+    }
+
+    .empty-description {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0 0 var(--space-5);
     }
 
     /* Competition Cards */
     .competitions-list {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: var(--space-3);
     }
 
     .competition-card {
+      padding: var(--space-5);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
       cursor: pointer;
-      transition: box-shadow 0.2s;
-    }
+      transition: all var(--transition-fast);
 
-    .competition-card:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      &:hover {
+        border-color: var(--color-border-strong);
+        box-shadow: var(--shadow-md);
+      }
     }
 
     .comp-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 1rem;
+      margin-bottom: var(--space-4);
     }
 
-    .comp-header h3 {
+    .comp-title {
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-text-primary);
       margin: 0;
-      font-size: 1rem;
-      font-weight: 500;
     }
 
     .comp-stats {
       display: flex;
-      gap: 1.5rem;
+      gap: var(--space-6);
     }
 
     .comp-stat {
       display: flex;
       flex-direction: column;
-    }
 
-    .comp-stat .value {
-      font-size: 1.25rem;
-      font-weight: 600;
-    }
+      .stat-value {
+        font-family: var(--font-display);
+        font-size: var(--text-lg);
+        font-weight: 700;
+        color: var(--color-text-primary);
 
-    .comp-stat .label {
-      font-size: 0.75rem;
-      color: var(--text-secondary, #666);
+        &.score {
+          font-family: var(--font-mono);
+          color: var(--color-accent);
+        }
+      }
+
+      .stat-label {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      &.days-left .stat-value {
+        color: var(--color-warning);
+      }
     }
 
     /* Submission Cards */
     .submissions-list {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: var(--space-2);
     }
 
     .submission-card {
-      cursor: pointer;
-    }
-
-    .submission-card mat-card-content {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: var(--space-4);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+
+      &:hover {
+        border-color: var(--color-border-strong);
+      }
     }
 
     .sub-info {
@@ -416,99 +563,170 @@ import { Notification } from '../../core/models/notification.model';
       flex-direction: column;
     }
 
-    .comp-title {
+    .sub-comp-title {
       font-weight: 500;
+      font-size: var(--text-sm);
+      color: var(--color-text-primary);
     }
 
     .sub-time {
-      font-size: 0.75rem;
-      color: var(--text-secondary, #666);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
     }
 
-    .score {
-      font-size: 1.125rem;
+    .sub-score {
+      font-family: var(--font-mono);
+      font-size: var(--text-base);
       font-weight: 600;
-      color: var(--primary-color, #1976d2);
+      color: var(--color-accent);
     }
 
     /* Notification Cards */
     .notifications-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: var(--space-3);
     }
 
     .notification-card {
-      cursor: pointer;
-    }
-
-    .notification-card.unread {
-      border-left: 3px solid var(--primary-color, #1976d2);
-    }
-
-    .notification-card mat-card-content {
       display: flex;
-      gap: 1rem;
-      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+
+      &:hover {
+        border-color: var(--color-border-strong);
+      }
+
+      &.unread {
+        border-left: 3px solid var(--color-accent);
+        background-color: var(--color-accent-light);
+      }
     }
 
-    .notif-icon {
-      color: var(--text-secondary, #666);
-    }
+    .notif-icon-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-full);
+      background-color: var(--color-surface-muted);
+      color: var(--color-text-muted);
+      flex-shrink: 0;
 
-    .notif-icon.submission_scored {
-      color: var(--success-color, #4caf50);
-    }
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
 
-    .notif-icon.submission_failed {
-      color: var(--warn-color, #f44336);
+      &.submission_scored {
+        background-color: var(--color-success-light);
+        color: var(--color-success);
+      }
+
+      &.submission_failed {
+        background-color: var(--color-error-light);
+        color: var(--color-error);
+      }
+
+      &.competition_started,
+      &.competition_ending {
+        background-color: var(--color-accent-light);
+        color: var(--color-accent);
+      }
     }
 
     .notif-content {
       display: flex;
       flex-direction: column;
       flex: 1;
+      min-width: 0;
     }
 
     .notif-title {
       font-weight: 500;
+      font-size: var(--text-sm);
+      color: var(--color-text-primary);
     }
 
     .notif-message {
-      font-size: 0.875rem;
-      color: var(--text-secondary, #666);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .notif-time {
-      font-size: 0.75rem;
-      color: var(--text-tertiary, #999);
-      margin-top: 0.25rem;
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: var(--space-1);
     }
 
-    /* Status Chips */
+    /* Status Badges */
+    .status-badge {
+      display: inline-block;
+      padding: var(--space-1) var(--space-2);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      border-radius: var(--radius-full);
+      text-transform: capitalize;
+    }
+
     .status-active {
-      background-color: var(--success-light, #e8f5e9) !important;
-      color: var(--success-color, #4caf50) !important;
+      background-color: var(--color-success-light);
+      color: var(--color-success);
     }
 
     .status-completed {
-      background-color: var(--info-light, #e3f2fd) !important;
-      color: var(--info-color, #2196f3) !important;
+      background-color: #e0f2fe;
+      color: #0284c7;
     }
 
     .status-draft {
-      background-color: var(--muted-light, #f5f5f5) !important;
-      color: var(--text-secondary, #666) !important;
+      background-color: var(--color-surface-muted);
+      color: var(--color-text-muted);
     }
 
     .status-pending {
-      background-color: var(--warning-light, #fff3e0) !important;
-      color: var(--warning-color, #ff9800) !important;
+      background-color: var(--color-warning-light);
+      color: var(--color-warning);
     }
 
-    .status-error {
-      background-color: var(--error-light, #ffebee) !important;
-      color: var(--error-color, #f44336) !important;
+    .status-failed {
+      background-color: var(--color-error-light);
+      color: var(--color-error);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-2) var(--space-4);
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      text-decoration: none;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: white;
+
+      &:hover {
+        background-color: var(--color-accent-hover);
+      }
     }
 
     /* Responsive */
@@ -520,20 +738,36 @@ import { Notification } from '../../core/models/notification.model';
       .dashboard-grid {
         grid-template-columns: 1fr;
       }
+
+      .notifications-list {
+        grid-template-columns: 1fr;
+      }
     }
 
     @media (max-width: 600px) {
-      .dashboard-container {
-        padding: 1rem;
+      .dashboard-page {
+        padding: var(--space-4);
+      }
+
+      .dashboard-title {
+        font-size: var(--text-2xl);
       }
 
       .stats-grid {
         grid-template-columns: 1fr 1fr;
+        gap: var(--space-3);
+      }
+
+      .stat-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+        padding: var(--space-4);
       }
 
       .comp-stats {
         flex-wrap: wrap;
-        gap: 1rem;
+        gap: var(--space-4);
       }
     }
   `],
@@ -584,7 +818,7 @@ export class DashboardComponent implements OnInit {
     return icons[type] || 'notifications';
   }
 
-  onNotificationClick(notification: Notification) {
+  onNotificationClick(notification: DashboardNotification) {
     if (!notification.is_read) {
       this.notificationService.markAsRead(notification.id).subscribe({
         next: () => {
@@ -605,7 +839,7 @@ export class DashboardComponent implements OnInit {
     this.notificationService.markAllAsRead().subscribe({
       next: () => {
         if (this.dashboard) {
-          this.dashboard.recent_notifications.forEach((n) => (n.is_read = true));
+          this.dashboard.notifications.forEach((n) => (n.is_read = true));
           this.dashboard.stats.unread_notifications = 0;
         }
       },

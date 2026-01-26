@@ -26,79 +26,243 @@ import { ProfileService } from '../../../core/services/profile.service';
     MatSnackBarModule,
   ],
   template: `
-    <div class="edit-container">
-      <mat-card>
-        <mat-card-header>
-          <mat-card-title>Edit Profile</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-          <form [formGroup]="form" (ngSubmit)="onSubmit()">
-            <mat-form-field appearance="outline">
-              <mat-label>Display Name</mat-label>
-              <input matInput formControlName="display_name" />
-              @if (form.get('display_name')?.hasError('required')) {
-                <mat-error>Display name is required</mat-error>
-              }
-              @if (form.get('display_name')?.hasError('minlength')) {
-                <mat-error>Display name must be at least 1 character</mat-error>
-              }
-              @if (form.get('display_name')?.hasError('maxlength')) {
-                <mat-error>Display name cannot exceed 255 characters</mat-error>
-              }
-            </mat-form-field>
+    <div class="edit-page">
+      <div class="edit-card">
+        <div class="edit-header">
+          <h1 class="edit-title">Edit Profile</h1>
+          <p class="edit-subtitle">Update your profile information</p>
+        </div>
 
-            @if (error) {
-              <p class="error">{{ error }}</p>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="edit-form">
+          <div class="form-group">
+            <label class="form-label" for="display_name">Display Name</label>
+            <input
+              id="display_name"
+              type="text"
+              class="form-input"
+              formControlName="display_name"
+              placeholder="Your display name"
+              [class.error]="form.get('display_name')?.invalid && form.get('display_name')?.touched"
+            />
+            @if (form.get('display_name')?.hasError('required') && form.get('display_name')?.touched) {
+              <span class="form-error">Display name is required</span>
             }
+            @if (form.get('display_name')?.hasError('minlength') && form.get('display_name')?.touched) {
+              <span class="form-error">Display name must be at least 1 character</span>
+            }
+            @if (form.get('display_name')?.hasError('maxlength') && form.get('display_name')?.touched) {
+              <span class="form-error">Display name cannot exceed 255 characters</span>
+            }
+          </div>
 
-            <div class="actions">
-              <a mat-button [routerLink]="['/users', auth.currentUser()?.username]">
-                Cancel
-              </a>
-              <button
-                mat-flat-button
-                color="primary"
-                type="submit"
-                [disabled]="loading || form.invalid"
-              >
-                @if (loading) {
-                  <mat-spinner diameter="20"></mat-spinner>
-                } @else {
-                  Save Changes
-                }
-              </button>
+          @if (error) {
+            <div class="alert alert-error">
+              {{ error }}
             </div>
-          </form>
-        </mat-card-content>
-      </mat-card>
+          }
+
+          <div class="form-actions">
+            <a [routerLink]="['/users', auth.currentUser()?.username]" class="btn btn-secondary">
+              Cancel
+            </a>
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="loading || form.invalid"
+            >
+              @if (loading) {
+                <span class="btn-loading-text">Saving...</span>
+              } @else {
+                Save Changes
+              }
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   `,
   styles: [`
-    .edit-container {
-      max-width: 500px;
-      margin: 64px auto;
-      padding: 0 1rem;
+    :host {
+      display: block;
     }
-    form {
+
+    .edit-page {
+      min-height: calc(100vh - 200px);
       display: flex;
-      flex-direction: column;
-      gap: 16px;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-6);
     }
-    mat-form-field {
+
+    .edit-card {
       width: 100%;
+      max-width: 480px;
+      padding: var(--space-8);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
     }
-    .error {
-      color: #f44336;
+
+    .edit-header {
+      text-align: center;
+      margin-bottom: var(--space-8);
+    }
+
+    .edit-title {
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-2);
+    }
+
+    .edit-subtitle {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
       margin: 0;
     }
-    .actions {
+
+    .edit-form {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .form-label {
+      font-size: var(--text-sm);
+      font-weight: 500;
+      color: var(--color-text-primary);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--color-text-primary);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      transition: border-color 150ms ease, box-shadow 150ms ease;
+
+      &::placeholder {
+        color: var(--color-text-muted);
+      }
+
+      &:hover:not(:disabled):not(:focus) {
+        border-color: var(--color-border-strong);
+      }
+
+      &:focus {
+        outline: none;
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px var(--color-accent-light);
+      }
+
+      &.error {
+        border-color: var(--color-error);
+
+        &:focus {
+          box-shadow: 0 0 0 3px var(--color-error-light);
+        }
+      }
+    }
+
+    .form-error {
+      font-size: var(--text-xs);
+      color: var(--color-error);
+    }
+
+    .alert {
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+    }
+
+    .alert-error {
+      background-color: var(--color-error-light);
+      color: var(--color-error);
+      border: 1px solid var(--color-error);
+    }
+
+    .form-actions {
       display: flex;
       justify-content: flex-end;
-      gap: 8px;
+      gap: var(--space-3);
+      margin-top: var(--space-4);
+      padding-top: var(--space-5);
+      border-top: 1px solid var(--color-border);
     }
-    button[type="submit"] {
-      height: 48px;
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-3) var(--space-5);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      font-weight: 500;
+      text-decoration: none;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 150ms ease;
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: white;
       min-width: 120px;
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-accent-hover);
+      }
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border-strong);
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-surface-muted);
+      }
+    }
+
+    .btn-loading-text {
+      opacity: 0.8;
+    }
+
+    @media (max-width: 480px) {
+      .edit-page {
+        padding: var(--space-4);
+        align-items: flex-start;
+        padding-top: var(--space-8);
+      }
+
+      .edit-card {
+        padding: var(--space-5);
+      }
+
+      .form-actions {
+        flex-direction: column-reverse;
+
+        .btn {
+          width: 100%;
+        }
+      }
     }
   `],
 })

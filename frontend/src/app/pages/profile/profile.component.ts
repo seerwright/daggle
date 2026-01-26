@@ -26,19 +26,19 @@ import { UserProfile, ProfileParticipation } from '../../core/models/profile.mod
     MatChipsModule,
   ],
   template: `
-    <div class="profile-container">
+    <div class="profile-page">
       @if (loading) {
-        <div class="loading-container">
+        <div class="loading-state">
           <mat-spinner diameter="40"></mat-spinner>
+          <span class="loading-text">Loading profile...</span>
         </div>
       } @else if (error) {
-        <mat-card class="error-card">
-          <mat-card-content>
-            <mat-icon>error</mat-icon>
-            <p>{{ error }}</p>
-            <a mat-button routerLink="/" color="primary">Go Home</a>
-          </mat-card-content>
-        </mat-card>
+        <div class="error-state">
+          <mat-icon class="error-icon">person_off</mat-icon>
+          <h2 class="error-title">Profile not found</h2>
+          <p class="error-message">{{ error }}</p>
+          <a routerLink="/" class="btn btn-primary">Go Home</a>
+        </div>
       } @else if (profile) {
         <!-- Profile Header -->
         <header class="profile-header">
@@ -49,14 +49,14 @@ import { UserProfile, ProfileParticipation } from '../../core/models/profile.mod
             />
           </div>
           <div class="profile-info">
-            <h1>{{ profile.display_name }}</h1>
-            <p class="username">&#64;{{ profile.username }}</p>
-            <p class="join-date">
+            <h1 class="profile-name">{{ profile.display_name }}</h1>
+            <p class="profile-username">&#64;{{ profile.username }}</p>
+            <p class="profile-joined">
               <mat-icon>calendar_today</mat-icon>
               Joined {{ profile.created_at | date:'MMMM yyyy' }}
             </p>
             @if (isOwnProfile()) {
-              <a mat-stroked-button routerLink="/profile/edit" class="edit-button">
+              <a routerLink="/profile/edit" class="btn btn-secondary edit-button">
                 <mat-icon>edit</mat-icon>
                 Edit Profile
               </a>
@@ -66,77 +66,66 @@ import { UserProfile, ProfileParticipation } from '../../core/models/profile.mod
 
         <!-- Stats Cards -->
         <div class="stats-grid">
-          <mat-card class="stat-card">
-            <mat-card-content>
-              <div class="stat-value">{{ profile.participations.length }}</div>
-              <div class="stat-label">Competitions</div>
-            </mat-card-content>
-          </mat-card>
-          <mat-card class="stat-card">
-            <mat-card-content>
-              <div class="stat-value">{{ getTotalSubmissions() }}</div>
-              <div class="stat-label">Total Submissions</div>
-            </mat-card-content>
-          </mat-card>
-          <mat-card class="stat-card">
-            <mat-card-content>
-              <div class="stat-value">{{ getBestRank() || '-' }}</div>
-              <div class="stat-label">Best Rank</div>
-            </mat-card-content>
-          </mat-card>
-          <mat-card class="stat-card">
-            <mat-card-content>
-              <div class="stat-value">{{ getCompetitionsWithSubmissions() }}</div>
-              <div class="stat-label">Active Participations</div>
-            </mat-card-content>
-          </mat-card>
+          <div class="stat-card">
+            <span class="stat-value">{{ profile.participations.length }}</span>
+            <span class="stat-label">Competitions</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value">{{ getTotalSubmissions() }}</span>
+            <span class="stat-label">Total Submissions</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value highlight">{{ getBestRank() || '—' }}</span>
+            <span class="stat-label">Best Rank</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value">{{ getCompetitionsWithSubmissions() }}</span>
+            <span class="stat-label">Active Participations</span>
+          </div>
         </div>
 
         <!-- Participations -->
         <section class="participations-section">
-          <h2>Competition History</h2>
+          <h2 class="section-title">Competition History</h2>
 
           @if (profile.participations.length === 0) {
-            <mat-card class="empty-card">
-              <mat-card-content>
-                <mat-icon>emoji_events</mat-icon>
-                <p>No competition participations yet.</p>
-              </mat-card-content>
-            </mat-card>
+            <div class="empty-state">
+              <mat-icon class="empty-icon">emoji_events</mat-icon>
+              <p class="empty-text">No competition participations yet</p>
+              <p class="empty-description">Join a competition to start building your history</p>
+            </div>
           } @else {
             <div class="participations-list">
               @for (participation of profile.participations; track participation.competition_id) {
-                <mat-card
+                <div
                   class="participation-card"
                   [routerLink]="['/competitions', participation.competition_slug]"
                 >
-                  <mat-card-content>
-                    <div class="participation-info">
-                      <h3>{{ participation.competition_title }}</h3>
-                      <p class="enrolled-date">
-                        Joined {{ participation.enrolled_at | date:'mediumDate' }}
-                      </p>
-                    </div>
-                    <div class="participation-stats">
-                      @if (participation.rank !== null) {
-                        <div class="stat">
-                          <span class="value">#{{ participation.rank }}</span>
-                          <span class="label">of {{ participation.total_participants }}</span>
-                        </div>
-                      }
-                      @if (participation.best_score !== null) {
-                        <div class="stat">
-                          <span class="value">{{ participation.best_score | number:'1.4-4' }}</span>
-                          <span class="label">Best Score</span>
-                        </div>
-                      }
-                      <div class="stat">
-                        <span class="value">{{ participation.submission_count }}</span>
-                        <span class="label">Submissions</span>
+                  <div class="participation-info">
+                    <h3 class="participation-title">{{ participation.competition_title }}</h3>
+                    <p class="participation-date">
+                      Joined {{ participation.enrolled_at | date:'mediumDate' }}
+                    </p>
+                  </div>
+                  <div class="participation-stats">
+                    @if (participation.rank !== null) {
+                      <div class="p-stat rank">
+                        <span class="p-value">#{{ participation.rank }}</span>
+                        <span class="p-label">of {{ participation.total_participants }}</span>
                       </div>
+                    }
+                    @if (participation.best_score !== null) {
+                      <div class="p-stat score">
+                        <span class="p-value">{{ participation.best_score | number:'1.4-4' }}</span>
+                        <span class="p-label">Best Score</span>
+                      </div>
+                    }
+                    <div class="p-stat">
+                      <span class="p-value">{{ participation.submission_count }}</span>
+                      <span class="p-label">Submissions</span>
                     </div>
-                  </mat-card-content>
-                </mat-card>
+                  </div>
+                </div>
               }
             </div>
           }
@@ -145,49 +134,77 @@ import { UserProfile, ProfileParticipation } from '../../core/models/profile.mod
     </div>
   `,
   styles: [`
-    .profile-container {
+    :host {
+      display: block;
+    }
+
+    .profile-page {
       max-width: 900px;
       margin: 0 auto;
-      padding: 2rem;
+      padding: var(--space-8) var(--space-6);
     }
 
-    .loading-container {
-      display: flex;
-      justify-content: center;
-      padding: 4rem;
-    }
-
-    .error-card mat-card-content {
+    .loading-state {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1rem;
-      padding: 2rem;
+      justify-content: center;
+      padding: var(--space-12);
+      color: var(--color-text-muted);
     }
 
-    .error-card mat-icon {
+    .loading-text {
+      margin-top: var(--space-4);
+      font-size: var(--text-sm);
+    }
+
+    .error-state {
+      text-align: center;
+      padding: var(--space-12);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+    }
+
+    .error-icon {
       font-size: 48px;
       width: 48px;
       height: 48px;
-      color: var(--warn-color, #f44336);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-4);
+    }
+
+    .error-title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-2);
+    }
+
+    .error-message {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0 0 var(--space-6);
     }
 
     /* Profile Header */
     .profile-header {
       display: flex;
-      gap: 2rem;
+      gap: var(--space-8);
       align-items: center;
-      margin-bottom: 2rem;
-      padding-bottom: 2rem;
-      border-bottom: 1px solid var(--border-color, #e0e0e0);
+      margin-bottom: var(--space-8);
+      padding-bottom: var(--space-8);
+      border-bottom: 1px solid var(--color-border);
     }
 
     .avatar-large {
       width: 120px;
       height: 120px;
-      border-radius: 50%;
+      border-radius: var(--radius-full);
       overflow: hidden;
-      background: var(--bg-tertiary, #f5f5f5);
+      background-color: var(--color-surface-muted);
+      border: 3px solid var(--color-border);
       flex-shrink: 0;
     }
 
@@ -197,143 +214,247 @@ import { UserProfile, ProfileParticipation } from '../../core/models/profile.mod
       object-fit: cover;
     }
 
-    .profile-info h1 {
-      font-size: 2rem;
-      font-weight: 500;
-      margin: 0 0 0.25rem;
+    .profile-info {
+      display: flex;
+      flex-direction: column;
     }
 
-    .username {
-      font-size: 1.125rem;
-      color: var(--text-secondary, #666);
-      margin: 0 0 0.5rem;
+    .profile-name {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-1);
+      letter-spacing: -0.01em;
     }
 
-    .join-date {
+    .profile-username {
+      font-size: var(--text-lg);
+      color: var(--color-text-muted);
+      margin: 0 0 var(--space-2);
+    }
+
+    .profile-joined {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      color: var(--text-tertiary, #999);
-      font-size: 0.875rem;
+      gap: var(--space-2);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
       margin: 0;
-    }
 
-    .join-date mat-icon {
-      font-size: 16px;
-      width: 16px;
-      height: 16px;
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
     }
 
     .edit-button {
-      margin-top: 1rem;
-    }
-
-    .edit-button mat-icon {
-      font-size: 18px;
-      width: 18px;
-      height: 18px;
-      margin-right: 4px;
+      margin-top: var(--space-4);
     }
 
     /* Stats Grid */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 1rem;
-      margin-bottom: 2rem;
+      gap: var(--space-4);
+      margin-bottom: var(--space-8);
     }
 
     .stat-card {
-      text-align: center;
-    }
-
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 600;
-      color: var(--primary-color, #1976d2);
-    }
-
-    .stat-label {
-      font-size: 0.875rem;
-      color: var(--text-secondary, #666);
-      margin-top: 0.25rem;
-    }
-
-    /* Participations */
-    .participations-section h2 {
-      font-size: 1.25rem;
-      font-weight: 500;
-      margin-bottom: 1rem;
-    }
-
-    .empty-card mat-card-content {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1rem;
-      padding: 2rem;
+      padding: var(--space-5);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      transition: all var(--transition-fast);
+
+      &:hover {
+        border-color: var(--color-border-strong);
+        box-shadow: var(--shadow-sm);
+      }
+    }
+
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      line-height: 1;
+
+      &.highlight {
+        color: var(--color-accent);
+      }
+    }
+
+    .stat-label {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-top: var(--space-2);
+    }
+
+    /* Participations */
+    .participations-section {
+      margin-top: var(--space-2);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-5);
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-10);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
       text-align: center;
     }
 
-    .empty-card mat-icon {
+    .empty-icon {
       font-size: 48px;
       width: 48px;
       height: 48px;
-      opacity: 0.5;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-3);
+    }
+
+    .empty-text {
+      font-size: var(--text-base);
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-1);
+    }
+
+    .empty-description {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0;
     }
 
     .participations-list {
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      gap: var(--space-3);
     }
 
     .participation-card {
-      cursor: pointer;
-      transition: box-shadow 0.2s;
-    }
-
-    .participation-card:hover {
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .participation-card mat-card-content {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: var(--space-5);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+
+      &:hover {
+        border-color: var(--color-border-strong);
+        box-shadow: var(--shadow-md);
+      }
     }
 
-    .participation-info h3 {
-      margin: 0 0 0.25rem;
-      font-size: 1rem;
-      font-weight: 500;
+    .participation-info {
+      display: flex;
+      flex-direction: column;
     }
 
-    .enrolled-date {
+    .participation-title {
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-1);
+    }
+
+    .participation-date {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
       margin: 0;
-      font-size: 0.75rem;
-      color: var(--text-secondary, #666);
     }
 
     .participation-stats {
       display: flex;
-      gap: 1.5rem;
+      gap: var(--space-6);
     }
 
-    .participation-stats .stat {
+    .p-stat {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
+
+      .p-value {
+        font-family: var(--font-display);
+        font-size: var(--text-lg);
+        font-weight: 700;
+        color: var(--color-text-primary);
+      }
+
+      .p-label {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+      }
+
+      &.rank .p-value {
+        color: var(--color-accent);
+      }
+
+      &.score .p-value {
+        font-family: var(--font-mono);
+        color: var(--color-accent);
+      }
     }
 
-    .participation-stats .value {
-      font-size: 1.125rem;
-      font-weight: 600;
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      text-decoration: none;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
     }
 
-    .participation-stats .label {
-      font-size: 0.75rem;
-      color: var(--text-secondary, #666);
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: white;
+
+      &:hover {
+        background-color: var(--color-accent-hover);
+      }
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border-strong);
+
+      &:hover {
+        background-color: var(--color-surface-muted);
+      }
     }
 
     /* Responsive */
@@ -343,14 +464,18 @@ import { UserProfile, ProfileParticipation } from '../../core/models/profile.mod
         text-align: center;
       }
 
+      .profile-info {
+        align-items: center;
+      }
+
       .stats-grid {
         grid-template-columns: repeat(2, 1fr);
       }
 
-      .participation-card mat-card-content {
+      .participation-card {
         flex-direction: column;
         align-items: flex-start;
-        gap: 1rem;
+        gap: var(--space-4);
       }
 
       .participation-stats {
@@ -358,14 +483,14 @@ import { UserProfile, ProfileParticipation } from '../../core/models/profile.mod
         justify-content: space-between;
       }
 
-      .participation-stats .stat {
+      .p-stat {
         align-items: center;
       }
     }
 
     @media (max-width: 480px) {
-      .profile-container {
-        padding: 1rem;
+      .profile-page {
+        padding: var(--space-4);
       }
 
       .avatar-large {
@@ -373,8 +498,13 @@ import { UserProfile, ProfileParticipation } from '../../core/models/profile.mod
         height: 80px;
       }
 
-      .profile-info h1 {
-        font-size: 1.5rem;
+      .profile-name {
+        font-size: var(--text-2xl);
+      }
+
+      .participation-stats {
+        flex-wrap: wrap;
+        gap: var(--space-4);
       }
     }
   `],
