@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -24,6 +25,7 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
     MatCardModule,
     MatChipsModule,
     MatButtonModule,
+    MatIconModule,
     MatTabsModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
@@ -33,167 +35,271 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
   ],
   template: `
     @if (loading) {
-      <div class="loading">
-        <mat-spinner></mat-spinner>
+      <div class="competition-loading">
+        <mat-spinner diameter="40"></mat-spinner>
+        <span class="loading-text">Loading competition...</span>
       </div>
     } @else if (!competition) {
-      <p class="error">Competition not found.</p>
+      <div class="competition-empty">
+        <mat-icon class="empty-icon">error_outline</mat-icon>
+        <h3 class="empty-title">Competition not found</h3>
+        <p class="empty-description">
+          This competition may have been removed or the URL is incorrect.
+        </p>
+        <a routerLink="/competitions" class="btn btn-primary">Browse Competitions</a>
+      </div>
     } @else {
-      <div class="competition-header">
-        <div class="header-content">
-          <h1>{{ competition.title }}</h1>
-          <mat-chip-set>
-            <mat-chip [class]="'status-' + competition.status">
-              {{ competition.status }}
-            </mat-chip>
-            <mat-chip [class]="'difficulty-' + competition.difficulty">
-              {{ competition.difficulty }}
-            </mat-chip>
-          </mat-chip-set>
+      <div class="competition-detail">
+        <header class="competition-header">
+          <div class="header-content">
+            <h1 class="competition-title">{{ competition.title }}</h1>
+            <div class="competition-meta">
+              <span class="status-badge" [class]="'status-' + competition.status">
+                {{ competition.status }}
+              </span>
+              <span class="difficulty-badge" [class]="'difficulty-' + competition.difficulty">
+                {{ competition.difficulty }}
+              </span>
+              <span class="competition-meta-item">
+                <mat-icon>calendar_today</mat-icon>
+                {{ competition.start_date | date:'mediumDate' }} - {{ competition.end_date | date:'mediumDate' }}
+              </span>
+            </div>
+            <div class="competition-actions">
+              @if (canManageCompetition()) {
+                <a class="btn btn-secondary" [routerLink]="['/competitions', slug, 'edit']">
+                  Edit Competition
+                </a>
+              }
+              @if (canManageCompetition() && competition.status === 'draft') {
+                <button class="btn btn-primary" (click)="activate()" [disabled]="activating">
+                  {{ activating ? 'Activating...' : 'Activate Competition' }}
+                </button>
+              }
+              @if (auth.isAuthenticated()) {
+                @if (isEnrolled) {
+                  <button class="btn btn-danger-outline" (click)="leave()" [disabled]="enrolling">
+                    Leave Competition
+                  </button>
+                } @else if (competition.status === 'active') {
+                  <button class="btn btn-primary" (click)="join()" [disabled]="enrolling">
+                    {{ enrolling ? 'Joining...' : 'Join Competition' }}
+                  </button>
+                }
+              }
+            </div>
+          </div>
+        </header>
+
+        <div class="competition-stats">
+          <div class="competition-stat">
+            <span class="stat-value">{{ competition.evaluation_metric }}</span>
+            <span class="stat-label">Metric</span>
+          </div>
+          <div class="competition-stat">
+            <span class="stat-value">{{ competition.max_team_size }}</span>
+            <span class="stat-label">Max Team</span>
+          </div>
+          <div class="competition-stat">
+            <span class="stat-value">{{ competition.daily_submission_limit }}</span>
+            <span class="stat-label">Daily Limit</span>
+          </div>
         </div>
-        <div class="header-actions">
-          @if (canManageCompetition()) {
-            <a mat-stroked-button [routerLink]="['/competitions', slug, 'edit']">
-              Edit Competition
-            </a>
-          }
-          @if (canManageCompetition() && competition.status === 'draft') {
-            <button mat-flat-button color="accent" (click)="activate()" [disabled]="activating">
-              {{ activating ? 'Activating...' : 'Activate Competition' }}
-            </button>
-          }
-          @if (auth.isAuthenticated()) {
-            @if (isEnrolled) {
-              <button mat-stroked-button color="warn" (click)="leave()" [disabled]="enrolling">
-                Leave Competition
-              </button>
-            } @else if (competition.status === 'active') {
-              <button mat-flat-button color="primary" (click)="join()" [disabled]="enrolling">
-                {{ enrolling ? 'Joining...' : 'Join Competition' }}
-              </button>
-            }
-          }
+
+        <div class="competition-tabs">
+          <mat-tab-group>
+            <mat-tab label="Overview">
+              <div class="tab-content">
+                <div class="competition-overview">
+                  <section class="overview-section">
+                    <h2 class="section-title">Description</h2>
+                    <div class="section-content">
+                      <p class="description-text">{{ competition.description }}</p>
+                    </div>
+                  </section>
+                </div>
+              </div>
+            </mat-tab>
+
+            <mat-tab label="Leaderboard">
+              <div class="tab-content">
+                <app-leaderboard [slug]="slug"></app-leaderboard>
+              </div>
+            </mat-tab>
+
+            <mat-tab label="Submit" [disabled]="!isEnrolled">
+              <div class="tab-content">
+                @if (isEnrolled) {
+                  <app-submit [slug]="slug" [competition]="competition!"></app-submit>
+                } @else {
+                  <div class="competition-empty">
+                    <mat-icon class="empty-icon">upload_file</mat-icon>
+                    <h3 class="empty-title">Join to submit</h3>
+                    <p class="empty-description">
+                      You must join this competition before submitting predictions.
+                    </p>
+                  </div>
+                }
+              </div>
+            </mat-tab>
+
+            <mat-tab label="Discussions">
+              <div class="tab-content">
+                <app-discussions [slug]="slug" [canPost]="isEnrolled"></app-discussions>
+              </div>
+            </mat-tab>
+          </mat-tab-group>
         </div>
       </div>
-
-      <mat-tab-group>
-        <mat-tab label="Overview">
-          <div class="tab-content">
-            <mat-card>
-              <mat-card-content>
-                <div class="description">{{ competition.description }}</div>
-
-                <div class="meta-grid">
-                  <div class="meta-item">
-                    <strong>Evaluation Metric</strong>
-                    <span>{{ competition.evaluation_metric }}</span>
-                  </div>
-                  <div class="meta-item">
-                    <strong>Max Team Size</strong>
-                    <span>{{ competition.max_team_size }}</span>
-                  </div>
-                  <div class="meta-item">
-                    <strong>Daily Submissions</strong>
-                    <span>{{ competition.daily_submission_limit }}</span>
-                  </div>
-                  <div class="meta-item">
-                    <strong>Start Date</strong>
-                    <span>{{ competition.start_date | date:'medium' }}</span>
-                  </div>
-                  <div class="meta-item">
-                    <strong>End Date</strong>
-                    <span>{{ competition.end_date | date:'medium' }}</span>
-                  </div>
-                </div>
-              </mat-card-content>
-            </mat-card>
-          </div>
-        </mat-tab>
-
-        <mat-tab label="Leaderboard">
-          <div class="tab-content">
-            <app-leaderboard [slug]="slug"></app-leaderboard>
-          </div>
-        </mat-tab>
-
-        <mat-tab label="Submit" [disabled]="!isEnrolled">
-          <div class="tab-content">
-            @if (isEnrolled) {
-              <app-submit [slug]="slug" [competition]="competition!"></app-submit>
-            } @else {
-              <p class="enroll-prompt">Join this competition to submit predictions.</p>
-            }
-          </div>
-        </mat-tab>
-
-        <mat-tab label="Discussions">
-          <div class="tab-content">
-            <app-discussions [slug]="slug" [canPost]="isEnrolled"></app-discussions>
-          </div>
-        </mat-tab>
-      </mat-tab-group>
     }
   `,
   styles: [`
-    .loading, .error {
-      text-align: center;
-      padding: 64px;
+    :host {
+      display: block;
     }
+
     .competition-header {
+      margin-bottom: var(--space-6);
+    }
+
+    .competition-title {
+      font-family: var(--font-display);
+      font-size: var(--text-3xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-3);
+      letter-spacing: -0.01em;
+    }
+
+    .competition-meta {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 24px;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
     }
-    .header-content h1 {
-      margin-bottom: 8px;
-    }
-    .header-actions {
+
+    .competition-meta-item {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: var(--color-text-muted);
+      }
     }
-    .tab-content {
-      padding: 24px 0;
+
+    .competition-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
     }
-    .description {
-      white-space: pre-wrap;
-      margin-bottom: 24px;
-      line-height: 1.6;
-    }
-    .meta-grid {
+
+    .competition-stats {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-4);
+      padding: var(--space-5);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-6);
     }
-    .meta-item {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .meta-item strong {
-      font-size: 0.875rem;
-      color: #666;
-    }
-    .status-active {
-      background-color: #4caf50 !important;
-      color: white !important;
-    }
-    .status-draft {
-      background-color: #9e9e9e !important;
-    }
-    .difficulty-beginner {
-      background-color: #81c784 !important;
-    }
-    .difficulty-intermediate {
-      background-color: #ffb74d !important;
-    }
-    .difficulty-advanced {
-      background-color: #e57373 !important;
-    }
-    .enroll-prompt {
+
+    .competition-stat {
       text-align: center;
-      color: #666;
-      padding: 48px;
+
+      .stat-value {
+        font-family: var(--font-display);
+        font-size: var(--text-xl);
+        font-weight: 700;
+        color: var(--color-text-primary);
+        line-height: 1;
+      }
+
+      .stat-label {
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+        margin-top: var(--space-1);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+    }
+
+    .tab-content {
+      padding: var(--space-6) 0;
+    }
+
+    .overview-section {
+      margin-bottom: var(--space-8);
+    }
+
+    .section-title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-4);
+    }
+
+    .description-text {
+      white-space: pre-wrap;
+      color: var(--color-text-secondary);
+      line-height: var(--leading-relaxed);
+      margin: 0;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      text-decoration: none;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 150ms ease;
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .btn-primary {
+      background-color: var(--color-accent);
+      color: white;
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-accent-hover);
+      }
+    }
+
+    .btn-secondary {
+      background-color: transparent;
+      color: var(--color-text-primary);
+      border-color: var(--color-border-strong);
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-surface-muted);
+      }
+    }
+
+    .btn-danger-outline {
+      background-color: transparent;
+      color: var(--color-error);
+      border-color: var(--color-error);
+
+      &:hover:not(:disabled) {
+        background-color: var(--color-error-light);
+      }
     }
   `],
 })

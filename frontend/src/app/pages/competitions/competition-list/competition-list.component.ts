@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CompetitionService } from '../../../core/services/competition.service';
 import { CompetitionListItem } from '../../../core/models/competition.model';
@@ -15,92 +16,57 @@ import { CompetitionListItem } from '../../../core/models/competition.model';
     RouterLink,
     MatCardModule,
     MatChipsModule,
+    MatIconModule,
     MatProgressSpinnerModule,
   ],
   template: `
-    <h1>Competitions</h1>
+    <div class="competitions-page">
+      <header class="page-header">
+        <h1 class="page-title">Competitions</h1>
+      </header>
 
-    @if (loading) {
-      <div class="loading">
-        <mat-spinner></mat-spinner>
-      </div>
-    } @else if (competitions.length === 0) {
-      <p class="empty">No competitions available yet.</p>
-    } @else {
-      <div class="competition-grid">
-        @for (comp of competitions; track comp.id) {
-          <mat-card class="competition-card" [routerLink]="['/competitions', comp.slug]">
-            <mat-card-header>
-              <mat-card-title>{{ comp.title }}</mat-card-title>
-              <mat-card-subtitle>
-                <mat-chip-set>
-                  <mat-chip [class]="'status-' + comp.status">
+      @if (loading) {
+        <div class="competition-loading">
+          <mat-spinner diameter="40"></mat-spinner>
+          <span class="loading-text">Loading competitions...</span>
+        </div>
+      } @else if (competitions.length === 0) {
+        <div class="competition-empty">
+          <mat-icon class="empty-icon">emoji_events</mat-icon>
+          <h3 class="empty-title">No competitions yet</h3>
+          <p class="empty-description">
+            Check back soon for new data science challenges.
+          </p>
+        </div>
+      } @else {
+        <div class="competition-grid">
+          @for (comp of competitions; track comp.id) {
+            <article class="competition-card" [routerLink]="['/competitions', comp.slug]">
+              <div class="competition-card-body">
+                <h3 class="competition-card-title">{{ comp.title }}</h3>
+                <div class="competition-card-meta">
+                  <span class="status-badge" [class]="'status-' + comp.status">
                     {{ comp.status }}
-                  </mat-chip>
-                  <mat-chip [class]="'difficulty-' + comp.difficulty">
+                  </span>
+                  <span class="difficulty-badge" [class]="'difficulty-' + comp.difficulty">
                     {{ comp.difficulty }}
-                  </mat-chip>
-                </mat-chip-set>
-              </mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <p>{{ comp.short_description }}</p>
-              <div class="dates">
+                  </span>
+                </div>
+                <p class="competition-card-description">{{ comp.short_description }}</p>
+              </div>
+              <footer class="competition-card-footer">
                 <span>Starts: {{ comp.start_date | date:'mediumDate' }}</span>
                 <span>Ends: {{ comp.end_date | date:'mediumDate' }}</span>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        }
-      </div>
-    }
+              </footer>
+            </article>
+          }
+        </div>
+      }
+    </div>
   `,
   styles: [`
-    h1 {
-      margin-bottom: 24px;
-    }
-    .loading, .empty {
-      text-align: center;
-      padding: 64px;
-    }
-    .competition-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-      gap: 24px;
-    }
-    .competition-card {
-      cursor: pointer;
-      transition: box-shadow 0.2s;
-    }
-    .competition-card:hover {
-      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
-    }
-    .dates {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 16px;
-      font-size: 0.875rem;
-      color: #666;
-    }
-    .status-active {
-      background-color: #4caf50 !important;
-      color: white !important;
-    }
-    .status-draft {
-      background-color: #9e9e9e !important;
-    }
-    .status-completed {
-      background-color: #2196f3 !important;
-      color: white !important;
-    }
-    .difficulty-beginner {
-      background-color: #81c784 !important;
-    }
-    .difficulty-intermediate {
-      background-color: #ffb74d !important;
-    }
-    .difficulty-advanced {
-      background-color: #e57373 !important;
+    :host {
+      display: block;
     }
   `],
 })

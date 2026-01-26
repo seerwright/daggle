@@ -1,0 +1,333 @@
+// =============================================================================
+// Daggle Design System - Tables
+// =============================================================================
+
+// ---------------------------------------------------------------------------
+// Base Table
+// ---------------------------------------------------------------------------
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.table th,
+.table td {
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  background-color: var(--color-surface-muted);
+  white-space: nowrap;
+}
+
+.table td {
+  color: var(--color-text-secondary);
+}
+
+.table tbody tr:hover {
+  background-color: var(--color-surface-muted);
+}
+
+// ---------------------------------------------------------------------------
+// Table Variants
+// ---------------------------------------------------------------------------
+
+// Bordered table
+.table-bordered {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+
+  th, td {
+    border: 1px solid var(--color-border);
+  }
+
+  th:first-child,
+  td:first-child {
+    border-left: none;
+  }
+
+  th:last-child,
+  td:last-child {
+    border-right: none;
+  }
+
+  thead tr:first-child th {
+    border-top: none;
+  }
+
+  tbody tr:last-child td {
+    border-bottom: none;
+  }
+}
+
+// Striped rows
+.table-striped tbody tr:nth-child(even) {
+  background-color: var(--color-surface-muted);
+}
+
+// Compact table
+.table-compact {
+  th, td {
+    padding: var(--space-2) var(--space-3);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Table Container (for overflow)
+// ---------------------------------------------------------------------------
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+}
+
+.table-container .table {
+  margin: 0;
+
+  th:first-child,
+  td:first-child {
+    padding-left: var(--space-5);
+  }
+
+  th:last-child,
+  td:last-child {
+    padding-right: var(--space-5);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Leaderboard Table
+// ---------------------------------------------------------------------------
+
+.leaderboard-table {
+  .rank-cell {
+    width: 60px;
+    text-align: center;
+  }
+
+  .user-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-semibold);
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+  }
+
+  .user-name {
+    font-weight: var(--font-medium);
+    color: var(--color-text-primary);
+  }
+
+  .user-team {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+  }
+
+  .score-cell {
+    font-family: var(--font-mono);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+  }
+
+  .entries-cell,
+  .date-cell {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+  }
+
+  // Highlight top 3
+  tr.rank-1 {
+    background-color: rgba(251, 191, 36, 0.1);
+  }
+
+  tr.rank-2 {
+    background-color: rgba(156, 163, 175, 0.1);
+  }
+
+  tr.rank-3 {
+    background-color: rgba(194, 133, 90, 0.1);
+  }
+
+  // Current user highlight
+  tr.current-user {
+    background-color: var(--color-accent-light);
+
+    &:hover {
+      background-color: var(--color-accent-light);
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Rank Badges (inline with table)
+// ---------------------------------------------------------------------------
+
+.rank-display {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--font-bold);
+  border-radius: var(--radius-full);
+}
+
+.rank-1 .rank-display {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #451a03;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+}
+
+.rank-2 .rank-display {
+  background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%);
+  color: #1f2937;
+  box-shadow: 0 2px 8px rgba(156, 163, 175, 0.4);
+}
+
+.rank-3 .rank-display {
+  background: linear-gradient(135deg, #fcd9b6 0%, #c2855a 100%);
+  color: #451a03;
+  box-shadow: 0 2px 8px rgba(194, 133, 90, 0.4);
+}
+
+.rank-default .rank-display {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+
+// ---------------------------------------------------------------------------
+// Empty State
+// ---------------------------------------------------------------------------
+
+.table-empty {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  color: var(--color-text-muted);
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: var(--space-4);
+    opacity: 0.5;
+  }
+
+  .empty-title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-medium);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-2);
+  }
+
+  .empty-description {
+    font-size: var(--text-sm);
+    max-width: 300px;
+    margin: 0 auto;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Submissions Table
+// ---------------------------------------------------------------------------
+
+.submissions-table {
+  .status-cell {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+
+    &.pending {
+      background-color: var(--color-warning);
+    }
+
+    &.processing {
+      background-color: var(--color-info);
+      animation: pulse 1.5s infinite;
+    }
+
+    &.completed {
+      background-color: var(--color-success);
+    }
+
+    &.failed {
+      background-color: var(--color-error);
+    }
+  }
+
+  .filename-cell {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--color-text-primary);
+  }
+
+  .score-improving {
+    color: var(--color-success);
+  }
+
+  .score-declining {
+    color: var(--color-error);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sortable Headers
+// ---------------------------------------------------------------------------
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--transition-fast);
+
+  &:hover {
+    background-color: var(--color-gray-200);
+  }
+
+  .sort-icon {
+    margin-left: var(--space-1);
+    opacity: 0.5;
+    font-size: 14px;
+    vertical-align: middle;
+  }
+
+  &.sorted-asc .sort-icon,
+  &.sorted-desc .sort-icon {
+    opacity: 1;
+    color: var(--color-accent);
+  }
+}
