@@ -205,7 +205,6 @@ import { AuthService } from '../../../core/services/auth.service';
       display: flex;
       flex-direction: column;
       height: 100%;
-      min-height: 280px;
       background-color: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
@@ -221,7 +220,7 @@ import { AuthService } from '../../../core/services/auth.service';
 
     .card-thumbnail {
       position: relative;
-      height: 100px;
+      aspect-ratio: 2 / 1;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -230,11 +229,12 @@ import { AuthService } from '../../../core/services/auth.service';
 
     .thumbnail-letter {
       font-family: var(--font-body);
-      font-size: 36px;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.85);
+      font-size: 32px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
       text-transform: uppercase;
       user-select: none;
+      letter-spacing: 0.02em;
     }
 
     .card-content {
@@ -392,16 +392,8 @@ import { AuthService } from '../../../core/services/auth.service';
         margin-bottom: var(--space-5);
       }
 
-      .card-thumbnail {
-        height: 80px;
-      }
-
       .thumbnail-letter {
-        font-size: 28px;
-      }
-
-      .competition-card {
-        min-height: 240px;
+        font-size: 26px;
       }
 
       .page-footer {
