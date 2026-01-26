@@ -7,37 +7,64 @@ import { HeaderComponent } from './header/header.component';
   standalone: true,
   imports: [RouterOutlet, HeaderComponent],
   template: `
-    <div class="app-container">
+    <div class="app-layout">
       <app-header />
       <main class="main-content">
-        <router-outlet />
+        <div class="container">
+          <router-outlet />
+        </div>
       </main>
       <footer class="footer">
-        <span>Daggle - Internal Data Science Platform</span>
+        <div class="footer-content">
+          <span class="footer-brand">Daggle</span>
+          <span class="footer-separator">·</span>
+          <span>Internal Data Science Platform</span>
+        </div>
       </footer>
     </div>
   `,
   styles: [`
-    .app-container {
+    .app-layout {
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      background-color: var(--color-background);
     }
+
     .main-content {
       flex: 1;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px;
-      width: 100%;
-      box-sizing: border-box;
+      padding: var(--space-8) 0;
     }
+
+    .container {
+      max-width: var(--container-max);
+      margin: 0 auto;
+      padding: 0 var(--space-6);
+    }
+
     .footer {
-      background: #f5f5f5;
-      padding: 24px;
-      text-align: center;
-      color: #666;
-      font-size: 0.875rem;
-      border-top: 1px solid #e0e0e0;
+      padding: var(--space-6);
+      background-color: var(--color-surface-muted);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .footer-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+
+    .footer-brand {
+      font-family: var(--font-display);
+      font-weight: var(--font-semibold);
+      color: var(--color-text-secondary);
+    }
+
+    .footer-separator {
+      color: var(--color-border-strong);
     }
   `],
 })

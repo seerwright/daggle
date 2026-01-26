@@ -85,6 +85,11 @@ $daggle-theme: mat.define-theme((
 @import 'styles/reset';
 @import 'styles/typography';
 @import 'styles/utilities';
+@import 'styles/buttons';
+@import 'styles/cards';
+@import 'styles/navigation';
+@import 'styles/forms';
+@import 'styles/badges';
 
 // ---------------------------------------------------------------------------
 // Global Layout
