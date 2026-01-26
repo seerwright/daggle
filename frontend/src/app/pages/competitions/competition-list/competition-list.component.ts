@@ -84,40 +84,24 @@ import { AuthService } from '../../../core/services/auth.service';
           <div class="competition-grid">
             @for (comp of competitions; track comp.id) {
               <article class="competition-card" [routerLink]="['/competitions', comp.slug]">
-                <div class="card-thumbnail" [style.background]="getThumbnailGradient(comp.slug)">
-                  <div class="thumbnail-overlay">
-                    <mat-icon class="thumbnail-icon">{{ getCategoryIcon(comp.difficulty) }}</mat-icon>
-                  </div>
-                  <div class="card-badges">
-                    <span class="status-badge" [class]="'status-' + comp.status">
-                      {{ comp.status }}
-                    </span>
-                  </div>
+                <div class="card-thumbnail" [style.background-color]="getThumbnailColor(comp.slug)">
+                  <span class="thumbnail-letter">{{ comp.title.charAt(0) }}</span>
                 </div>
                 <div class="card-content">
-                  <div class="card-header">
-                    <h3 class="card-title">{{ comp.title }}</h3>
-                    <span class="difficulty-pill" [class]="'difficulty-' + comp.difficulty">
+                  <h3 class="card-title">{{ comp.title }}</h3>
+                  <div class="card-badges">
+                    <span class="status-badge" [class]="'status-' + comp.status">
+                      {{ getStatusLabel(comp.status) }}
+                    </span>
+                    <span class="difficulty-badge" [class]="'difficulty-' + comp.difficulty">
                       {{ comp.difficulty }}
                     </span>
                   </div>
                   <p class="card-description">{{ comp.short_description }}</p>
                   <div class="card-meta">
-                    <div class="meta-item">
-                      <mat-icon>calendar_today</mat-icon>
-                      <span>{{ getTimeRemaining(comp.end_date) }}</span>
-                    </div>
-                    <div class="meta-item">
-                      <mat-icon>play_arrow</mat-icon>
-                      <span>Starts {{ comp.start_date | date:'MMM d' }}</span>
-                    </div>
+                    <mat-icon>schedule</mat-icon>
+                    <span>{{ getTimeRemaining(comp.end_date) }}</span>
                   </div>
-                </div>
-                <div class="card-footer">
-                  <span class="footer-action">
-                    View Challenge
-                    <mat-icon>arrow_forward</mat-icon>
-                  </span>
                 </div>
               </article>
             }
@@ -331,137 +315,110 @@ import { AuthService } from '../../../core/services/auth.service';
     /* Competition Grid */
     .competition-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: var(--space-5);
+    }
+
+    @media (min-width: 1100px) {
+      .competition-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
     }
 
     /* Competition Card */
     .competition-card {
       display: flex;
       flex-direction: column;
+      height: 100%;
+      min-height: 280px;
       background-color: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
       overflow: hidden;
       cursor: pointer;
-      transition: all 200ms ease;
+      transition: border-color 150ms ease, box-shadow 150ms ease;
 
       &:hover {
         border-color: var(--color-border-strong);
-        box-shadow: var(--shadow-lg);
-        transform: translateY(-3px);
-
-        .card-footer {
-          color: var(--color-accent);
-        }
-
-        .thumbnail-overlay {
-          opacity: 0.9;
-        }
+        box-shadow: var(--shadow-md);
       }
     }
 
     .card-thumbnail {
       position: relative;
-      height: 140px;
+      height: 100px;
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
 
-    .thumbnail-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: rgba(0, 0, 0, 0.1);
-      transition: opacity 200ms ease;
-    }
-
-    .thumbnail-icon {
-      font-size: 48px;
-      width: 48px;
-      height: 48px;
-      color: rgba(255, 255, 255, 0.9);
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-    }
-
-    .card-badges {
-      position: absolute;
-      top: var(--space-3);
-      left: var(--space-3);
-      display: flex;
-      gap: var(--space-2);
-    }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: var(--space-1) var(--space-2);
-      font-size: var(--text-xs);
+    .thumbnail-letter {
+      font-family: var(--font-body);
+      font-size: 36px;
       font-weight: 600;
-      border-radius: var(--radius-sm);
+      color: rgba(255, 255, 255, 0.85);
       text-transform: uppercase;
-      letter-spacing: 0.03em;
-      backdrop-filter: blur(4px);
-    }
-
-    .status-active {
-      background-color: rgba(34, 197, 94, 0.9);
-      color: white;
-    }
-
-    .status-draft {
-      background-color: rgba(100, 116, 139, 0.9);
-      color: white;
-    }
-
-    .status-evaluation {
-      background-color: rgba(234, 179, 8, 0.9);
-      color: #422006;
-    }
-
-    .status-completed {
-      background-color: rgba(180, 83, 9, 0.9);
-      color: white;
-    }
-
-    .status-archived {
-      background-color: rgba(100, 116, 139, 0.9);
-      color: white;
+      user-select: none;
     }
 
     .card-content {
       flex: 1;
-      padding: var(--space-5);
-    }
-
-    .card-header {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: var(--space-3);
-      margin-bottom: var(--space-3);
+      flex-direction: column;
+      padding: var(--space-4);
     }
 
     .card-title {
-      font-family: var(--font-display);
-      font-size: var(--text-lg);
+      font-family: var(--font-body);
+      font-size: 16px;
       font-weight: 600;
       color: var(--color-text-primary);
-      margin: 0;
-      line-height: 1.3;
-      flex: 1;
+      margin: 0 0 var(--space-2);
+      line-height: 1.35;
     }
 
-    .difficulty-pill {
-      flex-shrink: 0;
-      padding: var(--space-1) var(--space-2);
-      font-size: var(--text-xs);
+    .card-badges {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-bottom: var(--space-3);
+    }
+
+    .status-badge,
+    .difficulty-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      font-size: 11px;
       font-weight: 500;
-      border-radius: var(--radius-full);
+      border-radius: var(--radius-sm);
       text-transform: capitalize;
+    }
+
+    .status-active {
+      background-color: var(--color-success-light);
+      color: var(--color-success);
+    }
+
+    .status-draft {
+      background-color: var(--color-surface-muted);
+      color: var(--color-text-muted);
+    }
+
+    .status-evaluation {
+      background-color: var(--color-warning-light);
+      color: var(--color-warning);
+    }
+
+    .status-completed {
+      background-color: var(--color-accent-light);
+      color: var(--color-accent);
+    }
+
+    .status-archived {
+      background-color: var(--color-surface-muted);
+      color: var(--color-text-muted);
     }
 
     .difficulty-beginner {
@@ -480,10 +437,11 @@ import { AuthService } from '../../../core/services/auth.service';
     }
 
     .card-description {
-      font-size: var(--text-sm);
+      font-size: 14px;
       color: var(--color-text-secondary);
-      line-height: 1.6;
-      margin: 0 0 var(--space-4);
+      line-height: 1.5;
+      margin: 0;
+      flex: 1;
       display: -webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
@@ -492,14 +450,12 @@ import { AuthService } from '../../../core/services/auth.service';
 
     .card-meta {
       display: flex;
-      gap: var(--space-4);
-    }
-
-    .meta-item {
-      display: flex;
       align-items: center;
       gap: var(--space-1);
-      font-size: var(--text-xs);
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--color-border);
+      font-size: 12px;
       color: var(--color-text-muted);
 
       mat-icon {
@@ -507,36 +463,6 @@ import { AuthService } from '../../../core/services/auth.service';
         width: 14px;
         height: 14px;
       }
-    }
-
-    .card-footer {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding: var(--space-3) var(--space-5);
-      background-color: var(--color-surface-muted);
-      border-top: 1px solid var(--color-border);
-      transition: color 200ms ease;
-    }
-
-    .footer-action {
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-      font-size: var(--text-sm);
-      font-weight: 500;
-      color: var(--color-text-secondary);
-
-      mat-icon {
-        font-size: 16px;
-        width: 16px;
-        height: 16px;
-        transition: transform 200ms ease;
-      }
-    }
-
-    .competition-card:hover .footer-action mat-icon {
-      transform: translateX(3px);
     }
 
     /* CTA Section */
@@ -664,12 +590,15 @@ import { AuthService } from '../../../core/services/auth.service';
       }
 
       .card-thumbnail {
-        height: 120px;
+        height: 80px;
       }
 
-      .card-meta {
-        flex-direction: column;
-        gap: var(--space-2);
+      .thumbnail-letter {
+        font-size: 28px;
+      }
+
+      .competition-card {
+        min-height: 240px;
       }
     }
   `],
@@ -678,20 +607,16 @@ export class CompetitionListComponent implements OnInit {
   competitions: CompetitionListItem[] = [];
   loading = true;
 
-  // Gradient color pairs for thumbnails
-  private gradients = [
-    ['#667eea', '#764ba2'],
-    ['#f093fb', '#f5576c'],
-    ['#4facfe', '#00f2fe'],
-    ['#43e97b', '#38f9d7'],
-    ['#fa709a', '#fee140'],
-    ['#a8edea', '#fed6e3'],
-    ['#d299c2', '#fef9d7'],
-    ['#89f7fe', '#66a6ff'],
-    ['#cd9cf2', '#f6f3ff'],
-    ['#fddb92', '#d1fdff'],
-    ['#c1dfc4', '#deecdd'],
-    ['#0ba360', '#3cba92'],
+  // Muted, professional color palette for thumbnails
+  private thumbnailColors = [
+    '#64748b', // slate
+    '#6b7280', // gray
+    '#71717a', // zinc
+    '#737373', // neutral
+    '#78716c', // stone
+    '#7c8594', // cool gray
+    '#6d7a8a', // blue gray
+    '#7a7a7a', // true gray
   ];
 
   constructor(
@@ -716,24 +641,14 @@ export class CompetitionListComponent implements OnInit {
     return user !== null && (user.role === 'sponsor' || user.role === 'admin');
   }
 
-  getThumbnailGradient(slug: string): string {
-    // Generate consistent gradient based on slug hash
+  getThumbnailColor(slug: string): string {
     const hash = this.hashString(slug);
-    const gradientPair = this.gradients[hash % this.gradients.length];
-    return `linear-gradient(135deg, ${gradientPair[0]} 0%, ${gradientPair[1]} 100%)`;
+    return this.thumbnailColors[hash % this.thumbnailColors.length];
   }
 
-  getCategoryIcon(difficulty: string): string {
-    switch (difficulty) {
-      case 'beginner':
-        return 'school';
-      case 'intermediate':
-        return 'psychology';
-      case 'advanced':
-        return 'rocket_launch';
-      default:
-        return 'emoji_events';
-    }
+  getStatusLabel(status: string): string {
+    // Sentence case for status badges
+    return status.charAt(0).toUpperCase() + status.slice(1);
   }
 
   getTimeRemaining(endDate: string): string {
