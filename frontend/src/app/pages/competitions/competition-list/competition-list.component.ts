@@ -133,9 +133,9 @@ import { AuthService } from '../../../core/services/auth.service';
     }
 
     .section-title {
-      font-family: var(--font-display);
-      font-size: var(--text-xl);
-      font-weight: 600;
+      font-family: var(--font-body);
+      font-size: 20px;
+      font-weight: 500;
       color: var(--color-text-primary);
       margin: 0;
     }
@@ -174,9 +174,9 @@ import { AuthService } from '../../../core/services/auth.service';
     }
 
     .empty-title {
-      font-family: var(--font-display);
-      font-size: var(--text-xl);
-      font-weight: 600;
+      font-family: var(--font-body);
+      font-size: 20px;
+      font-weight: 500;
       color: var(--color-text-primary);
       margin: 0 0 var(--space-2);
     }
