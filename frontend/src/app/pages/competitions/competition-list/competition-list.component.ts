@@ -22,38 +22,13 @@ import { AuthService } from '../../../core/services/auth.service';
   ],
   template: `
     <div class="competitions-page">
-      <!-- Hero Section -->
-      <section class="hero">
-        <div class="hero-content">
-          <h1 class="hero-title">Competitions</h1>
-          <p class="hero-description">
-            Sharpen your data science skills by tackling real-world challenges.
-            Compete, learn, and climb the leaderboard.
-          </p>
-          <div class="hero-benefits">
-            <div class="benefit">
-              <mat-icon>school</mat-icon>
-              <span>Learn by doing</span>
-            </div>
-            <div class="benefit">
-              <mat-icon>trending_up</mat-icon>
-              <span>Track your progress</span>
-            </div>
-            <div class="benefit">
-              <mat-icon>groups</mat-icon>
-              <span>Join the community</span>
-            </div>
-          </div>
-        </div>
-        @if (canHostCompetition()) {
-          <div class="hero-action">
-            <a routerLink="/competitions/create" class="btn-host">
-              <mat-icon>add_circle</mat-icon>
-              Host a Competition
-            </a>
-          </div>
-        }
-      </section>
+      <!-- Page Header -->
+      <header class="page-header">
+        <h1 class="page-title">Competitions</h1>
+        <p class="page-description">
+          Tackle real-world data science challenges and climb the leaderboard.
+        </p>
+      </header>
 
       <!-- Competitions Grid -->
       @if (loading) {
@@ -66,13 +41,8 @@ import { AuthService } from '../../../core/services/auth.service';
           <mat-icon class="empty-icon">emoji_events</mat-icon>
           <h3 class="empty-title">No competitions yet</h3>
           <p class="empty-description">
-            Check back soon for new data science challenges.
+            Competitions will appear here once published.
           </p>
-          @if (canHostCompetition()) {
-            <a routerLink="/competitions/create" class="btn btn-primary">
-              Create the first competition
-            </a>
-          }
         </div>
       } @else {
         <section class="competitions-section">
@@ -109,21 +79,12 @@ import { AuthService } from '../../../core/services/auth.service';
         </section>
       }
 
-      <!-- Call to Action -->
-      @if (!loading && competitions.length > 0) {
-        <section class="cta-section">
-          <div class="cta-content">
-            <h3 class="cta-title">Ready to test your skills?</h3>
-            <p class="cta-description">
-              Join a competition today and see how you stack up against other data scientists.
-            </p>
-          </div>
-          @if (!auth.isAuthenticated()) {
-            <a routerLink="/register" class="btn btn-primary btn-lg">
-              Create Free Account
-            </a>
-          }
-        </section>
+      <!-- Footer prompt for hosts -->
+      @if (canHostCompetition() && !loading && competitions.length > 0) {
+        <footer class="page-footer">
+          <span class="footer-text">Want to run your own challenge?</span>
+          <a routerLink="/competitions/create" class="footer-link">Host a competition</a>
+        </footer>
       }
     </div>
   `,
@@ -138,111 +99,25 @@ import { AuthService } from '../../../core/services/auth.service';
       padding: var(--space-8) var(--space-6);
     }
 
-    /* Hero Section */
-    .hero {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: var(--space-6);
-      padding: var(--space-8);
-      margin-bottom: var(--space-8);
-      background: linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-muted) 100%);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-      position: relative;
-      overflow: hidden;
-
-      &::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -10%;
-        width: 400px;
-        height: 400px;
-        background: radial-gradient(circle, var(--color-accent-light) 0%, transparent 70%);
-        opacity: 0.5;
-        pointer-events: none;
-      }
+    /* Page Header */
+    .page-header {
+      margin-bottom: var(--space-6);
     }
 
-    .hero-content {
-      position: relative;
-      z-index: 1;
-      flex: 1;
-    }
-
-    .hero-title {
-      font-family: var(--font-display);
-      font-size: var(--text-4xl);
-      font-weight: 700;
-      color: var(--color-text-primary);
-      margin: 0 0 var(--space-3);
-      letter-spacing: -0.02em;
-    }
-
-    .hero-description {
-      font-size: var(--text-lg);
-      color: var(--color-text-secondary);
-      line-height: var(--leading-relaxed);
-      margin: 0 0 var(--space-6);
-      max-width: 560px;
-    }
-
-    .hero-benefits {
-      display: flex;
-      gap: var(--space-6);
-    }
-
-    .benefit {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: var(--text-sm);
-      font-weight: 500;
-      color: var(--color-text-secondary);
-
-      mat-icon {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
-        color: var(--color-accent);
-      }
-    }
-
-    .hero-action {
-      position: relative;
-      z-index: 1;
-      flex-shrink: 0;
-    }
-
-    .btn-host {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-2);
-      padding: var(--space-3) var(--space-5);
+    .page-title {
       font-family: var(--font-body);
-      font-size: var(--text-base);
+      font-size: 32px;
       font-weight: 600;
-      color: white;
-      background-color: var(--color-accent);
-      border: none;
-      border-radius: var(--radius-md);
-      text-decoration: none;
-      cursor: pointer;
-      transition: all 150ms ease;
-      box-shadow: var(--shadow-md);
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-2);
+      letter-spacing: -0.01em;
+    }
 
-      mat-icon {
-        font-size: 20px;
-        width: 20px;
-        height: 20px;
-      }
-
-      &:hover {
-        background-color: var(--color-accent-hover);
-        transform: translateY(-1px);
-        box-shadow: var(--shadow-lg);
-      }
+    .page-description {
+      font-size: 15px;
+      color: var(--color-text-secondary);
+      margin: 0;
+      max-width: 480px;
     }
 
     /* Section Header */
@@ -465,113 +340,46 @@ import { AuthService } from '../../../core/services/auth.service';
       }
     }
 
-    /* CTA Section */
-    .cta-section {
+    /* Page Footer */
+    .page-footer {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-6);
-      padding: var(--space-8);
-      background-color: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl);
-    }
-
-    .cta-content {
-      flex: 1;
-    }
-
-    .cta-title {
-      font-family: var(--font-display);
-      font-size: var(--text-xl);
-      font-weight: 600;
-      color: var(--color-text-primary);
-      margin: 0 0 var(--space-2);
-    }
-
-    .cta-description {
-      font-size: var(--text-sm);
-      color: var(--color-text-secondary);
-      margin: 0;
-    }
-
-    /* Buttons */
-    .btn {
-      display: inline-flex;
       align-items: center;
       justify-content: center;
-      padding: var(--space-2) var(--space-4);
-      font-family: var(--font-body);
-      font-size: var(--text-sm);
-      font-weight: 500;
-      text-decoration: none;
-      border: none;
-      border-radius: var(--radius-md);
-      cursor: pointer;
-      transition: all 150ms ease;
+      gap: var(--space-2);
+      padding: var(--space-6) 0;
+      margin-top: var(--space-4);
+      border-top: 1px solid var(--color-border);
     }
 
-    .btn-primary {
-      background-color: var(--color-accent);
-      color: white;
+    .footer-text {
+      font-size: 14px;
+      color: var(--color-text-muted);
+    }
+
+    .footer-link {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-accent);
+      text-decoration: none;
 
       &:hover {
-        background-color: var(--color-accent-hover);
+        text-decoration: underline;
       }
-    }
-
-    .btn-lg {
-      padding: var(--space-3) var(--space-6);
-      font-size: var(--text-base);
     }
 
     /* Responsive */
-    @media (max-width: 900px) {
-      .hero {
-        flex-direction: column;
-        gap: var(--space-5);
-      }
-
-      .hero-action {
-        width: 100%;
-      }
-
-      .btn-host {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-
     @media (max-width: 768px) {
       .competitions-page {
         padding: var(--space-6) var(--space-4);
       }
 
-      .hero {
-        padding: var(--space-6);
-      }
-
-      .hero-title {
-        font-size: var(--text-3xl);
-      }
-
-      .hero-description {
-        font-size: var(--text-base);
-      }
-
-      .hero-benefits {
-        flex-direction: column;
-        gap: var(--space-3);
+      .page-title {
+        font-size: 26px;
       }
 
       .competition-grid {
         grid-template-columns: 1fr;
         gap: var(--space-4);
-      }
-
-      .cta-section {
-        flex-direction: column;
-        text-align: center;
       }
     }
 
@@ -580,13 +388,8 @@ import { AuthService } from '../../../core/services/auth.service';
         padding: var(--space-4);
       }
 
-      .hero {
-        padding: var(--space-5);
-        margin-bottom: var(--space-6);
-      }
-
-      .hero-title {
-        font-size: var(--text-2xl);
+      .page-header {
+        margin-bottom: var(--space-5);
       }
 
       .card-thumbnail {
@@ -599,6 +402,11 @@ import { AuthService } from '../../../core/services/auth.service';
 
       .competition-card {
         min-height: 240px;
+      }
+
+      .page-footer {
+        flex-direction: column;
+        gap: var(--space-1);
       }
     }
   `],
