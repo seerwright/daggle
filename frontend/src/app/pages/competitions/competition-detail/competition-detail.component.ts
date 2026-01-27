@@ -1,8 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -12,10 +10,11 @@ import { CompetitionService } from '../../../core/services/competition.service';
 import { EnrollmentService } from '../../../core/services/enrollment.service';
 import { Competition } from '../../../core/models/competition.model';
 import { AuthService } from '../../../core/services/auth.service';
-import { LeaderboardComponent } from '../leaderboard/leaderboard.component';
-import { SubmitComponent } from '../submit/submit.component';
-import { DiscussionsComponent } from '../discussions/discussions.component';
 import { CompetitionHeaderComponent } from './competition-header/competition-header.component';
+import { OverviewTabComponent } from './tabs/overview-tab/overview-tab.component';
+import { LeaderboardTabComponent } from './tabs/leaderboard-tab/leaderboard-tab.component';
+import { SubmitTabComponent } from './tabs/submit-tab/submit-tab.component';
+import { DiscussionTabComponent } from './tabs/discussion-tab/discussion-tab.component';
 
 @Component({
   selector: 'app-competition-detail',
@@ -23,17 +22,16 @@ import { CompetitionHeaderComponent } from './competition-header/competition-hea
   imports: [
     CommonModule,
     RouterLink,
-    MatCardModule,
-    MatChipsModule,
     MatButtonModule,
     MatIconModule,
     MatTabsModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    LeaderboardComponent,
-    SubmitComponent,
-    DiscussionsComponent,
     CompetitionHeaderComponent,
+    OverviewTabComponent,
+    LeaderboardTabComponent,
+    SubmitTabComponent,
+    DiscussionTabComponent,
   ],
   template: `
     @if (loading) {
@@ -67,44 +65,23 @@ import { CompetitionHeaderComponent } from './competition-header/competition-hea
         <div class="competition-tabs">
           <mat-tab-group>
             <mat-tab label="Overview">
-              <div class="tab-content">
-                <div class="competition-overview">
-                  <section class="overview-section">
-                    <h2 class="section-title">Description</h2>
-                    <div class="section-content">
-                      <p class="description-text">{{ competition.description }}</p>
-                    </div>
-                  </section>
-                </div>
-              </div>
+              <app-overview-tab [competition]="competition"></app-overview-tab>
             </mat-tab>
 
             <mat-tab label="Leaderboard">
-              <div class="tab-content">
-                <app-leaderboard [slug]="slug"></app-leaderboard>
-              </div>
+              <app-leaderboard-tab [slug]="slug"></app-leaderboard-tab>
             </mat-tab>
 
             <mat-tab label="Submit" [disabled]="!isEnrolled">
-              <div class="tab-content">
-                @if (isEnrolled) {
-                  <app-submit [slug]="slug" [competition]="competition!"></app-submit>
-                } @else {
-                  <div class="competition-empty">
-                    <mat-icon class="empty-icon">upload_file</mat-icon>
-                    <h3 class="empty-title">Join to submit</h3>
-                    <p class="empty-description">
-                      You must join this competition before submitting predictions.
-                    </p>
-                  </div>
-                }
-              </div>
+              <app-submit-tab
+                [slug]="slug"
+                [competition]="competition"
+                [isEnrolled]="isEnrolled"
+              ></app-submit-tab>
             </mat-tab>
 
             <mat-tab label="Discussions">
-              <div class="tab-content">
-                <app-discussions [slug]="slug" [canPost]="isEnrolled"></app-discussions>
-              </div>
+              <app-discussion-tab [slug]="slug" [canPost]="isEnrolled"></app-discussion-tab>
             </mat-tab>
           </mat-tab-group>
         </div>
@@ -161,29 +138,6 @@ import { CompetitionHeaderComponent } from './competition-header/competition-hea
       margin: 0 0 var(--space-6);
     }
 
-    .tab-content {
-      padding: var(--space-6) 0;
-    }
-
-    .overview-section {
-      margin-bottom: var(--space-8);
-    }
-
-    .section-title {
-      font-family: var(--font-display);
-      font-size: var(--text-xl);
-      font-weight: 600;
-      color: var(--color-text-primary);
-      margin: 0 0 var(--space-4);
-    }
-
-    .description-text {
-      white-space: pre-wrap;
-      color: var(--color-text-secondary);
-      line-height: var(--leading-relaxed);
-      margin: 0;
-    }
-
     .btn {
       display: inline-flex;
       align-items: center;
@@ -223,10 +177,6 @@ import { CompetitionHeaderComponent } from './competition-header/competition-hea
     @media (max-width: 480px) {
       .competition-detail {
         padding: var(--space-4);
-      }
-
-      .tab-content {
-        padding: var(--space-4) 0;
       }
     }
   `],
