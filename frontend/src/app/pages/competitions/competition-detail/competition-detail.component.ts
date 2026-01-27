@@ -15,6 +15,7 @@ import { AuthService } from '../../../core/services/auth.service';
 import { LeaderboardComponent } from '../leaderboard/leaderboard.component';
 import { SubmitComponent } from '../submit/submit.component';
 import { DiscussionsComponent } from '../discussions/discussions.component';
+import { CompetitionHeaderComponent } from './competition-header/competition-header.component';
 
 @Component({
   selector: 'app-competition-detail',
@@ -32,6 +33,7 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
     LeaderboardComponent,
     SubmitComponent,
     DiscussionsComponent,
+    CompetitionHeaderComponent,
   ],
   template: `
     @if (loading) {
@@ -50,61 +52,17 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
       </div>
     } @else {
       <div class="competition-detail">
-        <header class="competition-header">
-          <div class="header-content">
-            <h1 class="competition-title">{{ competition.title }}</h1>
-            <div class="competition-meta">
-              <span class="status-badge" [class]="'status-' + competition.status">
-                {{ competition.status }}
-              </span>
-              <span class="difficulty-badge" [class]="'difficulty-' + competition.difficulty">
-                {{ competition.difficulty }}
-              </span>
-              <span class="competition-meta-item">
-                <mat-icon>calendar_today</mat-icon>
-                {{ competition.start_date | date:'mediumDate' }} - {{ competition.end_date | date:'mediumDate' }}
-              </span>
-            </div>
-            <div class="competition-actions">
-              @if (canManageCompetition()) {
-                <a class="btn btn-secondary" [routerLink]="['/competitions', slug, 'edit']">
-                  Edit Competition
-                </a>
-              }
-              @if (canManageCompetition() && competition.status === 'draft') {
-                <button class="btn btn-primary" (click)="activate()" [disabled]="activating">
-                  {{ activating ? 'Activating...' : 'Activate Competition' }}
-                </button>
-              }
-              @if (auth.isAuthenticated()) {
-                @if (isEnrolled) {
-                  <button class="btn btn-danger-outline" (click)="leave()" [disabled]="enrolling">
-                    Leave Competition
-                  </button>
-                } @else if (competition.status === 'active') {
-                  <button class="btn btn-primary" (click)="join()" [disabled]="enrolling">
-                    {{ enrolling ? 'Joining...' : 'Join Competition' }}
-                  </button>
-                }
-              }
-            </div>
-          </div>
-        </header>
-
-        <div class="competition-stats">
-          <div class="competition-stat">
-            <span class="stat-value">{{ competition.evaluation_metric }}</span>
-            <span class="stat-label">Metric</span>
-          </div>
-          <div class="competition-stat">
-            <span class="stat-value">{{ competition.max_team_size }}</span>
-            <span class="stat-label">Max Team</span>
-          </div>
-          <div class="competition-stat">
-            <span class="stat-value">{{ competition.daily_submission_limit }}</span>
-            <span class="stat-label">Daily Limit</span>
-          </div>
-        </div>
+        <app-competition-header
+          [competition]="competition"
+          [isEnrolled]="isEnrolled"
+          [enrolling]="enrolling"
+          [activating]="activating"
+          [canManage]="canManageCompetition()"
+          [isAuthenticated]="auth.isAuthenticated()"
+          (joinClick)="join()"
+          (leaveClick)="leave()"
+          (activateClick)="activate()"
+        ></app-competition-header>
 
         <div class="competition-tabs">
           <mat-tab-group>
@@ -203,135 +161,6 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
       margin: 0 0 var(--space-6);
     }
 
-    .competition-header {
-      margin-bottom: var(--space-6);
-    }
-
-    .competition-title {
-      font-family: var(--font-display);
-      font-size: var(--text-3xl);
-      font-weight: 700;
-      color: var(--color-text-primary);
-      margin: 0 0 var(--space-3);
-      letter-spacing: -0.01em;
-    }
-
-    .competition-meta {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: var(--space-3);
-      margin-bottom: var(--space-4);
-    }
-
-    .status-badge,
-    .difficulty-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: var(--space-1) var(--space-2);
-      font-size: var(--text-xs);
-      font-weight: 500;
-      border-radius: var(--radius-sm);
-      text-transform: capitalize;
-    }
-
-    .status-active {
-      background-color: var(--color-success-light);
-      color: var(--color-success);
-    }
-
-    .status-draft {
-      background-color: var(--color-surface-muted);
-      color: var(--color-text-muted);
-    }
-
-    .status-evaluation {
-      background-color: var(--color-warning-light);
-      color: var(--color-warning);
-    }
-
-    .status-completed {
-      background-color: var(--color-accent-light);
-      color: var(--color-accent);
-    }
-
-    .status-archived {
-      background-color: var(--color-surface-muted);
-      color: var(--color-text-muted);
-    }
-
-    .difficulty-beginner {
-      background-color: var(--color-success-light);
-      color: var(--color-success);
-    }
-
-    .difficulty-intermediate {
-      background-color: var(--color-warning-light);
-      color: var(--color-warning);
-    }
-
-    .difficulty-advanced {
-      background-color: var(--color-error-light);
-      color: var(--color-error);
-    }
-
-    .competition-meta-item {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: var(--text-sm);
-      color: var(--color-text-secondary);
-
-      mat-icon {
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-        color: var(--color-text-muted);
-      }
-    }
-
-    .competition-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-3);
-    }
-
-    .competition-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--space-4);
-      padding: var(--space-5);
-      background-color: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      margin-bottom: var(--space-6);
-    }
-
-    .competition-stat {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-
-      .stat-value {
-        font-family: var(--font-display);
-        font-size: var(--text-xl);
-        font-weight: 700;
-        color: var(--color-text-primary);
-        line-height: 1;
-        text-transform: uppercase;
-      }
-
-      .stat-label {
-        display: block;
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        margin-top: var(--space-1);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-    }
-
     .tab-content {
       padding: var(--space-6) 0;
     }
@@ -384,51 +213,10 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
       }
     }
 
-    .btn-secondary {
-      background-color: transparent;
-      color: var(--color-text-primary);
-      border-color: var(--color-border-strong);
-
-      &:hover:not(:disabled) {
-        background-color: var(--color-surface-muted);
-      }
-    }
-
-    .btn-danger-outline {
-      background-color: transparent;
-      color: var(--color-error);
-      border-color: var(--color-error);
-
-      &:hover:not(:disabled) {
-        background-color: var(--color-error-light);
-      }
-    }
-
     /* Responsive */
     @media (max-width: 768px) {
       .competition-detail {
         padding: var(--space-6) var(--space-4);
-      }
-
-      .competition-title {
-        font-size: var(--text-2xl);
-      }
-
-      .competition-meta {
-        gap: var(--space-2);
-      }
-
-      .competition-meta-item {
-        width: 100%;
-      }
-
-      .competition-actions {
-        width: 100%;
-      }
-
-      .competition-actions .btn {
-        flex: 1;
-        min-width: 0;
       }
     }
 
@@ -437,38 +225,8 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
         padding: var(--space-4);
       }
 
-      .competition-stats {
-        grid-template-columns: 1fr;
-        gap: var(--space-3);
-        padding: var(--space-4);
-      }
-
-      .competition-stat {
-        flex-direction: row;
-        justify-content: space-between;
-        padding: var(--space-2) 0;
-        border-bottom: 1px solid var(--color-border);
-
-        &:last-child {
-          border-bottom: 0;
-        }
-
-        .stat-label {
-          margin-top: 0;
-          order: -1;
-        }
-      }
-
       .tab-content {
         padding: var(--space-4) 0;
-      }
-
-      .competition-actions {
-        flex-direction: column;
-      }
-
-      .competition-actions .btn {
-        width: 100%;
       }
     }
   `],
