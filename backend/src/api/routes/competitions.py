@@ -10,8 +10,10 @@ from src.api.schemas.competition import (
     CompetitionResponse,
     CompetitionUpdate,
 )
+from src.api.schemas.faq import FAQCreate, FAQResponse, FAQUpdate, FAQReorderRequest
 from src.domain.models.user import User, UserRole
 from src.domain.services.competition import CompetitionService
+from src.domain.services.faq import FAQService
 from src.infrastructure.database import get_db
 
 router = APIRouter(prefix="/competitions", tags=["Competitions"])
@@ -232,3 +234,156 @@ async def upload_thumbnail(
         )
 
     return CompetitionResponse.from_orm_with_extras(competition)
+
+
+# ============================================================================
+# FAQ Endpoints
+# ============================================================================
+
+
+@router.get("/{slug}/faqs", response_model=list[FAQResponse])
+async def list_faqs(
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """List all FAQs for a competition."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    faq_service = FAQService(db)
+    return await faq_service.list_by_competition(competition.id)
+
+
+@router.post("/{slug}/faqs", response_model=FAQResponse, status_code=status.HTTP_201_CREATED)
+async def create_faq(
+    slug: str,
+    data: FAQCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new FAQ entry. Only the sponsor or admin can create FAQs."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to manage FAQs for this competition",
+        )
+
+    faq_service = FAQService(db)
+    return await faq_service.create(competition.id, data)
+
+
+@router.patch("/{slug}/faqs/{faq_id}", response_model=FAQResponse)
+async def update_faq(
+    slug: str,
+    faq_id: int,
+    data: FAQUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update a FAQ entry. Only the sponsor or admin can update FAQs."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to manage FAQs for this competition",
+        )
+
+    faq_service = FAQService(db)
+    faq = await faq_service.get_by_id(faq_id)
+
+    if faq is None or faq.competition_id != competition.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="FAQ not found",
+        )
+
+    return await faq_service.update(faq, data)
+
+
+@router.delete("/{slug}/faqs/{faq_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_faq(
+    slug: str,
+    faq_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a FAQ entry. Only the sponsor or admin can delete FAQs."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to manage FAQs for this competition",
+        )
+
+    faq_service = FAQService(db)
+    faq = await faq_service.get_by_id(faq_id)
+
+    if faq is None or faq.competition_id != competition.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="FAQ not found",
+        )
+
+    await faq_service.delete(faq)
+
+
+@router.post("/{slug}/faqs/reorder", response_model=list[FAQResponse])
+async def reorder_faqs(
+    slug: str,
+    data: FAQReorderRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Reorder FAQ entries. Only the sponsor or admin can reorder FAQs."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to manage FAQs for this competition",
+        )
+
+    faq_service = FAQService(db)
+    return await faq_service.reorder(competition.id, data.faq_ids)
