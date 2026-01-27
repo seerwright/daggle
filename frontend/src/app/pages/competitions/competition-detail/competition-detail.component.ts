@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -67,7 +67,7 @@ import { DiscussionTabComponent } from './tabs/discussion-tab/discussion-tab.com
         ></app-competition-header>
 
         <div class="competition-tabs">
-          <mat-tab-group>
+          <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
             <mat-tab label="Overview">
               <app-overview-tab [competition]="competition"></app-overview-tab>
             </mat-tab>
@@ -194,15 +194,19 @@ import { DiscussionTabComponent } from './tabs/discussion-tab/discussion-tab.com
   `],
 })
 export class CompetitionDetailComponent implements OnInit {
+  private readonly TAB_NAMES = ['overview', 'data', 'leaderboard', 'submit', 'rules', 'discussions'];
+
   competition: Competition | null = null;
   loading = true;
   slug = '';
   isEnrolled = false;
   enrolling = false;
   activating = false;
+  selectedTabIndex = 0;
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private competitionService: CompetitionService,
     private enrollmentService: EnrollmentService,
     private snackBar: MatSnackBar,
@@ -211,6 +215,16 @@ export class CompetitionDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.slug = this.route.snapshot.paramMap.get('slug') || '';
+
+    // Handle tab query parameter
+    const tabParam = this.route.snapshot.queryParamMap.get('tab');
+    if (tabParam) {
+      const tabIndex = this.TAB_NAMES.indexOf(tabParam.toLowerCase());
+      if (tabIndex !== -1) {
+        this.selectedTabIndex = tabIndex;
+      }
+    }
+
     if (this.slug) {
       this.competitionService.getBySlug(this.slug).subscribe({
         next: (data) => {
@@ -223,6 +237,17 @@ export class CompetitionDetailComponent implements OnInit {
         },
       });
     }
+  }
+
+  onTabChange(index: number): void {
+    this.selectedTabIndex = index;
+    const tabName = this.TAB_NAMES[index];
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: tabName === 'overview' ? {} : { tab: tabName },
+      queryParamsHandling: tabName === 'overview' ? '' : 'merge',
+      replaceUrl: true,
+    });
   }
 
   checkEnrollment(): void {
