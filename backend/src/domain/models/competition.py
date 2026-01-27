@@ -65,6 +65,7 @@ class Competition(Base, TimestampMixin):
     max_team_size: Mapped[int] = mapped_column(Integer, default=1)
     daily_submission_limit: Mapped[int] = mapped_column(Integer, default=5)
     evaluation_metric: Mapped[str] = mapped_column(String(100))
+    evaluation_description: Mapped[str | None] = mapped_column(Text)
     is_public: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # Data files (paths/references)
