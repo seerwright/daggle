@@ -69,7 +69,7 @@ import { DiscussionTabComponent } from './tabs/discussion-tab/discussion-tab.com
         <div class="competition-tabs">
           <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
             <mat-tab label="Overview">
-              <app-overview-tab [competition]="competition"></app-overview-tab>
+              <app-overview-tab [competition]="competition" [slug]="slug"></app-overview-tab>
             </mat-tab>
 
             <mat-tab label="Data">

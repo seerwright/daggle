@@ -2,11 +2,12 @@ import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { Competition } from '../../../../../core/models/competition.model';
+import { FAQAccordionComponent } from './faq-accordion/faq-accordion.component';
 
 @Component({
   selector: 'app-overview-tab',
   standalone: true,
-  imports: [CommonModule, MatIconModule],
+  imports: [CommonModule, MatIconModule, FAQAccordionComponent],
   template: `
     <div class="overview-tab">
       <!-- Description Section -->
@@ -84,11 +85,11 @@ import { Competition } from '../../../../../core/models/competition.model';
         </div>
       </section>
 
-      <!-- FAQ Section Placeholder - will be populated by FAQ component -->
+      <!-- FAQ Section -->
       <section class="overview-section" id="faq-section">
         <h2 class="section-title">Frequently Asked Questions</h2>
         <div class="section-content">
-          <ng-content select="[faq]"></ng-content>
+          <app-faq-accordion [slug]="slug"></app-faq-accordion>
         </div>
       </section>
     </div>
@@ -310,6 +311,7 @@ import { Competition } from '../../../../../core/models/competition.model';
 })
 export class OverviewTabComponent implements OnInit {
   @Input({ required: true }) competition!: Competition;
+  @Input({ required: true }) slug!: string;
 
   hasStarted = false;
   hasEnded = false;
