@@ -12,8 +12,10 @@ import { Competition } from '../../../core/models/competition.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { CompetitionHeaderComponent } from './competition-header/competition-header.component';
 import { OverviewTabComponent } from './tabs/overview-tab/overview-tab.component';
+import { DataTabComponent } from './tabs/data-tab/data-tab.component';
 import { LeaderboardTabComponent } from './tabs/leaderboard-tab/leaderboard-tab.component';
 import { SubmitTabComponent } from './tabs/submit-tab/submit-tab.component';
+import { RulesTabComponent } from './tabs/rules-tab/rules-tab.component';
 import { DiscussionTabComponent } from './tabs/discussion-tab/discussion-tab.component';
 
 @Component({
@@ -29,8 +31,10 @@ import { DiscussionTabComponent } from './tabs/discussion-tab/discussion-tab.com
     MatSnackBarModule,
     CompetitionHeaderComponent,
     OverviewTabComponent,
+    DataTabComponent,
     LeaderboardTabComponent,
     SubmitTabComponent,
+    RulesTabComponent,
     DiscussionTabComponent,
   ],
   template: `
@@ -68,6 +72,10 @@ import { DiscussionTabComponent } from './tabs/discussion-tab/discussion-tab.com
               <app-overview-tab [competition]="competition"></app-overview-tab>
             </mat-tab>
 
+            <mat-tab label="Data">
+              <app-data-tab [slug]="slug"></app-data-tab>
+            </mat-tab>
+
             <mat-tab label="Leaderboard">
               <app-leaderboard-tab [slug]="slug"></app-leaderboard-tab>
             </mat-tab>
@@ -78,6 +86,10 @@ import { DiscussionTabComponent } from './tabs/discussion-tab/discussion-tab.com
                 [competition]="competition"
                 [isEnrolled]="isEnrolled"
               ></app-submit-tab>
+            </mat-tab>
+
+            <mat-tab label="Rules">
+              <app-rules-tab [slug]="slug"></app-rules-tab>
             </mat-tab>
 
             <mat-tab label="Discussions">
