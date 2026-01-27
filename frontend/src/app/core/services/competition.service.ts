@@ -34,4 +34,8 @@ export class CompetitionService {
   uploadTruthSet(slug: string, file: File): Observable<Competition> {
     return this.api.upload<Competition>(`/competitions/${slug}/truth-set`, file);
   }
+
+  uploadThumbnail(slug: string, file: File): Observable<Competition> {
+    return this.api.upload<Competition>(`/competitions/${slug}/thumbnail`, file);
+  }
 }

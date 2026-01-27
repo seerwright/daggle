@@ -32,7 +32,7 @@ async def create_competition(
 
     service = CompetitionService(db)
     competition = await service.create(data, current_user)
-    return CompetitionResponse.from_orm_with_truth_set(competition)
+    return CompetitionResponse.from_orm_with_extras(competition)
 
 
 @router.get("/", response_model=list[CompetitionListResponse])
@@ -44,7 +44,7 @@ async def list_competitions(
     """List active public competitions."""
     service = CompetitionService(db)
     competitions = await service.list_active(skip=skip, limit=limit)
-    return competitions
+    return [CompetitionListResponse.from_orm_with_thumbnail(c) for c in competitions]
 
 
 @router.get("/mine", response_model=list[CompetitionListResponse])
@@ -57,7 +57,7 @@ async def list_my_competitions(
     """List competitions created by the current user."""
     service = CompetitionService(db)
     competitions = await service.list_by_sponsor(current_user.id, skip=skip, limit=limit)
-    return competitions
+    return [CompetitionListResponse.from_orm_with_thumbnail(c) for c in competitions]
 
 
 @router.get("/{slug}", response_model=CompetitionResponse)
@@ -75,7 +75,7 @@ async def get_competition(
             detail="Competition not found",
         )
 
-    return CompetitionResponse.from_orm_with_truth_set(competition)
+    return CompetitionResponse.from_orm_with_extras(competition)
 
 
 @router.patch("/{slug}", response_model=CompetitionResponse)
@@ -110,7 +110,7 @@ async def update_competition(
         )
 
     competition = await service.update(competition, data)
-    return CompetitionResponse.from_orm_with_truth_set(competition)
+    return CompetitionResponse.from_orm_with_extras(competition)
 
 
 @router.delete("/{slug}", status_code=status.HTTP_204_NO_CONTENT)
@@ -182,4 +182,53 @@ async def upload_truth_set(
             detail=str(e),
         )
 
-    return CompetitionResponse.from_orm_with_truth_set(competition)
+    return CompetitionResponse.from_orm_with_extras(competition)
+
+
+@router.post("/{slug}/thumbnail", response_model=CompetitionResponse)
+async def upload_thumbnail(
+    slug: str,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload a thumbnail image for the competition.
+
+    Only the sponsor or admin can upload a thumbnail.
+    Accepts PNG, JPG, JPEG, and WebP images (max 5MB).
+    """
+    service = CompetitionService(db)
+    competition = await service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to upload a thumbnail for this competition",
+        )
+
+    # Validate file type
+    allowed_extensions = {".png", ".jpg", ".jpeg", ".webp"}
+    if file.filename:
+        ext = "." + file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+        if ext not in allowed_extensions:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"File must be an image ({', '.join(allowed_extensions)})",
+            )
+
+    try:
+        competition = await service.upload_thumbnail(competition, file)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    return CompetitionResponse.from_orm_with_extras(competition)

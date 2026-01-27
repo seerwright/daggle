@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api.routes import admin, auth, competitions, dashboard, discussions, enrollments, health, notifications, profiles, submissions, teams
+from src.api.routes import admin, auth, competitions, dashboard, discussions, enrollments, health, notifications, profiles, submissions, teams, uploads
 from src.config import settings
 from src.infrastructure.database import async_session_factory
 from src.infrastructure.startup import run_startup_tasks
@@ -63,6 +63,7 @@ app.include_router(profiles.router)
 app.include_router(dashboard.router)
 app.include_router(teams.router)
 app.include_router(admin.router)
+app.include_router(uploads.router)
 
 
 @app.get("/")

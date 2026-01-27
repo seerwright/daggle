@@ -54,9 +54,13 @@ import { AuthService } from '../../../core/services/auth.service';
           <div class="competition-grid">
             @for (comp of competitions; track comp.id) {
               <article class="competition-card" [routerLink]="['/competitions', comp.slug]">
-                <div class="card-thumbnail" [style.background-color]="getThumbnailColor(comp.slug)">
-                  <span class="thumbnail-letter">{{ comp.title.charAt(0) }}</span>
-                </div>
+                @if (comp.thumbnail_url) {
+                  <img [src]="comp.thumbnail_url" [alt]="comp.title" class="card-thumbnail-img" />
+                } @else {
+                  <div class="card-thumbnail" [style.background-color]="getThumbnailColor(comp.slug)">
+                    <span class="thumbnail-letter">{{ comp.title.charAt(0) }}</span>
+                  </div>
+                }
                 <div class="card-content">
                   <h3 class="card-title">{{ comp.title }}</h3>
                   <div class="card-badges">
@@ -216,6 +220,13 @@ import { AuthService } from '../../../core/services/auth.service';
         border-color: var(--color-border-strong);
         box-shadow: var(--shadow-md);
       }
+    }
+
+    .card-thumbnail-img {
+      width: 100%;
+      aspect-ratio: 2 / 1;
+      object-fit: cover;
+      flex-shrink: 0;
     }
 
     .card-thumbnail {

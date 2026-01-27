@@ -142,3 +142,40 @@ class CompetitionService:
         # Update competition
         competition.solution_path = solution_path
         return await self.repo.update(competition)
+
+    async def upload_thumbnail(
+        self, competition: Competition, file: UploadFile
+    ) -> Competition:
+        """Upload a thumbnail image for the competition.
+
+        Args:
+            competition: The competition to upload the thumbnail for
+            file: The uploaded image file (PNG, JPG, JPEG, WebP)
+
+        Returns:
+            Updated competition with thumbnail_path set
+
+        Raises:
+            ValueError: If file format is invalid
+        """
+        # Read file content
+        content = await file.read()
+        await file.seek(0)
+
+        # Validate file size (max 5MB)
+        max_size = 5 * 1024 * 1024  # 5MB
+        if len(content) > max_size:
+            raise ValueError("Image file size cannot exceed 5MB")
+
+        # Determine file extension from filename
+        filename = file.filename or "image.png"
+        ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "png"
+
+        # Save file using storage backend
+        storage = get_storage_backend()
+        storage_key = f"thumbnails/{competition.id}/thumbnail.{ext}"
+        thumbnail_path = await storage.save(storage_key, content)
+
+        # Update competition
+        competition.thumbnail_path = thumbnail_path
+        return await self.repo.update(competition)

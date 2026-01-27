@@ -58,6 +58,9 @@ services:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/daggle
       CORS_ORIGINS: '["http://localhost:4200", "http://localhost"]'
       DEBUG: "true"
+      # Admin bootstrap - creates/promotes this user to admin on startup
+      ADMIN_EMAIL: admin@daggle.example.com
+      ADMIN_PASSWORD: password123
       # Async scoring (set to true when using --profile async)
       # ASYNC_SCORING_ENABLED: "true"
       # CELERY_BROKER_URL: redis://redis:6379/0
@@ -75,6 +78,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+      - daggle_uploads:/tmp/daggle/uploads
     command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
 
   # Backend with async scoring enabled
@@ -171,3 +175,4 @@ volumes:
   frontend_node_modules:
   minio_data:
   redis_data:
+  daggle_uploads:

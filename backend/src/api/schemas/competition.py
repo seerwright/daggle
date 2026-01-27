@@ -4,7 +4,24 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from src.config import settings
 from src.domain.models.competition import CompetitionStatus, Difficulty
+
+
+def _path_to_url(path: str | None) -> str | None:
+    """Convert a filesystem path to an API URL.
+
+    Converts paths like '/tmp/daggle/uploads/thumbnails/1/thumbnail.jpg'
+    to '/api/uploads/thumbnails/1/thumbnail.jpg'.
+    """
+    if not path:
+        return None
+    # Remove the upload_dir prefix to get the relative path
+    upload_dir = settings.upload_dir.rstrip("/")
+    if path.startswith(upload_dir):
+        relative_path = path[len(upload_dir):]
+        return f"/api/uploads{relative_path}"
+    return None
 
 
 class CompetitionCreate(BaseModel):
@@ -56,6 +73,7 @@ class CompetitionResponse(BaseModel):
     evaluation_metric: str
     is_public: bool
     has_truth_set: bool = False
+    thumbnail_url: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -63,8 +81,8 @@ class CompetitionResponse(BaseModel):
         from_attributes = True
 
     @classmethod
-    def from_orm_with_truth_set(cls, obj) -> "CompetitionResponse":
-        """Create response with has_truth_set computed from solution_path."""
+    def from_orm_with_extras(cls, obj) -> "CompetitionResponse":
+        """Create response with computed fields."""
         data = {
             "id": obj.id,
             "title": obj.title,
@@ -81,6 +99,7 @@ class CompetitionResponse(BaseModel):
             "evaluation_metric": obj.evaluation_metric,
             "is_public": obj.is_public,
             "has_truth_set": obj.solution_path is not None,
+            "thumbnail_url": _path_to_url(obj.thumbnail_path),
             "created_at": obj.created_at,
             "updated_at": obj.updated_at,
         }
@@ -99,6 +118,23 @@ class CompetitionListResponse(BaseModel):
     end_date: datetime
     difficulty: Difficulty
     is_public: bool
+    thumbnail_url: str | None = None
 
     class Config:
         from_attributes = True
+
+    @classmethod
+    def from_orm_with_thumbnail(cls, obj) -> "CompetitionListResponse":
+        """Create response with thumbnail_url from thumbnail_path."""
+        return cls(
+            id=obj.id,
+            title=obj.title,
+            slug=obj.slug,
+            short_description=obj.short_description,
+            status=obj.status,
+            start_date=obj.start_date,
+            end_date=obj.end_date,
+            difficulty=obj.difficulty,
+            is_public=obj.is_public,
+            thumbnail_url=_path_to_url(obj.thumbnail_path),
+        )

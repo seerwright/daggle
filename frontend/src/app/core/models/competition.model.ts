@@ -17,6 +17,7 @@ export interface Competition {
   evaluation_metric: string;
   is_public: boolean;
   has_truth_set: boolean;
+  thumbnail_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +32,7 @@ export interface CompetitionListItem {
   end_date: string;
   difficulty: Difficulty;
   is_public: boolean;
+  thumbnail_url: string | null;
 }
 
 export interface CompetitionCreate {

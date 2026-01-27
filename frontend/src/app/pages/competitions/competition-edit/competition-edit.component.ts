@@ -269,6 +269,80 @@ import { Competition, CompetitionStatus, Difficulty } from '../../../core/models
             </div>
           </form>
 
+          <!-- Thumbnail Upload Section -->
+          <div class="thumbnail-section">
+            <div class="section-header">
+              <h2 class="section-title">Thumbnail</h2>
+              <p class="section-description">
+                Upload an image to represent your competition (PNG, JPG, or WebP, max 5MB).
+                Recommended aspect ratio: 2:1.
+              </p>
+            </div>
+
+            <div class="thumbnail-preview">
+              @if (thumbnailPreview) {
+                <img [src]="thumbnailPreview" alt="Selected thumbnail preview" class="current-thumbnail" />
+              } @else if (competition?.thumbnail_url) {
+                <img [src]="competition!.thumbnail_url" alt="Competition thumbnail" class="current-thumbnail" />
+              } @else {
+                <div class="no-thumbnail">
+                  <mat-icon>image</mat-icon>
+                  <span>No thumbnail uploaded</span>
+                </div>
+              }
+            </div>
+
+            <div class="upload-area">
+              <input
+                type="file"
+                #thumbnailInput
+                accept=".png,.jpg,.jpeg,.webp"
+                (change)="onThumbnailSelected($event)"
+                hidden
+              />
+              @if (selectedThumbnail) {
+                <div class="selected-file">
+                  <mat-icon class="file-icon">image</mat-icon>
+                  <span class="file-name">{{ selectedThumbnail.name }}</span>
+                  <button type="button" class="file-remove" (click)="clearThumbnail()">
+                    <mat-icon>close</mat-icon>
+                  </button>
+                </div>
+              }
+              <div class="upload-actions">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  (click)="thumbnailInput.click()"
+                  [disabled]="uploadingThumbnail"
+                >
+                  <mat-icon>upload_file</mat-icon>
+                  {{ selectedThumbnail ? 'Change File' : 'Select Image' }}
+                </button>
+                @if (selectedThumbnail) {
+                  <button
+                    type="button"
+                    class="btn btn-primary"
+                    (click)="uploadThumbnail()"
+                    [disabled]="uploadingThumbnail"
+                  >
+                    @if (uploadingThumbnail) {
+                      <span class="btn-loading-text">Uploading...</span>
+                    } @else {
+                      Upload Thumbnail
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (thumbnailError) {
+              <div class="alert alert-error">
+                {{ thumbnailError }}
+              </div>
+            }
+          </div>
+
           <!-- Truth Set Upload Section -->
           <div class="truth-set-section">
             <div class="section-header">
@@ -605,6 +679,48 @@ import { Competition, CompetitionStatus, Difficulty } from '../../../core/models
       opacity: 0.8;
     }
 
+    /* Thumbnail Section */
+    .thumbnail-section {
+      margin-top: var(--space-8);
+      padding-top: var(--space-8);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .thumbnail-preview {
+      margin-bottom: var(--space-5);
+    }
+
+    .current-thumbnail {
+      width: 100%;
+      max-width: 400px;
+      aspect-ratio: 2 / 1;
+      object-fit: cover;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border);
+    }
+
+    .no-thumbnail {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      width: 100%;
+      max-width: 400px;
+      aspect-ratio: 2 / 1;
+      background-color: var(--color-surface-muted);
+      border: 1px dashed var(--color-border-strong);
+      border-radius: var(--radius-lg);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+
+      mat-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+      }
+    }
+
     /* Truth Set Section */
     .truth-set-section {
       margin-top: var(--space-8);
@@ -761,6 +877,12 @@ export class CompetitionEditComponent implements OnInit {
   error = '';
   slug = '';
 
+  // Thumbnail upload
+  selectedThumbnail: File | null = null;
+  thumbnailPreview: string | null = null;
+  uploadingThumbnail = false;
+  thumbnailError = '';
+
   // Truth set upload
   selectedFile: File | null = null;
   uploading = false;
@@ -808,36 +930,66 @@ export class CompetitionEditComponent implements OnInit {
       next: (competition) => {
         this.competition = competition;
 
-        // Check permissions
-        const user = this.authService.currentUser();
-        if (!user || (user.id !== competition.sponsor_id && user.role !== 'admin')) {
-          this.loadError = 'You do not have permission to edit this competition';
-          this.loadingCompetition = false;
-          return;
-        }
-
-        // Populate form with existing values
-        this.form.patchValue({
-          title: competition.title,
-          short_description: competition.short_description,
-          description: competition.description,
-          status: competition.status,
-          difficulty: competition.difficulty,
-          evaluation_metric: competition.evaluation_metric,
-          start_date: new Date(competition.start_date),
-          end_date: new Date(competition.end_date),
-          max_team_size: competition.max_team_size,
-          daily_submission_limit: competition.daily_submission_limit,
-          is_public: competition.is_public,
-        });
-
-        this.loadingCompetition = false;
+        // Check permissions - wait for user to be loaded if not yet available
+        this.checkPermissionsAndLoadForm(competition);
       },
       error: (err) => {
         this.loadError = err.error?.detail || 'Failed to load competition';
         this.loadingCompetition = false;
       },
     });
+  }
+
+  private checkPermissionsAndLoadForm(competition: Competition): void {
+    const user = this.authService.currentUser();
+
+    // If user is not yet loaded, wait a bit and retry (up to 10 times, 100ms each)
+    if (!user) {
+      const maxRetries = 10;
+      let retries = 0;
+
+      const checkUser = setInterval(() => {
+        const currentUser = this.authService.currentUser();
+        retries++;
+
+        if (currentUser) {
+          clearInterval(checkUser);
+          this.validateAndPopulateForm(competition, currentUser);
+        } else if (retries >= maxRetries) {
+          clearInterval(checkUser);
+          this.loadError = 'You must be logged in to edit this competition';
+          this.loadingCompetition = false;
+        }
+      }, 100);
+    } else {
+      this.validateAndPopulateForm(competition, user);
+    }
+  }
+
+  private validateAndPopulateForm(competition: Competition, user: { id: number; role: string }): void {
+    // Check if user has permission to edit
+    if (user.id !== competition.sponsor_id && user.role !== 'admin') {
+      this.loadError = 'You do not have permission to edit this competition';
+      this.loadingCompetition = false;
+      return;
+    }
+
+    // Populate form with existing values
+    this.form.patchValue({
+      title: competition.title,
+      short_description: competition.short_description,
+      description: competition.description,
+      status: competition.status,
+      difficulty: competition.difficulty,
+      evaluation_metric: competition.evaluation_metric,
+      start_date: new Date(competition.start_date),
+      end_date: new Date(competition.end_date),
+      max_team_size: competition.max_team_size,
+      daily_submission_limit: competition.daily_submission_limit,
+      is_public: competition.is_public,
+    });
+
+    this.loadingCompetition = false;
   }
 
   dateValidator(control: AbstractControl): ValidationErrors | null {
@@ -875,6 +1027,47 @@ export class CompetitionEditComponent implements OnInit {
       error: (err) => {
         this.saving = false;
         this.error = err.error?.detail || 'Failed to update competition';
+      },
+    });
+  }
+
+  onThumbnailSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedThumbnail = input.files[0];
+      this.thumbnailError = '';
+      // Create local preview
+      this.thumbnailPreview = URL.createObjectURL(this.selectedThumbnail);
+    }
+  }
+
+  clearThumbnail(): void {
+    if (this.thumbnailPreview) {
+      URL.revokeObjectURL(this.thumbnailPreview);
+      this.thumbnailPreview = null;
+    }
+    this.selectedThumbnail = null;
+    this.thumbnailError = '';
+  }
+
+  uploadThumbnail(): void {
+    if (!this.selectedThumbnail) return;
+
+    this.uploadingThumbnail = true;
+    this.thumbnailError = '';
+
+    this.competitionService.uploadThumbnail(this.slug, this.selectedThumbnail).subscribe({
+      next: (competition) => {
+        this.competition = competition;
+        this.uploadingThumbnail = false;
+        this.clearThumbnail();
+        this.snackBar.open('Thumbnail uploaded successfully!', 'Close', {
+          duration: 3000,
+        });
+      },
+      error: (err) => {
+        this.uploadingThumbnail = false;
+        this.thumbnailError = err.error?.detail || 'Failed to upload thumbnail';
       },
     });
   }
