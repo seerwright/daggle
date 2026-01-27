@@ -1,8 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatChipsModule } from '@angular/material/chips';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -12,9 +10,13 @@ import { CompetitionService } from '../../../core/services/competition.service';
 import { EnrollmentService } from '../../../core/services/enrollment.service';
 import { Competition } from '../../../core/models/competition.model';
 import { AuthService } from '../../../core/services/auth.service';
-import { LeaderboardComponent } from '../leaderboard/leaderboard.component';
-import { SubmitComponent } from '../submit/submit.component';
-import { DiscussionsComponent } from '../discussions/discussions.component';
+import { CompetitionHeaderComponent } from './competition-header/competition-header.component';
+import { OverviewTabComponent } from './tabs/overview-tab/overview-tab.component';
+import { DataTabComponent } from './tabs/data-tab/data-tab.component';
+import { LeaderboardTabComponent } from './tabs/leaderboard-tab/leaderboard-tab.component';
+import { SubmitTabComponent } from './tabs/submit-tab/submit-tab.component';
+import { RulesTabComponent } from './tabs/rules-tab/rules-tab.component';
+import { DiscussionTabComponent } from './tabs/discussion-tab/discussion-tab.component';
 
 @Component({
   selector: 'app-competition-detail',
@@ -22,16 +24,18 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
   imports: [
     CommonModule,
     RouterLink,
-    MatCardModule,
-    MatChipsModule,
     MatButtonModule,
     MatIconModule,
     MatTabsModule,
     MatProgressSpinnerModule,
     MatSnackBarModule,
-    LeaderboardComponent,
-    SubmitComponent,
-    DiscussionsComponent,
+    CompetitionHeaderComponent,
+    OverviewTabComponent,
+    DataTabComponent,
+    LeaderboardTabComponent,
+    SubmitTabComponent,
+    RulesTabComponent,
+    DiscussionTabComponent,
   ],
   template: `
     @if (loading) {
@@ -50,103 +54,46 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
       </div>
     } @else {
       <div class="competition-detail">
-        <header class="competition-header">
-          <div class="header-content">
-            <h1 class="competition-title">{{ competition.title }}</h1>
-            <div class="competition-meta">
-              <span class="status-badge" [class]="'status-' + competition.status">
-                {{ competition.status }}
-              </span>
-              <span class="difficulty-badge" [class]="'difficulty-' + competition.difficulty">
-                {{ competition.difficulty }}
-              </span>
-              <span class="competition-meta-item">
-                <mat-icon>calendar_today</mat-icon>
-                {{ competition.start_date | date:'mediumDate' }} - {{ competition.end_date | date:'mediumDate' }}
-              </span>
-            </div>
-            <div class="competition-actions">
-              @if (canManageCompetition()) {
-                <a class="btn btn-secondary" [routerLink]="['/competitions', slug, 'edit']">
-                  Edit Competition
-                </a>
-              }
-              @if (canManageCompetition() && competition.status === 'draft') {
-                <button class="btn btn-primary" (click)="activate()" [disabled]="activating">
-                  {{ activating ? 'Activating...' : 'Activate Competition' }}
-                </button>
-              }
-              @if (auth.isAuthenticated()) {
-                @if (isEnrolled) {
-                  <button class="btn btn-danger-outline" (click)="leave()" [disabled]="enrolling">
-                    Leave Competition
-                  </button>
-                } @else if (competition.status === 'active') {
-                  <button class="btn btn-primary" (click)="join()" [disabled]="enrolling">
-                    {{ enrolling ? 'Joining...' : 'Join Competition' }}
-                  </button>
-                }
-              }
-            </div>
-          </div>
-        </header>
-
-        <div class="competition-stats">
-          <div class="competition-stat">
-            <span class="stat-value">{{ competition.evaluation_metric }}</span>
-            <span class="stat-label">Metric</span>
-          </div>
-          <div class="competition-stat">
-            <span class="stat-value">{{ competition.max_team_size }}</span>
-            <span class="stat-label">Max Team</span>
-          </div>
-          <div class="competition-stat">
-            <span class="stat-value">{{ competition.daily_submission_limit }}</span>
-            <span class="stat-label">Daily Limit</span>
-          </div>
-        </div>
+        <app-competition-header
+          [competition]="competition"
+          [isEnrolled]="isEnrolled"
+          [enrolling]="enrolling"
+          [activating]="activating"
+          [canManage]="canManageCompetition()"
+          [isAuthenticated]="auth.isAuthenticated()"
+          (joinClick)="join()"
+          (leaveClick)="leave()"
+          (activateClick)="activate()"
+        ></app-competition-header>
 
         <div class="competition-tabs">
-          <mat-tab-group>
+          <mat-tab-group [selectedIndex]="selectedTabIndex" (selectedIndexChange)="onTabChange($event)">
             <mat-tab label="Overview">
-              <div class="tab-content">
-                <div class="competition-overview">
-                  <section class="overview-section">
-                    <h2 class="section-title">Description</h2>
-                    <div class="section-content">
-                      <p class="description-text">{{ competition.description }}</p>
-                    </div>
-                  </section>
-                </div>
-              </div>
+              <app-overview-tab [competition]="competition"></app-overview-tab>
+            </mat-tab>
+
+            <mat-tab label="Data">
+              <app-data-tab [slug]="slug"></app-data-tab>
             </mat-tab>
 
             <mat-tab label="Leaderboard">
-              <div class="tab-content">
-                <app-leaderboard [slug]="slug"></app-leaderboard>
-              </div>
+              <app-leaderboard-tab [slug]="slug"></app-leaderboard-tab>
             </mat-tab>
 
             <mat-tab label="Submit" [disabled]="!isEnrolled">
-              <div class="tab-content">
-                @if (isEnrolled) {
-                  <app-submit [slug]="slug" [competition]="competition!"></app-submit>
-                } @else {
-                  <div class="competition-empty">
-                    <mat-icon class="empty-icon">upload_file</mat-icon>
-                    <h3 class="empty-title">Join to submit</h3>
-                    <p class="empty-description">
-                      You must join this competition before submitting predictions.
-                    </p>
-                  </div>
-                }
-              </div>
+              <app-submit-tab
+                [slug]="slug"
+                [competition]="competition"
+                [isEnrolled]="isEnrolled"
+              ></app-submit-tab>
+            </mat-tab>
+
+            <mat-tab label="Rules">
+              <app-rules-tab [slug]="slug"></app-rules-tab>
             </mat-tab>
 
             <mat-tab label="Discussions">
-              <div class="tab-content">
-                <app-discussions [slug]="slug" [canPost]="isEnrolled"></app-discussions>
-              </div>
+              <app-discussion-tab [slug]="slug" [canPost]="isEnrolled"></app-discussion-tab>
             </mat-tab>
           </mat-tab-group>
         </div>
@@ -203,158 +150,6 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
       margin: 0 0 var(--space-6);
     }
 
-    .competition-header {
-      margin-bottom: var(--space-6);
-    }
-
-    .competition-title {
-      font-family: var(--font-display);
-      font-size: var(--text-3xl);
-      font-weight: 700;
-      color: var(--color-text-primary);
-      margin: 0 0 var(--space-3);
-      letter-spacing: -0.01em;
-    }
-
-    .competition-meta {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: var(--space-3);
-      margin-bottom: var(--space-4);
-    }
-
-    .status-badge,
-    .difficulty-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: var(--space-1) var(--space-2);
-      font-size: var(--text-xs);
-      font-weight: 500;
-      border-radius: var(--radius-sm);
-      text-transform: capitalize;
-    }
-
-    .status-active {
-      background-color: var(--color-success-light);
-      color: var(--color-success);
-    }
-
-    .status-draft {
-      background-color: var(--color-surface-muted);
-      color: var(--color-text-muted);
-    }
-
-    .status-evaluation {
-      background-color: var(--color-warning-light);
-      color: var(--color-warning);
-    }
-
-    .status-completed {
-      background-color: var(--color-accent-light);
-      color: var(--color-accent);
-    }
-
-    .status-archived {
-      background-color: var(--color-surface-muted);
-      color: var(--color-text-muted);
-    }
-
-    .difficulty-beginner {
-      background-color: var(--color-success-light);
-      color: var(--color-success);
-    }
-
-    .difficulty-intermediate {
-      background-color: var(--color-warning-light);
-      color: var(--color-warning);
-    }
-
-    .difficulty-advanced {
-      background-color: var(--color-error-light);
-      color: var(--color-error);
-    }
-
-    .competition-meta-item {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: var(--text-sm);
-      color: var(--color-text-secondary);
-
-      mat-icon {
-        font-size: 18px;
-        width: 18px;
-        height: 18px;
-        color: var(--color-text-muted);
-      }
-    }
-
-    .competition-actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-3);
-    }
-
-    .competition-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--space-4);
-      padding: var(--space-5);
-      background-color: var(--color-surface);
-      border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg);
-      margin-bottom: var(--space-6);
-    }
-
-    .competition-stat {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-
-      .stat-value {
-        font-family: var(--font-display);
-        font-size: var(--text-xl);
-        font-weight: 700;
-        color: var(--color-text-primary);
-        line-height: 1;
-        text-transform: uppercase;
-      }
-
-      .stat-label {
-        display: block;
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        margin-top: var(--space-1);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-    }
-
-    .tab-content {
-      padding: var(--space-6) 0;
-    }
-
-    .overview-section {
-      margin-bottom: var(--space-8);
-    }
-
-    .section-title {
-      font-family: var(--font-display);
-      font-size: var(--text-xl);
-      font-weight: 600;
-      color: var(--color-text-primary);
-      margin: 0 0 var(--space-4);
-    }
-
-    .description-text {
-      white-space: pre-wrap;
-      color: var(--color-text-secondary);
-      line-height: var(--leading-relaxed);
-      margin: 0;
-    }
-
     .btn {
       display: inline-flex;
       align-items: center;
@@ -384,51 +179,10 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
       }
     }
 
-    .btn-secondary {
-      background-color: transparent;
-      color: var(--color-text-primary);
-      border-color: var(--color-border-strong);
-
-      &:hover:not(:disabled) {
-        background-color: var(--color-surface-muted);
-      }
-    }
-
-    .btn-danger-outline {
-      background-color: transparent;
-      color: var(--color-error);
-      border-color: var(--color-error);
-
-      &:hover:not(:disabled) {
-        background-color: var(--color-error-light);
-      }
-    }
-
     /* Responsive */
     @media (max-width: 768px) {
       .competition-detail {
         padding: var(--space-6) var(--space-4);
-      }
-
-      .competition-title {
-        font-size: var(--text-2xl);
-      }
-
-      .competition-meta {
-        gap: var(--space-2);
-      }
-
-      .competition-meta-item {
-        width: 100%;
-      }
-
-      .competition-actions {
-        width: 100%;
-      }
-
-      .competition-actions .btn {
-        flex: 1;
-        min-width: 0;
       }
     }
 
@@ -436,53 +190,23 @@ import { DiscussionsComponent } from '../discussions/discussions.component';
       .competition-detail {
         padding: var(--space-4);
       }
-
-      .competition-stats {
-        grid-template-columns: 1fr;
-        gap: var(--space-3);
-        padding: var(--space-4);
-      }
-
-      .competition-stat {
-        flex-direction: row;
-        justify-content: space-between;
-        padding: var(--space-2) 0;
-        border-bottom: 1px solid var(--color-border);
-
-        &:last-child {
-          border-bottom: 0;
-        }
-
-        .stat-label {
-          margin-top: 0;
-          order: -1;
-        }
-      }
-
-      .tab-content {
-        padding: var(--space-4) 0;
-      }
-
-      .competition-actions {
-        flex-direction: column;
-      }
-
-      .competition-actions .btn {
-        width: 100%;
-      }
     }
   `],
 })
 export class CompetitionDetailComponent implements OnInit {
+  private readonly TAB_NAMES = ['overview', 'data', 'leaderboard', 'submit', 'rules', 'discussions'];
+
   competition: Competition | null = null;
   loading = true;
   slug = '';
   isEnrolled = false;
   enrolling = false;
   activating = false;
+  selectedTabIndex = 0;
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private competitionService: CompetitionService,
     private enrollmentService: EnrollmentService,
     private snackBar: MatSnackBar,
@@ -491,6 +215,16 @@ export class CompetitionDetailComponent implements OnInit {
 
   ngOnInit(): void {
     this.slug = this.route.snapshot.paramMap.get('slug') || '';
+
+    // Handle tab query parameter
+    const tabParam = this.route.snapshot.queryParamMap.get('tab');
+    if (tabParam) {
+      const tabIndex = this.TAB_NAMES.indexOf(tabParam.toLowerCase());
+      if (tabIndex !== -1) {
+        this.selectedTabIndex = tabIndex;
+      }
+    }
+
     if (this.slug) {
       this.competitionService.getBySlug(this.slug).subscribe({
         next: (data) => {
@@ -503,6 +237,17 @@ export class CompetitionDetailComponent implements OnInit {
         },
       });
     }
+  }
+
+  onTabChange(index: number): void {
+    this.selectedTabIndex = index;
+    const tabName = this.TAB_NAMES[index];
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: tabName === 'overview' ? {} : { tab: tabName },
+      queryParamsHandling: tabName === 'overview' ? '' : 'merge',
+      replaceUrl: true,
+    });
   }
 
   checkEnrollment(): void {
