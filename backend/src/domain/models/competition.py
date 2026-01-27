@@ -94,6 +94,11 @@ class Competition(Base, TimestampMixin):
         back_populates="competition",
         lazy="selectin",
     )
+    faqs: Mapped[list["CompetitionFAQ"]] = relationship(  # noqa: F821
+        back_populates="competition",
+        lazy="selectin",
+        order_by="CompetitionFAQ.display_order",
+    )
 
     def __repr__(self) -> str:
         return f"<Competition(id={self.id}, title={self.title})>"
