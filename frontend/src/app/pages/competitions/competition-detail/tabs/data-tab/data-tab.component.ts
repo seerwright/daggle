@@ -4,8 +4,14 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatTabsModule } from '@angular/material/tabs';
 import { CompetitionFileService } from '../../../../../core/services/competition-file.service';
-import { CompetitionFile } from '../../../../../core/models/competition-file.model';
+import {
+  CompetitionFile,
+  ColumnInfo,
+  DataDictionaryEntry,
+  FilePreview,
+} from '../../../../../core/models/competition-file.model';
 import { AuthService } from '../../../../../core/services/auth.service';
 
 @Component({
@@ -17,6 +23,7 @@ import { AuthService } from '../../../../../core/services/auth.service';
     MatButtonModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
+    MatTabsModule,
   ],
   template: `
     <div class="data-tab">
@@ -56,76 +63,217 @@ import { AuthService } from '../../../../../core/services/auth.service';
             Download the datasets and documentation needed for this competition.
           </p>
 
-          <div class="files-list">
-            @for (file of files; track file.id) {
-              <div
-                class="file-item"
-                [class.selected]="selectedFile?.id === file.id"
-                (click)="selectFile(file)"
-              >
-                <div class="file-icon">
-                  <mat-icon>{{ getFileIcon(file) }}</mat-icon>
-                </div>
-                <div class="file-info">
-                  <span class="file-name">{{ file.display_name || file.filename }}</span>
-                  <span class="file-meta">
-                    {{ formatFileSize(file.file_size) }}
-                    @if (file.purpose) {
-                      <span class="file-purpose">{{ file.purpose }}</span>
-                    }
-                  </span>
-                </div>
-                <div class="file-actions">
-                  <button
-                    mat-icon-button
-                    [matTooltip]="'Download ' + file.filename"
-                    (click)="downloadFile(file); $event.stopPropagation()"
+          <div class="content-layout">
+            <!-- File List (Left Panel) -->
+            <div class="files-list-panel">
+              <div class="files-list">
+                @for (file of files; track file.id) {
+                  <div
+                    class="file-item"
+                    [class.selected]="selectedFile?.id === file.id"
+                    (click)="selectFile(file)"
                   >
-                    <mat-icon>download</mat-icon>
-                  </button>
-                </div>
-              </div>
-            }
-          </div>
-
-          @if (selectedFile) {
-            <div class="file-preview">
-              <h3 class="preview-title">{{ selectedFile.display_name || selectedFile.filename }}</h3>
-              <div class="preview-details">
-                <div class="detail-row">
-                  <span class="detail-label">Filename</span>
-                  <span class="detail-value">{{ selectedFile.filename }}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">Size</span>
-                  <span class="detail-value">{{ formatFileSize(selectedFile.file_size) }}</span>
-                </div>
-                <div class="detail-row">
-                  <span class="detail-label">Type</span>
-                  <span class="detail-value">{{ selectedFile.file_type || 'Unknown' }}</span>
-                </div>
-                @if (selectedFile.purpose) {
-                  <div class="detail-row">
-                    <span class="detail-label">Description</span>
-                    <span class="detail-value">{{ selectedFile.purpose }}</span>
+                    <div class="file-icon">
+                      <mat-icon>{{ getFileIcon(file) }}</mat-icon>
+                    </div>
+                    <div class="file-info">
+                      <span class="file-name">{{ file.display_name || file.filename }}</span>
+                      <span class="file-meta">
+                        {{ formatFileSize(file.file_size) }}
+                        @if (file.purpose) {
+                          <span class="file-purpose">{{ file.purpose }}</span>
+                        }
+                      </span>
+                    </div>
+                    <div class="file-actions">
+                      <button
+                        mat-icon-button
+                        [matTooltip]="'Download ' + file.filename"
+                        (click)="downloadFile(file); $event.stopPropagation()"
+                      >
+                        <mat-icon>download</mat-icon>
+                      </button>
+                    </div>
                   </div>
                 }
-                <div class="detail-row">
-                  <span class="detail-label">Uploaded</span>
-                  <span class="detail-value">{{ selectedFile.created_at | date:'medium' }}</span>
-                </div>
               </div>
-              <button
-                mat-flat-button
-                color="primary"
-                class="preview-download-btn"
-                (click)="downloadFile(selectedFile)"
-              >
-                <mat-icon>download</mat-icon>
-                Download File
-              </button>
             </div>
-          }
+
+            <!-- Details Panel (Right) -->
+            <div class="details-panel" [class.visible]="selectedFile">
+              @if (selectedFile) {
+                <div class="details-header">
+                  <h3 class="details-title">{{ selectedFile.display_name || selectedFile.filename }}</h3>
+                  <button
+                    mat-flat-button
+                    color="primary"
+                    class="download-btn"
+                    (click)="downloadFile(selectedFile)"
+                  >
+                    <mat-icon>download</mat-icon>
+                    Download
+                  </button>
+                </div>
+
+                <div class="file-metadata">
+                  <div class="meta-item">
+                    <span class="meta-label">Filename</span>
+                    <span class="meta-value">{{ selectedFile.filename }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Size</span>
+                    <span class="meta-value">{{ formatFileSize(selectedFile.file_size) }}</span>
+                  </div>
+                  <div class="meta-item">
+                    <span class="meta-label">Type</span>
+                    <span class="meta-value">{{ selectedFile.file_type || 'Unknown' }}</span>
+                  </div>
+                  @if (selectedFile.purpose) {
+                    <div class="meta-item">
+                      <span class="meta-label">Description</span>
+                      <span class="meta-value">{{ selectedFile.purpose }}</span>
+                    </div>
+                  }
+                </div>
+
+                @if (isCsvFile(selectedFile)) {
+                  <mat-tab-group class="preview-tabs" animationDuration="200ms">
+                    <mat-tab label="Preview">
+                      <div class="tab-content">
+                        @if (previewLoading) {
+                          <div class="tab-loading">
+                            <mat-spinner diameter="24"></mat-spinner>
+                            <span>Loading preview...</span>
+                          </div>
+                        } @else if (preview) {
+                          <div class="preview-table-container">
+                            <table class="preview-table">
+                              <thead>
+                                <tr>
+                                  @for (col of preview.columns; track col) {
+                                    <th>{{ col }}</th>
+                                  }
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @for (row of preview.rows; track $index) {
+                                  <tr>
+                                    @for (col of preview.columns; track col) {
+                                      <td>{{ row[col] }}</td>
+                                    }
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                          <div class="preview-footer">
+                            <span class="row-count">
+                              Showing {{ preview.rows.length }} of {{ preview.total_rows | number }} rows
+                              @if (preview.truncated) {
+                                <span class="truncated-badge">Truncated</span>
+                              }
+                            </span>
+                          </div>
+                        } @else {
+                          <div class="tab-empty">
+                            <mat-icon>visibility_off</mat-icon>
+                            <span>Preview not available</span>
+                          </div>
+                        }
+                      </div>
+                    </mat-tab>
+
+                    <mat-tab label="Data Dictionary">
+                      <div class="tab-content">
+                        @if (dictionaryLoading) {
+                          <div class="tab-loading">
+                            <mat-spinner diameter="24"></mat-spinner>
+                            <span>Loading dictionary...</span>
+                          </div>
+                        } @else if (dictionary.length > 0) {
+                          <div class="dictionary-table-container">
+                            <table class="dictionary-table">
+                              <thead>
+                                <tr>
+                                  <th>Column</th>
+                                  <th>Definition</th>
+                                  <th>Encoding</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @for (entry of dictionary; track entry.id) {
+                                  <tr>
+                                    <td class="column-name">{{ entry.column_name }}</td>
+                                    <td>{{ entry.definition || '—' }}</td>
+                                    <td class="encoding-cell">{{ entry.encoding || '—' }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        } @else if (columnInfo.length > 0) {
+                          <div class="dictionary-table-container">
+                            <p class="auto-detected-notice">
+                              <mat-icon>info</mat-icon>
+                              Auto-detected columns (no dictionary defined)
+                            </p>
+                            <table class="dictionary-table">
+                              <thead>
+                                <tr>
+                                  <th>Column</th>
+                                  <th>Type</th>
+                                  <th>Nulls</th>
+                                  <th>Unique</th>
+                                  <th>Sample Values</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                @for (col of columnInfo; track col.name) {
+                                  <tr>
+                                    <td class="column-name">{{ col.name }}</td>
+                                    <td class="dtype-cell">{{ col.dtype }}</td>
+                                    <td class="count-cell">{{ col.null_count | number }}</td>
+                                    <td class="count-cell">{{ col.unique_count | number }}</td>
+                                    <td class="samples-cell">{{ col.sample_values.join(', ') }}</td>
+                                  </tr>
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        } @else {
+                          <div class="tab-empty">
+                            <mat-icon>table_chart</mat-icon>
+                            <span>No column information available</span>
+                          </div>
+                        }
+                      </div>
+                    </mat-tab>
+
+                    @if (selectedFile.variable_notes) {
+                      <mat-tab label="Notes">
+                        <div class="tab-content">
+                          <div class="variable-notes">
+                            {{ selectedFile.variable_notes }}
+                          </div>
+                        </div>
+                      </mat-tab>
+                    }
+                  </mat-tab-group>
+                } @else {
+                  <div class="non-csv-notice">
+                    <mat-icon>{{ getFileIcon(selectedFile) }}</mat-icon>
+                    <p>Preview not available for {{ selectedFile.file_type || 'this file type' }}.</p>
+                    <p class="hint">Download the file to view its contents.</p>
+                  </div>
+                }
+              } @else {
+                <div class="no-selection">
+                  <mat-icon>touch_app</mat-icon>
+                  <p>Select a file to view details</p>
+                </div>
+              }
+            </div>
+          </div>
         </div>
       }
     </div>
@@ -223,12 +371,25 @@ import { AuthService } from '../../../../../core/services/auth.service';
       margin: 0;
     }
 
-    /* Files List */
+    /* Two-column Layout */
+    .content-layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: var(--space-5);
+      margin-top: var(--space-2);
+      min-height: 400px;
+    }
+
+    /* Files List Panel */
+    .files-list-panel {
+      display: flex;
+      flex-direction: column;
+    }
+
     .files-list {
       display: flex;
       flex-direction: column;
       gap: var(--space-2);
-      margin-top: var(--space-2);
     }
 
     .file-item {
@@ -314,49 +475,34 @@ import { AuthService } from '../../../../../core/services/auth.service';
       }
     }
 
-    /* File Preview */
-    .file-preview {
-      margin-top: var(--space-4);
-      padding: var(--space-5);
+    /* Details Panel */
+    .details-panel {
       background-color: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
 
-    .preview-title {
+    .details-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--color-border);
+      background-color: var(--color-surface-muted);
+    }
+
+    .details-title {
       font-family: var(--font-display);
       font-size: var(--text-lg);
       font-weight: 600;
       color: var(--color-text-primary);
-      margin: 0 0 var(--space-4);
+      margin: 0;
     }
 
-    .preview-details {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-      margin-bottom: var(--space-5);
-    }
-
-    .detail-row {
-      display: flex;
-      gap: var(--space-4);
-    }
-
-    .detail-label {
-      width: 100px;
-      flex-shrink: 0;
-      font-size: var(--text-sm);
-      color: var(--color-text-muted);
-    }
-
-    .detail-value {
-      font-size: var(--text-sm);
-      color: var(--color-text-primary);
-      word-break: break-word;
-    }
-
-    .preview-download-btn {
+    .download-btn {
       display: flex;
       align-items: center;
       gap: var(--space-2);
@@ -365,6 +511,306 @@ import { AuthService } from '../../../../../core/services/auth.service';
         font-size: 18px;
         width: 18px;
         height: 18px;
+      }
+    }
+
+    .file-metadata {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+    }
+
+    .meta-label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .meta-value {
+      font-size: var(--text-sm);
+      color: var(--color-text-primary);
+      word-break: break-word;
+    }
+
+    /* Tabs */
+    .preview-tabs {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
+      ::ng-deep {
+        .mat-mdc-tab-header {
+          background-color: var(--color-surface);
+          border-bottom: 1px solid var(--color-border);
+        }
+
+        .mat-mdc-tab-body-wrapper {
+          flex: 1;
+        }
+
+        .mat-mdc-tab-body-content {
+          height: 100%;
+          overflow: auto;
+        }
+      }
+    }
+
+    .tab-content {
+      padding: var(--space-4);
+      min-height: 200px;
+    }
+
+    .tab-loading,
+    .tab-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-3);
+      min-height: 200px;
+      color: var(--color-text-muted);
+
+      mat-icon {
+        font-size: 32px;
+        width: 32px;
+        height: 32px;
+        opacity: 0.5;
+      }
+
+      span {
+        font-size: var(--text-sm);
+      }
+    }
+
+    /* Preview Table */
+    .preview-table-container {
+      overflow-x: auto;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+
+      th, td {
+        padding: var(--space-2) var(--space-3);
+        text-align: left;
+        border-bottom: 1px solid var(--color-border);
+        white-space: nowrap;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      th {
+        background-color: var(--color-surface-muted);
+        font-weight: 600;
+        color: var(--color-text-primary);
+        position: sticky;
+        top: 0;
+      }
+
+      td {
+        color: var(--color-text-secondary);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      tr:hover td {
+        background-color: var(--color-surface-hover);
+      }
+    }
+
+    .preview-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .row-count {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .truncated-badge {
+      display: inline-block;
+      padding: var(--space-1) var(--space-2);
+      background-color: var(--color-warning-light);
+      color: var(--color-warning);
+      font-size: var(--text-xs);
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+    }
+
+    /* Dictionary Table */
+    .auto-detected-notice {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-3);
+      margin-bottom: var(--space-3);
+      background-color: var(--color-info-light);
+      color: var(--color-info);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+      }
+    }
+
+    .dictionary-table-container {
+      overflow-x: auto;
+    }
+
+    .dictionary-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+
+      th, td {
+        padding: var(--space-3);
+        text-align: left;
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      th {
+        background-color: var(--color-surface-muted);
+        font-weight: 600;
+        color: var(--color-text-primary);
+      }
+
+      td {
+        color: var(--color-text-secondary);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .column-name {
+        font-family: var(--font-mono);
+        font-weight: 500;
+        color: var(--color-text-primary);
+      }
+
+      .dtype-cell {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+        color: var(--color-accent);
+      }
+
+      .count-cell {
+        font-family: var(--font-mono);
+        text-align: right;
+      }
+
+      .samples-cell {
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: var(--text-xs);
+        color: var(--color-text-muted);
+      }
+
+      .encoding-cell {
+        font-family: var(--font-mono);
+        font-size: var(--text-xs);
+      }
+    }
+
+    /* Variable Notes */
+    .variable-notes {
+      white-space: pre-wrap;
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Non-CSV Notice */
+    .non-csv-notice {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-3);
+      padding: var(--space-8);
+      text-align: center;
+      color: var(--color-text-muted);
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        opacity: 0.3;
+      }
+
+      p {
+        margin: 0;
+        font-size: var(--text-sm);
+      }
+
+      .hint {
+        font-size: var(--text-xs);
+        opacity: 0.7;
+      }
+    }
+
+    /* No Selection */
+    .no-selection {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      min-height: 300px;
+      gap: var(--space-3);
+      color: var(--color-text-muted);
+
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        opacity: 0.3;
+      }
+
+      p {
+        margin: 0;
+        font-size: var(--text-sm);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .content-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .details-panel {
+        min-height: 400px;
       }
     }
 
@@ -387,13 +833,8 @@ import { AuthService } from '../../../../../core/services/auth.service';
         height: 36px;
       }
 
-      .detail-row {
-        flex-direction: column;
-        gap: var(--space-1);
-      }
-
-      .detail-label {
-        width: auto;
+      .file-metadata {
+        grid-template-columns: 1fr 1fr;
       }
     }
   `],
@@ -405,6 +846,13 @@ export class DataTabComponent implements OnInit {
   selectedFile: CompetitionFile | null = null;
   loading = true;
   downloading = false;
+
+  preview: FilePreview | null = null;
+  previewLoading = false;
+
+  dictionary: DataDictionaryEntry[] = [];
+  columnInfo: ColumnInfo[] = [];
+  dictionaryLoading = false;
 
   constructor(
     private fileService: CompetitionFileService,
@@ -428,7 +876,71 @@ export class DataTabComponent implements OnInit {
   }
 
   selectFile(file: CompetitionFile): void {
-    this.selectedFile = this.selectedFile?.id === file.id ? null : file;
+    if (this.selectedFile?.id === file.id) {
+      this.selectedFile = null;
+      this.preview = null;
+      this.dictionary = [];
+      this.columnInfo = [];
+      return;
+    }
+
+    this.selectedFile = file;
+    this.preview = null;
+    this.dictionary = [];
+    this.columnInfo = [];
+
+    if (this.isCsvFile(file)) {
+      this.loadPreview(file);
+      this.loadDictionary(file);
+    }
+  }
+
+  private loadPreview(file: CompetitionFile): void {
+    this.previewLoading = true;
+    this.fileService.getPreview(this.slug, file.id).subscribe({
+      next: (preview) => {
+        this.preview = preview;
+        this.previewLoading = false;
+      },
+      error: () => {
+        this.previewLoading = false;
+      },
+    });
+  }
+
+  private loadDictionary(file: CompetitionFile): void {
+    this.dictionaryLoading = true;
+    this.fileService.getDictionary(this.slug, file.id).subscribe({
+      next: (dictionary) => {
+        this.dictionary = dictionary;
+        this.dictionaryLoading = false;
+
+        // If no dictionary, try to get auto-detected columns
+        if (dictionary.length === 0) {
+          this.loadColumnInfo(file);
+        }
+      },
+      error: () => {
+        this.dictionaryLoading = false;
+        this.loadColumnInfo(file);
+      },
+    });
+  }
+
+  private loadColumnInfo(file: CompetitionFile): void {
+    this.fileService.detectColumns(this.slug, file.id).subscribe({
+      next: (columns) => {
+        this.columnInfo = columns;
+      },
+      error: () => {
+        // Silently fail - column info is optional
+      },
+    });
+  }
+
+  isCsvFile(file: CompetitionFile): boolean {
+    const ext = file.filename.split('.').pop()?.toLowerCase();
+    return ext === 'csv';
   }
 
   downloadFile(file: CompetitionFile): void {
