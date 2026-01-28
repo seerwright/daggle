@@ -1,16 +1,14 @@
-import { Notification } from './notification.model';
-
 export interface DashboardCompetition {
   id: number;
   title: string;
   slug: string;
   status: string;
-  enrolled_at: string;
+  end_date: string;
   days_remaining: number | null;
   user_rank: number | null;
   total_participants: number;
-  best_score: number | null;
-  submission_count: number;
+  user_best_score: number | null;
+  user_submission_count: number;
 }
 
 export interface DashboardSubmission {
@@ -18,8 +16,18 @@ export interface DashboardSubmission {
   competition_id: number;
   competition_title: string;
   competition_slug: string;
-  score: number | null;
+  public_score: number | null;
   status: string;
+  submitted_at: string;
+}
+
+export interface DashboardNotification {
+  id: number;
+  type: string;
+  title: string;
+  message: string;
+  link: string | null;
+  is_read: boolean;
   created_at: string;
 }
 
@@ -31,12 +39,13 @@ export interface DashboardStats {
 }
 
 export interface DashboardResponse {
-  competitions: DashboardCompetition[];
+  user_id: number;
+  username: string;
+  display_name: string;
+  active_competitions: DashboardCompetition[];
   recent_submissions: DashboardSubmission[];
-  recent_notifications: Notification[];
+  notifications: DashboardNotification[];
   stats: DashboardStats;
 }
 
-export interface DashboardStatsResponse {
-  stats: DashboardStats;
-}
+export interface DashboardStatsResponse extends DashboardStats {}

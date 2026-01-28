@@ -6,7 +6,11 @@
     "serve": "npx serve -l 3000",
     "test": "npx playwright test",
     "test:ui": "npx playwright test --ui",
-    "test:headed": "npx playwright test --headed"
+    "test:headed": "npx playwright test --headed",
+    "test:prototype": "npx playwright test --project=prototype",
+    "test:angular": "npx playwright test --project=angular",
+    "test:angular:headed": "npx playwright test --project=angular --headed",
+    "test:auth": "npx playwright test --project=angular tests/auth.spec.ts"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
