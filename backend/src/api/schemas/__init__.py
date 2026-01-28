@@ -25,6 +25,14 @@ from src.api.schemas.data_dictionary import (
     DataDictionaryEntryUpdate,
     PreviewResponse,
 )
+from src.api.schemas.rules import (
+    CompetitionRuleCreate,
+    CompetitionRuleResponse,
+    CompetitionRuleUpdate,
+    RuleBulkUpdate,
+    RulesDisplayResponse,
+    RuleTemplateResponse,
+)
 from src.api.schemas.submission import (
     LeaderboardEntry,
     LeaderboardResponse,
@@ -33,6 +41,9 @@ from src.api.schemas.submission import (
 )
 
 __all__ = [
+    "CompetitionRuleCreate",
+    "CompetitionRuleResponse",
+    "CompetitionRuleUpdate",
     "ColumnInfoResponse",
     "CompetitionCreate",
     "CompetitionFileCreate",
@@ -50,6 +61,9 @@ __all__ = [
     "LoginRequest",
     "PreviewResponse",
     "RegisterRequest",
+    "RuleBulkUpdate",
+    "RulesDisplayResponse",
+    "RuleTemplateResponse",
     "SubmissionListResponse",
     "SubmissionResponse",
     "TokenResponse",

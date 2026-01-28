@@ -25,11 +25,19 @@ from src.api.schemas.data_dictionary import (
     PreviewResponse,
 )
 from src.api.schemas.faq import FAQCreate, FAQResponse, FAQUpdate, FAQReorderRequest
+from src.api.schemas.rules import (
+    CompetitionRuleCreate,
+    CompetitionRuleResponse,
+    RuleBulkUpdate,
+    RulesDisplayResponse,
+    RuleTemplateResponse,
+)
 from src.domain.models.user import User, UserRole
 from src.domain.services.competition import CompetitionService
 from src.domain.services.competition_file import CompetitionFileService
 from src.domain.services.data_dictionary import DataDictionaryService
 from src.domain.services.faq import FAQService
+from src.domain.services.rule_service import RuleService
 from src.infrastructure.database import get_db
 
 router = APIRouter(prefix="/competitions", tags=["Competitions"])
@@ -826,3 +834,226 @@ async def update_file_dictionary(
         [entry.model_dump() for entry in data.entries],
     )
     return entries
+
+
+# ============================================================================
+# Rules Endpoints
+# ============================================================================
+
+
+@router.get("/rule-templates", response_model=list[RuleTemplateResponse])
+async def list_rule_templates(
+    db: AsyncSession = Depends(get_db),
+):
+    """List all available rule templates."""
+    service = RuleService(db)
+    templates = await service.list_templates()
+
+    # Seed templates if none exist
+    if not templates:
+        await service.seed_templates()
+        templates = await service.list_templates()
+
+    return templates
+
+
+@router.get("/{slug}/rules", response_model=list[CompetitionRuleResponse])
+async def list_competition_rules(
+    slug: str,
+    enabled_only: bool = Query(default=True),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all rules for a competition."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    rule_service = RuleService(db)
+    rules = await rule_service.list_competition_rules(competition.id, enabled_only)
+    return [CompetitionRuleResponse.from_rule(r) for r in rules]
+
+
+@router.get("/{slug}/rules/display", response_model=list[RulesDisplayResponse])
+async def get_rules_for_display(
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Get rules formatted for display to participants.
+
+    Returns rules grouped by category with rendered text.
+    """
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    rule_service = RuleService(db)
+    rules = await rule_service.list_competition_rules(competition.id, enabled_only=True)
+
+    # Group by category
+    categories: dict[str, list[str]] = {}
+    for rule in rules:
+        text = rule.get_rendered_text()
+        if not text:
+            continue
+
+        if rule.template:
+            category = rule.template.category
+        else:
+            category = "Custom Rules"
+
+        if category not in categories:
+            categories[category] = []
+        categories[category].append(text)
+
+    return [
+        RulesDisplayResponse(category=category, rules=rules_list)
+        for category, rules_list in categories.items()
+    ]
+
+
+@router.post(
+    "/{slug}/rules",
+    response_model=CompetitionRuleResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_competition_rule(
+    slug: str,
+    data: CompetitionRuleCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new rule for a competition.
+
+    Only the sponsor or admin can create rules.
+    """
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to manage rules for this competition",
+        )
+
+    rule_service = RuleService(db)
+
+    # Validate template exists if provided
+    if data.rule_template_id:
+        template = await rule_service.get_template(data.rule_template_id)
+        if template is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Rule template not found",
+            )
+
+    rule = await rule_service.create_rule(
+        competition_id=competition.id,
+        rule_template_id=data.rule_template_id,
+        parameter_value=data.parameter_value,
+        custom_text=data.custom_text,
+        display_order=data.display_order,
+    )
+    return CompetitionRuleResponse.from_rule(rule)
+
+
+@router.put("/{slug}/rules", response_model=list[CompetitionRuleResponse])
+async def bulk_update_rules(
+    slug: str,
+    data: RuleBulkUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Bulk update rules for a competition.
+
+    Replaces all existing rules with the provided rules.
+    Only the sponsor or admin can update rules.
+    """
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to manage rules for this competition",
+        )
+
+    rule_service = RuleService(db)
+
+    # Validate all templates exist
+    for rule_data in data.rules:
+        if rule_data.rule_template_id:
+            template = await rule_service.get_template(rule_data.rule_template_id)
+            if template is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Rule template {rule_data.rule_template_id} not found",
+                )
+
+    rules = await rule_service.bulk_update_rules(
+        competition_id=competition.id,
+        rules_data=[r.model_dump() for r in data.rules],
+    )
+    return [CompetitionRuleResponse.from_rule(r) for r in rules]
+
+
+@router.delete("/{slug}/rules/{rule_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_competition_rule(
+    slug: str,
+    rule_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a competition rule.
+
+    Only the sponsor or admin can delete rules.
+    """
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to manage rules for this competition",
+        )
+
+    rule_service = RuleService(db)
+    rule = await rule_service.get_rule(rule_id)
+
+    if rule is None or rule.competition_id != competition.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Rule not found",
+        )
+
+    await rule_service.delete_rule(rule)
