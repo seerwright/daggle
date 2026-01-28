@@ -17,6 +17,14 @@ from src.api.schemas.competition_file import (
     CompetitionFileResponse,
     CompetitionFileUpdate,
 )
+from src.api.schemas.data_dictionary import (
+    ColumnInfoResponse,
+    DataDictionaryBulkUpdate,
+    DataDictionaryEntryCreate,
+    DataDictionaryEntryResponse,
+    DataDictionaryEntryUpdate,
+    PreviewResponse,
+)
 from src.api.schemas.submission import (
     LeaderboardEntry,
     LeaderboardResponse,
@@ -25,6 +33,7 @@ from src.api.schemas.submission import (
 )
 
 __all__ = [
+    "ColumnInfoResponse",
     "CompetitionCreate",
     "CompetitionFileCreate",
     "CompetitionFileResponse",
@@ -32,9 +41,14 @@ __all__ = [
     "CompetitionListResponse",
     "CompetitionResponse",
     "CompetitionUpdate",
+    "DataDictionaryBulkUpdate",
+    "DataDictionaryEntryCreate",
+    "DataDictionaryEntryResponse",
+    "DataDictionaryEntryUpdate",
     "LeaderboardEntry",
     "LeaderboardResponse",
     "LoginRequest",
+    "PreviewResponse",
     "RegisterRequest",
     "SubmissionListResponse",
     "SubmissionResponse",

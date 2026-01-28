@@ -18,10 +18,17 @@ from src.api.schemas.competition_file import (
     CompetitionFileResponse,
     CompetitionFileUpdate,
 )
+from src.api.schemas.data_dictionary import (
+    ColumnInfoResponse,
+    DataDictionaryBulkUpdate,
+    DataDictionaryEntryResponse,
+    PreviewResponse,
+)
 from src.api.schemas.faq import FAQCreate, FAQResponse, FAQUpdate, FAQReorderRequest
 from src.domain.models.user import User, UserRole
 from src.domain.services.competition import CompetitionService
 from src.domain.services.competition_file import CompetitionFileService
+from src.domain.services.data_dictionary import DataDictionaryService
 from src.domain.services.faq import FAQService
 from src.infrastructure.database import get_db
 
@@ -634,3 +641,188 @@ async def delete_file(
         )
 
     await file_service.delete(competition_file)
+
+
+# ============================================================================
+# Data Dictionary & Preview Endpoints
+# ============================================================================
+
+
+@router.get("/{slug}/files/{file_id}/preview", response_model=PreviewResponse)
+async def get_file_preview(
+    slug: str,
+    file_id: int,
+    max_rows: int = Query(default=20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get a preview of a CSV file (first N rows)."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    file_service = CompetitionFileService(db)
+    competition_file = await file_service.get_by_id(file_id)
+
+    if competition_file is None or competition_file.competition_id != competition.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found",
+        )
+
+    dict_service = DataDictionaryService(db)
+
+    try:
+        result = await dict_service.get_csv_preview(competition_file, max_rows)
+        return PreviewResponse(
+            columns=result.columns,
+            rows=result.rows,
+            total_rows=result.total_rows,
+            truncated=result.truncated,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found in storage",
+        )
+
+
+@router.get("/{slug}/files/{file_id}/columns", response_model=list[ColumnInfoResponse])
+async def detect_file_columns(
+    slug: str,
+    file_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Auto-detect columns from a CSV file."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    file_service = CompetitionFileService(db)
+    competition_file = await file_service.get_by_id(file_id)
+
+    if competition_file is None or competition_file.competition_id != competition.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found",
+        )
+
+    dict_service = DataDictionaryService(db)
+
+    try:
+        columns = await dict_service.detect_columns(competition_file)
+        return [
+            ColumnInfoResponse(
+                name=col.name,
+                dtype=col.dtype,
+                sample_values=col.sample_values,
+                null_count=col.null_count,
+                unique_count=col.unique_count,
+            )
+            for col in columns
+        ]
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found in storage",
+        )
+
+
+@router.get(
+    "/{slug}/files/{file_id}/dictionary",
+    response_model=list[DataDictionaryEntryResponse],
+)
+async def get_file_dictionary(
+    slug: str,
+    file_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Get data dictionary entries for a file."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    file_service = CompetitionFileService(db)
+    competition_file = await file_service.get_by_id(file_id)
+
+    if competition_file is None or competition_file.competition_id != competition.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found",
+        )
+
+    dict_service = DataDictionaryService(db)
+    return await dict_service.list_by_file(file_id)
+
+
+@router.put(
+    "/{slug}/files/{file_id}/dictionary",
+    response_model=list[DataDictionaryEntryResponse],
+)
+async def update_file_dictionary(
+    slug: str,
+    file_id: int,
+    data: DataDictionaryBulkUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Bulk update data dictionary entries for a file.
+
+    Replaces all existing entries with the provided entries.
+    Only the sponsor or admin can update the dictionary.
+    """
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to update the data dictionary",
+        )
+
+    file_service = CompetitionFileService(db)
+    competition_file = await file_service.get_by_id(file_id)
+
+    if competition_file is None or competition_file.competition_id != competition.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found",
+        )
+
+    dict_service = DataDictionaryService(db)
+    entries = await dict_service.bulk_update(
+        file_id,
+        [entry.model_dump() for entry in data.entries],
+    )
+    return entries
