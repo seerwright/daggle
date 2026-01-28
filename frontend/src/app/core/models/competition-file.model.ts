@@ -29,6 +29,9 @@ export interface ColumnInfo {
   sample_values: string[];
   null_count: number;
   unique_count: number;
+  suggested_definition: string | null;
+  suggested_encoding: string | null;
+  suggestion_confidence: 'low' | 'medium' | 'high';
 }
 
 export interface FilePreview {

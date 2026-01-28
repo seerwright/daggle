@@ -214,17 +214,16 @@ import { AuthService } from '../../../../../core/services/auth.service';
                         } @else if (columnInfo.length > 0) {
                           <div class="dictionary-table-container">
                             <p class="auto-detected-notice">
-                              <mat-icon>info</mat-icon>
-                              Auto-detected columns (no dictionary defined)
+                              <mat-icon>auto_awesome</mat-icon>
+                              Auto-detected columns with suggested definitions
                             </p>
-                            <table class="dictionary-table">
+                            <table class="dictionary-table suggestions-table">
                               <thead>
                                 <tr>
                                   <th>Column</th>
                                   <th>Type</th>
-                                  <th>Nulls</th>
-                                  <th>Unique</th>
-                                  <th>Sample Values</th>
+                                  <th>Suggested Definition</th>
+                                  <th>Suggested Encoding</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -232,9 +231,25 @@ import { AuthService } from '../../../../../core/services/auth.service';
                                   <tr>
                                     <td class="column-name">{{ col.name }}</td>
                                     <td class="dtype-cell">{{ col.dtype }}</td>
-                                    <td class="count-cell">{{ col.null_count | number }}</td>
-                                    <td class="count-cell">{{ col.unique_count | number }}</td>
-                                    <td class="samples-cell">{{ col.sample_values.join(', ') }}</td>
+                                    <td class="suggestion-cell">
+                                      @if (col.suggested_definition) {
+                                        <span class="suggestion" [class.high-confidence]="col.suggestion_confidence === 'high'" [class.medium-confidence]="col.suggestion_confidence === 'medium'">
+                                          {{ col.suggested_definition }}
+                                        </span>
+                                        <span class="confidence-badge" [class]="col.suggestion_confidence">
+                                          {{ col.suggestion_confidence }}
+                                        </span>
+                                      } @else {
+                                        <span class="no-suggestion">—</span>
+                                      }
+                                    </td>
+                                    <td class="encoding-cell">
+                                      @if (col.suggested_encoding) {
+                                        <span class="suggestion">{{ col.suggested_encoding }}</span>
+                                      } @else {
+                                        <span class="no-suggestion">—</span>
+                                      }
+                                    </td>
                                   </tr>
                                 }
                               </tbody>
@@ -740,6 +755,60 @@ import { AuthService } from '../../../../../core/services/auth.service';
       .encoding-cell {
         font-family: var(--font-mono);
         font-size: var(--text-xs);
+      }
+    }
+
+    /* Suggestions Table */
+    .suggestions-table {
+      .suggestion-cell {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+      }
+
+      .suggestion {
+        font-style: italic;
+        color: var(--color-text-secondary);
+
+        &.high-confidence {
+          color: var(--color-text-primary);
+          font-style: normal;
+        }
+
+        &.medium-confidence {
+          color: var(--color-text-secondary);
+        }
+      }
+
+      .confidence-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        font-size: 10px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-radius: var(--radius-sm);
+
+        &.high {
+          background-color: var(--color-success-light);
+          color: var(--color-success);
+        }
+
+        &.medium {
+          background-color: var(--color-warning-light);
+          color: var(--color-warning);
+        }
+
+        &.low {
+          background-color: var(--color-surface-muted);
+          color: var(--color-text-muted);
+        }
+      }
+
+      .no-suggestion {
+        color: var(--color-text-muted);
+        opacity: 0.5;
       }
     }
 

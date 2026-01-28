@@ -19,8 +19,19 @@ import { CompetitionFileService } from '../../../core/services/competition-file.
 import { RuleService } from '../../../core/services/rule.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { Competition } from '../../../core/models/competition.model';
-import { CompetitionFile } from '../../../core/models/competition-file.model';
+import { CompetitionFile, ColumnInfo, DataDictionaryEntry } from '../../../core/models/competition-file.model';
 import { RuleTemplate, CompetitionRule, CompetitionRuleCreate } from '../../../core/models/rule.model';
+
+interface DictionaryEditEntry {
+  column_name: string;
+  definition: string;
+  encoding: string;
+  display_order: number;
+  suggested_definition: string | null;
+  suggested_encoding: string | null;
+  suggestion_confidence: 'low' | 'medium' | 'high';
+  hasAcceptedSuggestion: boolean;
+}
 
 interface Section {
   id: string;
@@ -423,6 +434,132 @@ interface Section {
                       </button>
                     }
                   </div>
+                </div>
+
+                <!-- Data Dictionary Editor -->
+                <div class="dictionary-manager">
+                  <div class="files-header">
+                    <h3 class="subsection-title">Data Dictionary</h3>
+                  </div>
+                  <p class="subsection-hint">Define column descriptions for your CSV files to help participants understand the data.</p>
+
+                  @if (getCsvFiles().length === 0) {
+                    <div class="empty-files">
+                      <mat-icon>table_chart</mat-icon>
+                      <p>Upload a CSV file to create a data dictionary</p>
+                    </div>
+                  } @else {
+                    <div class="dict-file-select">
+                      <label class="form-label">Select a file to edit:</label>
+                      <mat-select
+                        [value]="selectedFileForDict?.id"
+                        (selectionChange)="onDictFileSelect($event.value)"
+                        class="form-select"
+                      >
+                        @for (file of getCsvFiles(); track file.id) {
+                          <mat-option [value]="file.id">{{ file.display_name || file.filename }}</mat-option>
+                        }
+                      </mat-select>
+                    </div>
+
+                    @if (selectedFileForDict) {
+                      @if (loadingDictionary) {
+                        <div class="loading-inline">
+                          <mat-spinner diameter="24"></mat-spinner>
+                          <span>Loading columns...</span>
+                        </div>
+                      } @else if (dictionaryEntries.length > 0) {
+                        @if (hasSuggestions) {
+                          <div class="suggestions-banner">
+                            <mat-icon>auto_awesome</mat-icon>
+                            <span>Smart suggestions available for some columns</span>
+                            <button class="btn btn-sm btn-secondary" (click)="acceptAllSuggestions()">
+                              Accept All Suggestions
+                            </button>
+                          </div>
+                        }
+
+                        <div class="dictionary-editor">
+                          <table class="dict-table">
+                            <thead>
+                              <tr>
+                                <th class="col-name">Column</th>
+                                <th class="col-def">Definition</th>
+                                <th class="col-enc">Encoding</th>
+                                <th class="col-actions"></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              @for (entry of dictionaryEntries; track entry.column_name; let i = $index) {
+                                <tr>
+                                  <td class="col-name">
+                                    <code>{{ entry.column_name }}</code>
+                                  </td>
+                                  <td class="col-def">
+                                    <input
+                                      type="text"
+                                      class="dict-input"
+                                      [class.has-suggestion]="entry.suggested_definition && !entry.definition"
+                                      [value]="entry.definition"
+                                      [placeholder]="entry.suggested_definition || 'Enter definition...'"
+                                      (input)="updateDictEntry(i, 'definition', $event)"
+                                    />
+                                    @if (entry.suggested_definition && !entry.definition) {
+                                      <span class="suggestion-badge" [class]="entry.suggestion_confidence">
+                                        Suggested
+                                      </span>
+                                    }
+                                  </td>
+                                  <td class="col-enc">
+                                    <input
+                                      type="text"
+                                      class="dict-input"
+                                      [class.has-suggestion]="entry.suggested_encoding && !entry.encoding"
+                                      [value]="entry.encoding"
+                                      [placeholder]="entry.suggested_encoding || 'e.g., 0=No, 1=Yes'"
+                                      (input)="updateDictEntry(i, 'encoding', $event)"
+                                    />
+                                  </td>
+                                  <td class="col-actions">
+                                    @if ((entry.suggested_definition && !entry.definition) || (entry.suggested_encoding && !entry.encoding)) {
+                                      <button
+                                        class="btn-icon accept-btn"
+                                        matTooltip="Accept suggestion"
+                                        (click)="acceptSuggestion(i)"
+                                      >
+                                        <mat-icon>check</mat-icon>
+                                      </button>
+                                    }
+                                  </td>
+                                </tr>
+                              }
+                            </tbody>
+                          </table>
+
+                          <div class="dict-actions">
+                            <button
+                              class="btn btn-primary"
+                              (click)="saveDictionary()"
+                              [disabled]="savingDictionary"
+                            >
+                              @if (savingDictionary) {
+                                <mat-spinner diameter="18"></mat-spinner>
+                                Saving...
+                              } @else {
+                                <mat-icon>save</mat-icon>
+                                Save Dictionary
+                              }
+                            </button>
+                          </div>
+                        </div>
+                      } @else {
+                        <div class="empty-files">
+                          <mat-icon>info</mat-icon>
+                          <p>No columns detected in this file</p>
+                        </div>
+                      }
+                    }
+                  }
                 </div>
 
                 <div class="section-actions">
@@ -920,7 +1057,7 @@ interface Section {
     }
 
     /* Files Manager */
-    .files-manager, .truth-set-manager, .thumbnail-manager {
+    .files-manager, .truth-set-manager, .thumbnail-manager, .dictionary-manager {
       margin-bottom: var(--space-6);
       padding-bottom: var(--space-6);
       border-bottom: 1px solid var(--color-border);
@@ -998,6 +1135,118 @@ interface Section {
       color: var(--color-text-muted);
 
       mat-icon { font-size: 32px; width: 32px; height: 32px; }
+    }
+
+    /* Dictionary Editor */
+    .dict-file-select {
+      margin-bottom: var(--space-4);
+
+      .form-select { max-width: 300px; }
+    }
+
+    .suggestions-banner {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background-color: var(--color-info-light);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-4);
+      color: var(--color-info);
+
+      mat-icon { font-size: 20px; width: 20px; height: 20px; }
+      span { flex: 1; font-size: var(--text-sm); }
+    }
+
+    .dictionary-editor {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .dict-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+
+      th, td {
+        padding: var(--space-3);
+        text-align: left;
+        border-bottom: 1px solid var(--color-border);
+      }
+
+      th {
+        background-color: var(--color-surface-muted);
+        font-weight: 600;
+        font-size: var(--text-xs);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      tr:last-child td { border-bottom: none; }
+
+      .col-name { width: 150px; }
+      .col-def { width: 40%; }
+      .col-enc { width: 30%; }
+      .col-actions { width: 50px; text-align: center; }
+
+      code {
+        font-family: var(--font-mono);
+        font-size: var(--text-sm);
+        background-color: var(--color-surface-muted);
+        padding: 2px 6px;
+        border-radius: var(--radius-sm);
+      }
+    }
+
+    .dict-input {
+      width: 100%;
+      padding: var(--space-2);
+      font-size: var(--text-sm);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background-color: var(--color-surface);
+
+      &:focus {
+        outline: none;
+        border-color: var(--color-accent);
+      }
+
+      &.has-suggestion {
+        border-style: dashed;
+        border-color: var(--color-info);
+
+        &::placeholder {
+          color: var(--color-info);
+          font-style: italic;
+        }
+      }
+    }
+
+    .suggestion-badge {
+      display: inline-block;
+      margin-top: var(--space-1);
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      border-radius: var(--radius-sm);
+
+      &.high { background-color: var(--color-success-light); color: var(--color-success); }
+      &.medium { background-color: var(--color-warning-light); color: var(--color-warning); }
+      &.low { background-color: var(--color-surface-muted); color: var(--color-text-muted); }
+    }
+
+    .accept-btn {
+      color: var(--color-success) !important;
+      &:hover { background-color: var(--color-success-light) !important; }
+    }
+
+    .dict-actions {
+      display: flex;
+      justify-content: flex-end;
     }
 
     /* Rules Editor */
@@ -1207,6 +1456,13 @@ export class CompetitionEditComponent implements OnInit {
   loadingTemplates = true;
   ruleCategories: string[] = [];
   enabledRules: Map<number, { enabled: boolean; parameterValue: string }> = new Map();
+
+  // Data Dictionary Editor
+  selectedFileForDict: CompetitionFile | null = null;
+  dictionaryEntries: DictionaryEditEntry[] = [];
+  loadingDictionary = false;
+  savingDictionary = false;
+  hasSuggestions = false;
 
   constructor(
     private fb: FormBuilder,
@@ -1624,6 +1880,132 @@ export class CompetitionEditComponent implements OnInit {
       error: (err) => {
         this.savingRules = false;
         this.error = err.error?.detail || 'Failed to save rules';
+        setTimeout(() => this.error = '', 5000);
+      },
+    });
+  }
+
+  // Data Dictionary Editor
+  getCsvFiles(): CompetitionFile[] {
+    return this.files.filter(f => f.filename.toLowerCase().endsWith('.csv'));
+  }
+
+  onDictFileSelect(fileId: number): void {
+    this.selectedFileForDict = this.files.find(f => f.id === fileId) || null;
+    if (this.selectedFileForDict) {
+      this.loadDictionaryForFile(this.selectedFileForDict);
+    }
+  }
+
+  private loadDictionaryForFile(file: CompetitionFile): void {
+    this.loadingDictionary = true;
+    this.dictionaryEntries = [];
+    this.hasSuggestions = false;
+
+    // First load existing dictionary
+    this.fileService.getDictionary(this.slug, file.id).subscribe({
+      next: (existingEntries) => {
+        // Then load column info with suggestions
+        this.fileService.detectColumns(this.slug, file.id).subscribe({
+          next: (columns) => {
+            // Merge existing entries with suggestions
+            this.dictionaryEntries = columns.map((col, index) => {
+              const existing = existingEntries.find(e => e.column_name === col.name);
+              const hasSuggestion = !!(col.suggested_definition || col.suggested_encoding);
+              if (hasSuggestion && (!existing?.definition && !existing?.encoding)) {
+                this.hasSuggestions = true;
+              }
+              return {
+                column_name: col.name,
+                definition: existing?.definition || '',
+                encoding: existing?.encoding || '',
+                display_order: existing?.display_order ?? index,
+                suggested_definition: col.suggested_definition,
+                suggested_encoding: col.suggested_encoding,
+                suggestion_confidence: col.suggestion_confidence,
+                hasAcceptedSuggestion: false,
+              };
+            });
+            this.loadingDictionary = false;
+          },
+          error: () => {
+            // Fallback to just existing entries if column detection fails
+            this.dictionaryEntries = existingEntries.map((entry, index) => ({
+              column_name: entry.column_name,
+              definition: entry.definition || '',
+              encoding: entry.encoding || '',
+              display_order: entry.display_order,
+              suggested_definition: null,
+              suggested_encoding: null,
+              suggestion_confidence: 'low' as const,
+              hasAcceptedSuggestion: false,
+            }));
+            this.loadingDictionary = false;
+          },
+        });
+      },
+      error: () => {
+        this.loadingDictionary = false;
+      },
+    });
+  }
+
+  updateDictEntry(index: number, field: 'definition' | 'encoding', event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.dictionaryEntries[index][field] = value;
+  }
+
+  acceptSuggestion(index: number): void {
+    const entry = this.dictionaryEntries[index];
+    if (entry.suggested_definition && !entry.definition) {
+      entry.definition = entry.suggested_definition;
+    }
+    if (entry.suggested_encoding && !entry.encoding) {
+      entry.encoding = entry.suggested_encoding;
+    }
+    entry.hasAcceptedSuggestion = true;
+    this.updateHasSuggestions();
+  }
+
+  acceptAllSuggestions(): void {
+    this.dictionaryEntries.forEach(entry => {
+      if (entry.suggested_definition && !entry.definition) {
+        entry.definition = entry.suggested_definition;
+      }
+      if (entry.suggested_encoding && !entry.encoding) {
+        entry.encoding = entry.suggested_encoding;
+      }
+      entry.hasAcceptedSuggestion = true;
+    });
+    this.hasSuggestions = false;
+  }
+
+  private updateHasSuggestions(): void {
+    this.hasSuggestions = this.dictionaryEntries.some(
+      entry => (entry.suggested_definition && !entry.definition) ||
+               (entry.suggested_encoding && !entry.encoding)
+    );
+  }
+
+  saveDictionary(): void {
+    if (!this.selectedFileForDict) return;
+
+    this.savingDictionary = true;
+    const entries = this.dictionaryEntries.map((e, i) => ({
+      column_name: e.column_name,
+      definition: e.definition || null,
+      encoding: e.encoding || null,
+      display_order: i,
+    }));
+
+    this.fileService.updateDictionary(this.slug, this.selectedFileForDict.id, entries).subscribe({
+      next: () => {
+        this.savingDictionary = false;
+        this.snackBar.open('Dictionary saved!', 'Close', { duration: 2000 });
+      },
+      error: (err) => {
+        this.savingDictionary = false;
+        this.error = err.error?.detail || 'Failed to save dictionary';
         setTimeout(() => this.error = '', 5000);
       },
     });
