@@ -50,7 +50,7 @@ module.exports = defineConfig({
         ...devices['Desktop Chrome'],
         baseURL: 'http://localhost:4200',
       },
-      testMatch: /auth\.spec\.ts|e2e\.spec\.ts|profile-edit\.spec\.ts|competition-create\.spec\.ts|thumbnail-upload\.spec\.ts|competition-tabs\.spec\.ts/,
+      testMatch: /auth\.spec\.ts|e2e\.spec\.ts|profile-edit\.spec\.ts|competition-create\.spec\.ts|thumbnail-upload\.spec\.ts|competition-tabs\.spec\.ts|competition-overview\.spec\.ts/,
     },
   ],
 

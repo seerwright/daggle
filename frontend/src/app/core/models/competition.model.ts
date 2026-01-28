@@ -15,6 +15,7 @@ export interface Competition {
   max_team_size: number;
   daily_submission_limit: number;
   evaluation_metric: string;
+  evaluation_description: string | null;
   is_public: boolean;
   has_truth_set: boolean;
   thumbnail_url: string | null;
@@ -45,5 +46,6 @@ export interface CompetitionCreate {
   max_team_size: number;
   daily_submission_limit: number;
   evaluation_metric: string;
+  evaluation_description?: string;
   is_public: boolean;
 }

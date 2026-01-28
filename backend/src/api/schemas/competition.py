@@ -36,6 +36,7 @@ class CompetitionCreate(BaseModel):
     max_team_size: int = Field(default=1, ge=1, le=10)
     daily_submission_limit: int = Field(default=5, ge=1, le=100)
     evaluation_metric: str = Field(min_length=1, max_length=100)
+    evaluation_description: str | None = None
     is_public: bool = True
 
 
@@ -51,6 +52,7 @@ class CompetitionUpdate(BaseModel):
     max_team_size: int | None = Field(default=None, ge=1, le=10)
     daily_submission_limit: int | None = Field(default=None, ge=1, le=100)
     evaluation_metric: str | None = Field(default=None, min_length=1, max_length=100)
+    evaluation_description: str | None = None
     is_public: bool | None = None
     status: CompetitionStatus | None = None
 
@@ -71,6 +73,7 @@ class CompetitionResponse(BaseModel):
     max_team_size: int
     daily_submission_limit: int
     evaluation_metric: str
+    evaluation_description: str | None = None
     is_public: bool
     has_truth_set: bool = False
     thumbnail_url: str | None = None
@@ -97,6 +100,7 @@ class CompetitionResponse(BaseModel):
             "max_team_size": obj.max_team_size,
             "daily_submission_limit": obj.daily_submission_limit,
             "evaluation_metric": obj.evaluation_metric,
+            "evaluation_description": obj.evaluation_description,
             "is_public": obj.is_public,
             "has_truth_set": obj.solution_path is not None,
             "thumbnail_url": _path_to_url(obj.thumbnail_path),
