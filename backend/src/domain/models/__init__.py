@@ -3,6 +3,7 @@
 from src.domain.models.base import Base
 from src.domain.models.competition import Competition
 from src.domain.models.competition_file import CompetitionFile
+from src.domain.models.data_dictionary import DataDictionaryEntry
 from src.domain.models.discussion import DiscussionThread, DiscussionReply
 from src.domain.models.enrollment import Enrollment
 from src.domain.models.faq import CompetitionFAQ
@@ -16,6 +17,7 @@ __all__ = [
     "Competition",
     "CompetitionFAQ",
     "CompetitionFile",
+    "DataDictionaryEntry",
     "DiscussionReply",
     "DiscussionThread",
     "Enrollment",

@@ -24,10 +24,16 @@ class CompetitionFile(Base, TimestampMixin):
     file_path: Mapped[str] = mapped_column(String(500))
     file_size: Mapped[int | None] = mapped_column(BigInteger)
     file_type: Mapped[str | None] = mapped_column(String(50))
+    variable_notes: Mapped[str | None] = mapped_column(Text)
 
     # Relationships
     competition: Mapped["Competition"] = relationship(  # noqa: F821
         back_populates="files",
+    )
+    dictionary_entries: Mapped[list["DataDictionaryEntry"]] = relationship(  # noqa: F821
+        back_populates="file",
+        lazy="selectin",
+        order_by="DataDictionaryEntry.display_order",
     )
 
     def __repr__(self) -> str:
