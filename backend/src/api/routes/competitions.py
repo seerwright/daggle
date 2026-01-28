@@ -473,6 +473,53 @@ async def upload_file(
         )
 
 
+@router.get("/{slug}/files/download-all")
+async def download_all_files(
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Download all competition files as a zip archive."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    file_service = CompetitionFileService(db)
+    files = await file_service.list_by_competition(competition.id)
+
+    if not files:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No files available for this competition",
+        )
+
+    # Create zip archive in memory
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for competition_file in files:
+            try:
+                content = await file_service.get_download_content(competition_file)
+                zip_file.writestr(competition_file.filename, content)
+            except FileNotFoundError:
+                # Skip files that don't exist in storage
+                continue
+
+    zip_buffer.seek(0)
+    zip_filename = f"{competition.slug}-data.zip"
+
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{zip_filename}"',
+        },
+    )
+
+
 @router.get("/{slug}/files/{file_id}")
 async def download_file(
     slug: str,
@@ -587,50 +634,3 @@ async def delete_file(
         )
 
     await file_service.delete(competition_file)
-
-
-@router.get("/{slug}/files/download-all")
-async def download_all_files(
-    slug: str,
-    db: AsyncSession = Depends(get_db),
-):
-    """Download all competition files as a zip archive."""
-    comp_service = CompetitionService(db)
-    competition = await comp_service.get_by_slug(slug)
-
-    if competition is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Competition not found",
-        )
-
-    file_service = CompetitionFileService(db)
-    files = await file_service.list_by_competition(competition.id)
-
-    if not files:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No files available for this competition",
-        )
-
-    # Create zip archive in memory
-    zip_buffer = io.BytesIO()
-    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-        for competition_file in files:
-            try:
-                content = await file_service.get_download_content(competition_file)
-                zip_file.writestr(competition_file.filename, content)
-            except FileNotFoundError:
-                # Skip files that don't exist in storage
-                continue
-
-    zip_buffer.seek(0)
-    zip_filename = f"{competition.slug}-data.zip"
-
-    return StreamingResponse(
-        zip_buffer,
-        media_type="application/zip",
-        headers={
-            "Content-Disposition": f'attachment; filename="{zip_filename}"',
-        },
-    )

@@ -265,10 +265,10 @@ test.describe.serial('Competition Detail Tabs', () => {
     await page.goto(`/competitions/${competitionSlug}`);
     await page.waitForLoadState('networkidle');
 
-    // Check Data tab placeholder
+    // Check Data tab empty state
     await page.click('[role="tab"]:has-text("Data")');
-    await expect(page.locator('app-data-tab .placeholder-title')).toHaveText('Data Files');
-    await expect(page.locator('app-data-tab .placeholder-description')).toContainText('Competition data files');
+    await expect(page.locator('app-data-tab .empty-title')).toHaveText('No Data Files');
+    await expect(page.locator('app-data-tab .empty-description')).toContainText('No data files have been uploaded');
 
     // Check Rules tab placeholder
     await page.click('[role="tab"]:has-text("Rules")');
