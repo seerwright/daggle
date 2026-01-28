@@ -8,11 +8,13 @@ from src.domain.models.rule_template import RuleTemplate
 
 
 # Predefined rule templates organized by category
+# Each template has a title (short heading) and template_text (detailed description)
 PREDEFINED_TEMPLATES = [
     # Team Formation
     {
         "category": "Team Formation",
-        "template_text": "Teams may have a maximum of {n} members",
+        "title": "Team Size Limit",
+        "template_text": "Teams may have a maximum of {n} members. Teams with more members will not be eligible for prizes.",
         "has_parameter": True,
         "parameter_type": "number",
         "parameter_label": "Maximum team size",
@@ -20,7 +22,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Team Formation",
-        "template_text": "Team mergers are allowed until {date}",
+        "title": "Team Mergers",
+        "template_text": "Team mergers are allowed and can be performed by the team leader until {date}. The combined team must have a total submission count less than or equal to the maximum allowed.",
         "has_parameter": True,
         "parameter_type": "date",
         "parameter_label": "Merger deadline",
@@ -28,7 +31,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Team Formation",
-        "template_text": "Participants may only belong to one team",
+        "title": "One Team Per Participant",
+        "template_text": "Participants may only belong to one team. You cannot switch teams or participate on multiple teams during the competition.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -36,7 +40,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Team Formation",
-        "template_text": "Team members cannot be changed after the competition starts",
+        "title": "Team Roster Lock",
+        "template_text": "Team members cannot be changed after the competition starts. Make sure your team is finalized before the start date.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -45,7 +50,8 @@ PREDEFINED_TEMPLATES = [
     # Submissions
     {
         "category": "Submissions",
-        "template_text": "Daily submission limit: {n} per day",
+        "title": "Daily Submission Limit",
+        "template_text": "You may submit a maximum of {n} entries per day. Unused submissions do not roll over to the next day.",
         "has_parameter": True,
         "parameter_type": "number",
         "parameter_label": "Submissions per day",
@@ -53,7 +59,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Submissions",
-        "template_text": "Submissions must include source code",
+        "title": "Code Submission Required",
+        "template_text": "Submissions must include reproducible source code. Winners may be required to share their solution code with the competition host.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -61,7 +68,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Submissions",
-        "template_text": "External data is permitted if documented",
+        "title": "External Data Policy",
+        "template_text": "External data is permitted if properly documented and made available to all participants. You must disclose any external data sources used in your solution.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -69,7 +77,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Submissions",
-        "template_text": "Pre-trained models are allowed",
+        "title": "Pre-trained Models",
+        "template_text": "Pre-trained models are allowed. You may use publicly available pre-trained models as part of your solution.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -77,7 +86,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Submissions",
-        "template_text": "Hand-labeling of test data is prohibited",
+        "title": "No Manual Labeling",
+        "template_text": "Hand-labeling of test data is strictly prohibited. Any submission found to use manually labeled test data will be disqualified.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -86,7 +96,8 @@ PREDEFINED_TEMPLATES = [
     # Scoring
     {
         "category": "Scoring",
-        "template_text": "Final ranking uses private leaderboard scores",
+        "title": "Private Leaderboard",
+        "template_text": "Final ranking uses private leaderboard scores calculated on a held-out test set. The public leaderboard is for feedback only.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -94,7 +105,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Scoring",
-        "template_text": "Ties are broken by earliest submission time",
+        "title": "Tie-Breaking",
+        "template_text": "Ties are broken by earliest submission time. If two participants have the same score, the one who submitted earlier wins.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -102,7 +114,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Scoring",
-        "template_text": "You may select {n} submissions for final scoring",
+        "title": "Final Submission Selection",
+        "template_text": "You may select up to {n} submissions for final scoring. If no selection is made, your best public leaderboard submissions will be used.",
         "has_parameter": True,
         "parameter_type": "number",
         "parameter_label": "Number of final submissions",
@@ -111,7 +124,8 @@ PREDEFINED_TEMPLATES = [
     # Conduct
     {
         "category": "Conduct",
-        "template_text": "Share knowledge freely in discussions",
+        "title": "Open Discussion",
+        "template_text": "Share knowledge freely in the discussion forums. Helping others learn is encouraged and contributes to a positive community.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -119,7 +133,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Conduct",
-        "template_text": "Cite sources when using external code",
+        "title": "Citation Requirements",
+        "template_text": "Cite sources when using external code or techniques. Give proper credit to original authors and provide links to source repositories.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -127,7 +142,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Conduct",
-        "template_text": "Private sharing of code between teams is prohibited",
+        "title": "No Private Sharing",
+        "template_text": "Private sharing of code or data outside of teams is not permitted. It's okay to share code if made available to all participants on the forums.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -135,7 +151,8 @@ PREDEFINED_TEMPLATES = [
     },
     {
         "category": "Conduct",
-        "template_text": "Multiple accounts are not permitted",
+        "title": "One Account Per Participant",
+        "template_text": "You cannot sign up from multiple accounts and therefore cannot submit from multiple accounts. Violations will result in disqualification.",
         "has_parameter": False,
         "parameter_type": None,
         "parameter_label": None,
@@ -287,6 +304,7 @@ class RuleService:
                 competition_id=competition_id,
                 rule_template_id=data.get("rule_template_id"),
                 parameter_value=data.get("parameter_value"),
+                custom_title=data.get("custom_title"),
                 custom_text=data.get("custom_text"),
                 is_enabled=data.get("is_enabled", True),
                 display_order=data.get("display_order", i),

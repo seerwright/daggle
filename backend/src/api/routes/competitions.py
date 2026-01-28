@@ -29,6 +29,7 @@ from src.api.schemas.rules import (
     CompetitionRuleCreate,
     CompetitionRuleResponse,
     RuleBulkUpdate,
+    RuleDisplayItem,
     RulesDisplayResponse,
     RuleTemplateResponse,
 )
@@ -740,6 +741,9 @@ async def detect_file_columns(
                 sample_values=col.sample_values,
                 null_count=col.null_count,
                 unique_count=col.unique_count,
+                suggested_definition=col.suggested_definition,
+                suggested_encoding=col.suggested_encoding,
+                suggestion_confidence=col.suggestion_confidence,
             )
             for col in columns
         ]
@@ -900,10 +904,11 @@ async def get_rules_for_display(
     rules = await rule_service.list_competition_rules(competition.id, enabled_only=True)
 
     # Group by category
-    categories: dict[str, list[str]] = {}
+    categories: dict[str, list[RuleDisplayItem]] = {}
     for rule in rules:
-        text = rule.get_rendered_text()
-        if not text:
+        title = rule.get_title()
+        description = rule.get_rendered_text()
+        if not description:
             continue
 
         if rule.template:
@@ -913,7 +918,7 @@ async def get_rules_for_display(
 
         if category not in categories:
             categories[category] = []
-        categories[category].append(text)
+        categories[category].append(RuleDisplayItem(title=title, description=description))
 
     return [
         RulesDisplayResponse(category=category, rules=rules_list)

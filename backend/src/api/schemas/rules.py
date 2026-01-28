@@ -10,7 +10,8 @@ class RuleTemplateResponse(BaseModel):
 
     id: int
     category: str
-    template_text: str
+    title: str
+    template_text: str  # Description
     has_parameter: bool
     parameter_type: str | None
     parameter_label: str | None
@@ -25,6 +26,7 @@ class CompetitionRuleCreate(BaseModel):
 
     rule_template_id: int | None = None
     parameter_value: str | None = None
+    custom_title: str | None = None
     custom_text: str | None = None
     display_order: int = Field(default=0, ge=0)
 
@@ -46,9 +48,11 @@ class CompetitionRuleResponse(BaseModel):
     rule_template_id: int | None
     is_enabled: bool
     parameter_value: str | None
+    custom_title: str | None
     custom_text: str | None
     display_order: int
-    rendered_text: str
+    title: str  # Resolved title (from template or custom)
+    rendered_text: str  # Resolved description
     template: RuleTemplateResponse | None
     created_at: datetime
     updated_at: datetime
@@ -65,8 +69,10 @@ class CompetitionRuleResponse(BaseModel):
             rule_template_id=rule.rule_template_id,
             is_enabled=rule.is_enabled,
             parameter_value=rule.parameter_value,
+            custom_title=rule.custom_title,
             custom_text=rule.custom_text,
             display_order=rule.display_order,
+            title=rule.get_title(),
             rendered_text=rule.get_rendered_text(),
             template=RuleTemplateResponse.model_validate(rule.template) if rule.template else None,
             created_at=rule.created_at,
@@ -80,8 +86,15 @@ class RuleBulkUpdate(BaseModel):
     rules: list[CompetitionRuleCreate]
 
 
+class RuleDisplayItem(BaseModel):
+    """A single rule with title and description."""
+
+    title: str
+    description: str
+
+
 class RulesDisplayResponse(BaseModel):
-    """Schema for displaying rules to participants (simplified view)."""
+    """Schema for displaying rules to participants (grouped by category)."""
 
     category: str
-    rules: list[str]
+    rules: list[RuleDisplayItem]

@@ -42,14 +42,17 @@ import { RulesDisplay } from '../../../../../core/models/rule.model';
                 <mat-icon>{{ getCategoryIcon(category.category) }}</mat-icon>
                 {{ category.category }}
               </h3>
-              <ul class="rules-list">
-                @for (rule of category.rules; track rule) {
-                  <li class="rule-item">
-                    <mat-icon class="rule-icon">check_circle</mat-icon>
-                    <span class="rule-text">{{ rule }}</span>
-                  </li>
+              <div class="rules-list">
+                @for (rule of category.rules; track rule.title) {
+                  <div class="rule-item">
+                    <div class="rule-header">
+                      <mat-icon class="rule-icon">check_circle</mat-icon>
+                      <h4 class="rule-title">{{ rule.title }}</h4>
+                    </div>
+                    <p class="rule-description">{{ rule.description }}</p>
+                  </div>
                 }
-              </ul>
+              </div>
             </div>
           }
 
@@ -180,18 +183,23 @@ import { RulesDisplay } from '../../../../../core/models/rule.model';
     }
 
     .rules-list {
-      list-style: none;
       margin: 0;
       padding: var(--space-4) var(--space-5);
       display: flex;
       flex-direction: column;
-      gap: var(--space-3);
+      gap: var(--space-5);
     }
 
     .rule-item {
       display: flex;
-      align-items: flex-start;
-      gap: var(--space-3);
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .rule-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
     }
 
     .rule-icon {
@@ -200,13 +208,22 @@ import { RulesDisplay } from '../../../../../core/models/rule.model';
       height: 18px;
       color: var(--color-success);
       flex-shrink: 0;
-      margin-top: 2px;
     }
 
-    .rule-text {
+    .rule-title {
+      font-family: var(--font-display);
       font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0;
+    }
+
+    .rule-description {
+      font-size: var(--text-sm);
       color: var(--color-text-secondary);
-      line-height: 1.5;
+      line-height: 1.6;
+      margin: 0;
+      padding-left: 26px;  /* Align with title after icon */
     }
 
     /* Footer */

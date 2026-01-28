@@ -26,6 +26,7 @@ class CompetitionRule(Base, TimestampMixin):
     )
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     parameter_value: Mapped[str | None] = mapped_column(String(255))
+    custom_title: Mapped[str | None] = mapped_column(String(255))  # For custom rules
     custom_text: Mapped[str | None] = mapped_column(Text)  # For custom rules (rule_template_id is NULL)
     display_order: Mapped[int] = mapped_column(Integer, default=0)
 
@@ -39,8 +40,16 @@ class CompetitionRule(Base, TimestampMixin):
         back_populates="competition_rules",
     )
 
+    def get_title(self) -> str:
+        """Get the rule title."""
+        if self.custom_title:
+            return self.custom_title
+        if self.template and self.template.title:
+            return self.template.title
+        return ""
+
     def get_rendered_text(self) -> str:
-        """Get the rule text with parameter value substituted."""
+        """Get the rule description with parameter value substituted."""
         if self.custom_text:
             return self.custom_text
         if self.template:

@@ -7,6 +7,8 @@ data types, and common patterns in data science datasets.
 import re
 from dataclasses import dataclass
 
+import inflection
+
 
 @dataclass
 class ColumnSuggestion:
@@ -191,34 +193,76 @@ def format_description(template: str, column_name: str) -> str:
     return template
 
 
-def suggest_encoding_from_dtype(dtype: str, unique_count: int, sample_values: list[str]) -> str | None:
-    """Suggest encoding description based on data type and values."""
-    if dtype == "binary":
-        return "0 = No, 1 = Yes"
+def _sort_key_for_encoding(x: str) -> tuple:
+    """Generate a sort key that sorts numbers first, then strings alphabetically."""
+    try:
+        return (0, float(x))
+    except (ValueError, OverflowError):
+        return (1, x.lower())
 
-    if dtype == "bool":
-        # Check actual values to determine encoding
-        lower_values = {v.lower() for v in sample_values if v}
-        if "true" in lower_values or "false" in lower_values:
-            return "true = Yes, false = No"
-        if "yes" in lower_values or "no" in lower_values:
-            return "yes = Yes, no = No"
-        return "0 = No, 1 = Yes"
 
-    # For low-cardinality categorical variables, list the values
-    if dtype == "string" and unique_count <= 10 and unique_count > 0:
-        if len(sample_values) <= 5:
-            values_str = ", ".join(sorted(sample_values))
-            return f"Possible values: {values_str}"
+def suggest_encoding_from_values(
+    unique_values: list[str],
+    unique_count: int,
+    max_categorical: int = 6,
+) -> str | None:
+    """Suggest encoding description based on unique values.
 
-    return None
+    If there are 6 or fewer unique values, generate a template like:
+    "0=?, 1=?, 2=?, 3=?" for the user to fill in.
+
+    Args:
+        unique_values: List of unique values in the column
+        unique_count: Total count of unique values
+        max_categorical: Maximum number of unique values to consider categorical
+
+    Returns:
+        Encoding suggestion string or None
+    """
+    if unique_count == 0 or unique_count > max_categorical:
+        return None
+
+    # Sort values for consistent display (numbers first, then alphabetically)
+    sorted_values = sorted(unique_values, key=_sort_key_for_encoding)
+
+    # Check for binary 0/1 pattern
+    if set(sorted_values) == {"0", "1"}:
+        return "0=?, 1=?"
+
+    # Check for boolean-like values
+    lower_values = {v.lower() for v in sorted_values}
+    if lower_values == {"true", "false"}:
+        return "true=?, false=?"
+    if lower_values == {"yes", "no"}:
+        return "yes=?, no=?"
+    if lower_values == {"y", "n"}:
+        return "Y=?, N=?"
+
+    # Generate template for all unique values
+    encoding_parts = [f"{v}=?" for v in sorted_values]
+    return ", ".join(encoding_parts)
+
+
+def humanize_column_name(column_name: str) -> str:
+    """Convert a column name to a human-readable format using inflection.
+
+    Examples:
+        - "AssetClass" -> "Asset class"
+        - "user_first_name" -> "User first name"
+        - "isActive" -> "Is active"
+    """
+    # Use inflection to handle various naming conventions
+    # First convert to underscore format, then humanize
+    underscored = inflection.underscore(column_name)
+    humanized = inflection.humanize(underscored)
+    return humanized
 
 
 def get_column_suggestion(
     column_name: str,
     dtype: str = "unknown",
     unique_count: int = 0,
-    sample_values: list[str] | None = None,
+    unique_values: list[str] | None = None,
 ) -> ColumnSuggestion:
     """Get suggestion for a column based on its name and properties.
 
@@ -226,34 +270,31 @@ def get_column_suggestion(
         column_name: The column name to analyze
         dtype: Detected data type (int, float, string, bool, binary)
         unique_count: Number of unique values in the column
-        sample_values: Sample values from the column
+        unique_values: All unique values from the column (for encoding suggestion)
 
     Returns:
         ColumnSuggestion with definition and encoding suggestions
     """
-    sample_values = sample_values or []
+    unique_values = unique_values or []
     column_lower = column_name.lower()
 
-    # Try pattern matching
+    # Generate encoding suggestion based on unique values
+    encoding = suggest_encoding_from_values(unique_values, unique_count)
+
+    # Try pattern matching for definition
     for pattern, template, confidence in COLUMN_PATTERNS:
         if re.search(pattern, column_lower):
             definition = format_description(template, column_name)
-            encoding = suggest_encoding_from_dtype(dtype, unique_count, sample_values)
             return ColumnSuggestion(
                 definition=definition,
                 encoding=encoding,
                 confidence=confidence,
             )
 
-    # Fallback: try to create a readable description from the column name
-    parts = parse_column_name(column_name)
-    if parts:
-        readable = " ".join(parts).title()
-        encoding = suggest_encoding_from_dtype(dtype, unique_count, sample_values)
-        return ColumnSuggestion(
-            definition=readable,
-            encoding=encoding,
-            confidence="low",
-        )
-
-    return ColumnSuggestion()
+    # Fallback: use inflection to humanize the column name
+    humanized = humanize_column_name(column_name)
+    return ColumnSuggestion(
+        definition=humanized,
+        encoding=encoding,
+        confidence="low",
+    )

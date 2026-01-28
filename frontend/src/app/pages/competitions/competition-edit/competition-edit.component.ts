@@ -30,7 +30,8 @@ interface DictionaryEditEntry {
   suggested_definition: string | null;
   suggested_encoding: string | null;
   suggestion_confidence: 'low' | 'medium' | 'high';
-  hasAcceptedSuggestion: boolean;
+  definitionEdited: boolean;
+  encodingEdited: boolean;
 }
 
 interface Section {
@@ -226,6 +227,43 @@ interface Section {
                   </div>
                 </form>
 
+                <!-- Thumbnail -->
+                <div class="thumbnail-section">
+                  <h3 class="subsection-title">Competition Thumbnail</h3>
+                  <p class="subsection-hint">Image displayed on competition cards (recommended: 800x400px)</p>
+
+                  <div class="thumbnail-preview-small">
+                    @if (thumbnailPreview) {
+                      <img [src]="thumbnailPreview" alt="New thumbnail" />
+                    } @else if (competition?.thumbnail_url) {
+                      <img [src]="competition!.thumbnail_url" alt="Current thumbnail" />
+                    } @else {
+                      <div class="no-thumbnail-small">
+                        <mat-icon>image</mat-icon>
+                      </div>
+                    }
+                  </div>
+
+                  <div class="upload-section">
+                    <input
+                      type="file"
+                      #thumbnailInputBasics
+                      accept=".png,.jpg,.jpeg,.webp"
+                      (change)="onThumbnailSelected($event)"
+                      hidden
+                    />
+                    <button class="btn btn-secondary" (click)="thumbnailInputBasics.click()" [disabled]="uploadingThumbnail">
+                      <mat-icon>image</mat-icon>
+                      {{ competition?.thumbnail_url ? 'Change Thumbnail' : 'Upload Thumbnail' }}
+                    </button>
+                    @if (selectedThumbnail) {
+                      <button class="btn btn-primary" (click)="uploadThumbnail()" [disabled]="uploadingThumbnail">
+                        @if (uploadingThumbnail) { Uploading... } @else { Save Thumbnail }
+                      </button>
+                    }
+                  </div>
+                </div>
+
                 <div class="section-actions">
                   <button class="btn btn-primary" (click)="saveBasics()" [disabled]="savingBasics">
                     @if (savingBasics) {
@@ -398,44 +436,6 @@ interface Section {
                   </div>
                 </div>
 
-                <!-- Thumbnail -->
-                <div class="thumbnail-manager">
-                  <div class="files-header">
-                    <h3 class="subsection-title">Thumbnail</h3>
-                  </div>
-
-                  <div class="thumbnail-preview-small">
-                    @if (thumbnailPreview) {
-                      <img [src]="thumbnailPreview" alt="New thumbnail" />
-                    } @else if (competition?.thumbnail_url) {
-                      <img [src]="competition!.thumbnail_url" alt="Current thumbnail" />
-                    } @else {
-                      <div class="no-thumbnail-small">
-                        <mat-icon>image</mat-icon>
-                      </div>
-                    }
-                  </div>
-
-                  <div class="upload-section">
-                    <input
-                      type="file"
-                      #thumbnailInput
-                      accept=".png,.jpg,.jpeg,.webp"
-                      (change)="onThumbnailSelected($event)"
-                      hidden
-                    />
-                    <button class="btn btn-secondary" (click)="thumbnailInput.click()" [disabled]="uploadingThumbnail">
-                      <mat-icon>image</mat-icon>
-                      {{ competition?.thumbnail_url ? 'Change Thumbnail' : 'Upload Thumbnail' }}
-                    </button>
-                    @if (selectedThumbnail) {
-                      <button class="btn btn-primary" (click)="uploadThumbnail()" [disabled]="uploadingThumbnail">
-                        @if (uploadingThumbnail) { Uploading... } @else { Save Thumbnail }
-                      </button>
-                    }
-                  </div>
-                </div>
-
                 <!-- Data Dictionary Editor -->
                 <div class="dictionary-manager">
                   <div class="files-header">
@@ -457,9 +457,20 @@ interface Section {
                         class="form-select"
                       >
                         @for (file of getCsvFiles(); track file.id) {
-                          <mat-option [value]="file.id">{{ file.display_name || file.filename }}</mat-option>
+                          <mat-option [value]="file.id">
+                            {{ file.display_name || file.filename }}
+                            @if (!fileHasDefinitions(file.id)) {
+                              <span class="needs-definition-badge">needs definitions</span>
+                            }
+                          </mat-option>
                         }
                       </mat-select>
+                      @if (getFilesNeedingDefinitions().length > 0) {
+                        <p class="dict-note">
+                          <mat-icon>info</mat-icon>
+                          {{ getFilesNeedingDefinitions().length }} file(s) still need data dictionary definitions
+                        </p>
+                      }
                     </div>
 
                     @if (selectedFileForDict) {
@@ -472,10 +483,7 @@ interface Section {
                         @if (hasSuggestions) {
                           <div class="suggestions-banner">
                             <mat-icon>auto_awesome</mat-icon>
-                            <span>Smart suggestions available for some columns</span>
-                            <button class="btn btn-sm btn-secondary" (click)="acceptAllSuggestions()">
-                              Accept All Suggestions
-                            </button>
+                            <span>Suggested values are pre-filled (dashed border). Edit as needed, then save.</span>
                           </div>
                         }
 
@@ -499,38 +507,21 @@ interface Section {
                                     <input
                                       type="text"
                                       class="dict-input"
-                                      [class.has-suggestion]="entry.suggested_definition && !entry.definition"
+                                      [class.has-suggestion]="!entry.definitionEdited && entry.suggested_definition"
                                       [value]="entry.definition"
-                                      [placeholder]="entry.suggested_definition || 'Enter definition...'"
                                       (input)="updateDictEntry(i, 'definition', $event)"
                                     />
-                                    @if (entry.suggested_definition && !entry.definition) {
-                                      <span class="suggestion-badge" [class]="entry.suggestion_confidence">
-                                        Suggested
-                                      </span>
-                                    }
                                   </td>
                                   <td class="col-enc">
                                     <input
                                       type="text"
                                       class="dict-input"
-                                      [class.has-suggestion]="entry.suggested_encoding && !entry.encoding"
+                                      [class.has-suggestion]="!entry.encodingEdited && entry.suggested_encoding"
                                       [value]="entry.encoding"
-                                      [placeholder]="entry.suggested_encoding || 'e.g., 0=No, 1=Yes'"
                                       (input)="updateDictEntry(i, 'encoding', $event)"
                                     />
                                   </td>
-                                  <td class="col-actions">
-                                    @if ((entry.suggested_definition && !entry.definition) || (entry.suggested_encoding && !entry.encoding)) {
-                                      <button
-                                        class="btn-icon accept-btn"
-                                        matTooltip="Accept suggestion"
-                                        (click)="acceptSuggestion(i)"
-                                      >
-                                        <mat-icon>check</mat-icon>
-                                      </button>
-                                    }
-                                  </td>
+                                  <td class="col-actions"></td>
                                 </tr>
                               }
                             </tbody>
@@ -628,16 +619,26 @@ interface Section {
                     <!-- Custom Rules -->
                     <div class="rule-category">
                       <h3 class="category-title">Custom Rules</h3>
+                      <p class="category-hint">Add your own rules with a title and description.</p>
                       <div class="custom-rules">
                         @for (rule of customRules; track rule.id || $index) {
                           <div class="custom-rule-item">
-                            <input
-                              type="text"
-                              class="form-input"
-                              [value]="rule.custom_text"
-                              (change)="updateCustomRule($index, $event)"
-                              placeholder="Enter custom rule..."
-                            />
+                            <div class="custom-rule-fields">
+                              <input
+                                type="text"
+                                class="form-input custom-rule-title"
+                                [value]="rule.custom_title"
+                                (change)="updateCustomRuleTitle($index, $event)"
+                                placeholder="Rule title (e.g., No External Data)"
+                              />
+                              <textarea
+                                class="form-input custom-rule-desc"
+                                [value]="rule.custom_text"
+                                (change)="updateCustomRule($index, $event)"
+                                placeholder="Rule description..."
+                                rows="2"
+                              ></textarea>
+                            </div>
                             <button class="btn-icon" (click)="removeCustomRule($index)">
                               <mat-icon>close</mat-icon>
                             </button>
@@ -1057,10 +1058,17 @@ interface Section {
     }
 
     /* Files Manager */
-    .files-manager, .truth-set-manager, .thumbnail-manager, .dictionary-manager {
+    .files-manager, .truth-set-manager, .dictionary-manager {
       margin-bottom: var(--space-6);
       padding-bottom: var(--space-6);
       border-bottom: 1px solid var(--color-border);
+    }
+
+    /* Thumbnail Section (in Basics) */
+    .thumbnail-section {
+      margin-top: var(--space-6);
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--color-border);
     }
 
     .files-header {
@@ -1141,7 +1149,32 @@ interface Section {
     .dict-file-select {
       margin-bottom: var(--space-4);
 
-      .form-select { max-width: 300px; }
+      .form-select { max-width: 400px; }
+    }
+
+    .needs-definition-badge {
+      margin-left: var(--space-2);
+      padding: 2px 6px;
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      background-color: var(--color-warning-light);
+      color: var(--color-warning);
+      border-radius: var(--radius-sm);
+    }
+
+    .dict-note {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+      padding: var(--space-2) var(--space-3);
+      font-size: var(--text-sm);
+      color: var(--color-warning);
+      background-color: var(--color-warning-light);
+      border-radius: var(--radius-md);
+
+      mat-icon { font-size: 16px; width: 16px; height: 16px; }
     }
 
     .suggestions-banner {
@@ -1225,24 +1258,7 @@ interface Section {
       }
     }
 
-    .suggestion-badge {
-      display: inline-block;
-      margin-top: var(--space-1);
-      padding: 2px 6px;
-      font-size: 10px;
-      font-weight: 500;
-      text-transform: uppercase;
-      border-radius: var(--radius-sm);
 
-      &.high { background-color: var(--color-success-light); color: var(--color-success); }
-      &.medium { background-color: var(--color-warning-light); color: var(--color-warning); }
-      &.low { background-color: var(--color-surface-muted); color: var(--color-text-muted); }
-    }
-
-    .accept-btn {
-      color: var(--color-success) !important;
-      &:hover { background-color: var(--color-success-light) !important; }
-    }
 
     .dict-actions {
       display: flex;
@@ -1294,14 +1310,37 @@ interface Section {
       border-radius: var(--radius-sm);
     }
 
-    .custom-rules { display: flex; flex-direction: column; gap: var(--space-3); }
+    .custom-rules { display: flex; flex-direction: column; gap: var(--space-4); }
+
+    .category-hint {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0 0 var(--space-3);
+    }
 
     .custom-rule-item {
       display: flex;
-      align-items: center;
-      gap: var(--space-2);
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      background-color: var(--color-surface-muted);
+      border-radius: var(--radius-md);
+    }
 
-      .form-input { flex: 1; }
+    .custom-rule-fields {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .custom-rule-title {
+      font-weight: 500;
+    }
+
+    .custom-rule-desc {
+      resize: vertical;
+      min-height: 60px;
     }
 
     /* Review */
@@ -1452,7 +1491,7 @@ export class CompetitionEditComponent implements OnInit {
   // Rules
   ruleTemplates: RuleTemplate[] = [];
   competitionRules: CompetitionRule[] = [];
-  customRules: { id?: number; custom_text: string }[] = [];
+  customRules: { id?: number; custom_title: string; custom_text: string }[] = [];
   loadingTemplates = true;
   ruleCategories: string[] = [];
   enabledRules: Map<number, { enabled: boolean; parameterValue: string }> = new Map();
@@ -1463,6 +1502,7 @@ export class CompetitionEditComponent implements OnInit {
   loadingDictionary = false;
   savingDictionary = false;
   hasSuggestions = false;
+  filesWithDefinitions: Set<number> = new Set();
 
   constructor(
     private fb: FormBuilder,
@@ -1522,8 +1562,28 @@ export class CompetitionEditComponent implements OnInit {
 
   private loadFiles(): void {
     this.fileService.list(this.slug).subscribe({
-      next: (files) => this.files = files,
+      next: (files) => {
+        this.files = files;
+        // Check which CSV files have definitions
+        this.checkFilesForDefinitions();
+      },
       error: () => {},
+    });
+  }
+
+  private checkFilesForDefinitions(): void {
+    const csvFiles = this.getCsvFiles();
+    csvFiles.forEach(file => {
+      this.fileService.getDictionary(this.slug, file.id).subscribe({
+        next: (entries) => {
+          // File has definitions if any entry has a non-empty definition
+          const hasDefinition = entries.some(e => e.definition && e.definition.trim());
+          if (hasDefinition) {
+            this.filesWithDefinitions.add(file.id);
+          }
+        },
+        error: () => {},
+      });
     });
   }
 
@@ -1544,7 +1604,7 @@ export class CompetitionEditComponent implements OnInit {
         this.competitionRules = rules;
         this.customRules = rules
           .filter(r => r.custom_text)
-          .map(r => ({ id: r.id, custom_text: r.custom_text! }));
+          .map(r => ({ id: r.id, custom_title: r.custom_title || '', custom_text: r.custom_text! }));
 
         // Initialize enabled rules map
         rules.filter(r => r.rule_template_id).forEach(r => {
@@ -1688,11 +1748,18 @@ export class CompetitionEditComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.uploadingDataFile = true;
+      const uploadedFileName = input.files[0].name;
       this.fileService.upload(this.slug, input.files[0]).subscribe({
         next: (file) => {
           this.files.push(file);
           this.uploadingDataFile = false;
           this.snackBar.open('File uploaded!', 'Close', { duration: 2000 });
+
+          // Auto-select newly uploaded CSV files for dictionary editing
+          if (uploadedFileName.toLowerCase().endsWith('.csv')) {
+            this.selectedFileForDict = file;
+            this.loadDictionaryForFile(file);
+          }
         },
         error: (err) => {
           this.uploadingDataFile = false;
@@ -1827,15 +1894,19 @@ export class CompetitionEditComponent implements OnInit {
   }
 
   addCustomRule(): void {
-    this.customRules.push({ custom_text: '' });
+    this.customRules.push({ custom_title: '', custom_text: '' });
   }
 
   removeCustomRule(index: number): void {
     this.customRules.splice(index, 1);
   }
 
+  updateCustomRuleTitle(index: number, event: Event): void {
+    this.customRules[index].custom_title = (event.target as HTMLInputElement).value;
+  }
+
   updateCustomRule(index: number, event: Event): void {
-    this.customRules[index].custom_text = (event.target as HTMLInputElement).value;
+    this.customRules[index].custom_text = (event.target as HTMLTextAreaElement).value;
   }
 
   getEnabledRulesCount(): number {
@@ -1865,6 +1936,7 @@ export class CompetitionEditComponent implements OnInit {
     this.customRules.forEach(rule => {
       if (rule.custom_text.trim()) {
         rules.push({
+          custom_title: rule.custom_title.trim() || null,
           custom_text: rule.custom_text.trim(),
           display_order: order++,
         });
@@ -1890,6 +1962,14 @@ export class CompetitionEditComponent implements OnInit {
     return this.files.filter(f => f.filename.toLowerCase().endsWith('.csv'));
   }
 
+  fileHasDefinitions(fileId: number): boolean {
+    return this.filesWithDefinitions.has(fileId);
+  }
+
+  getFilesNeedingDefinitions(): CompetitionFile[] {
+    return this.getCsvFiles().filter(f => !this.filesWithDefinitions.has(f.id));
+  }
+
   onDictFileSelect(fileId: number): void {
     this.selectedFileForDict = this.files.find(f => f.id === fileId) || null;
     if (this.selectedFileForDict) {
@@ -1911,19 +1991,36 @@ export class CompetitionEditComponent implements OnInit {
             // Merge existing entries with suggestions
             this.dictionaryEntries = columns.map((col, index) => {
               const existing = existingEntries.find(e => e.column_name === col.name);
-              const hasSuggestion = !!(col.suggested_definition || col.suggested_encoding);
-              if (hasSuggestion && (!existing?.definition && !existing?.encoding)) {
+
+              // Determine if we have user-entered values or should use suggestions
+              const hasExistingDefinition = !!(existing?.definition && existing.definition.trim());
+              const hasExistingEncoding = !!(existing?.encoding && existing.encoding.trim());
+
+              // Pre-populate with suggestions if no existing value
+              const definition = hasExistingDefinition
+                ? (existing!.definition || '')
+                : (col.suggested_definition || '');
+              const encoding = hasExistingEncoding
+                ? (existing!.encoding || '')
+                : (col.suggested_encoding || '');
+
+              // Track if there are still unedited suggestions
+              if ((col.suggested_definition && !hasExistingDefinition) ||
+                  (col.suggested_encoding && !hasExistingEncoding)) {
                 this.hasSuggestions = true;
               }
+
               return {
                 column_name: col.name,
-                definition: existing?.definition || '',
-                encoding: existing?.encoding || '',
+                definition,
+                encoding,
                 display_order: existing?.display_order ?? index,
                 suggested_definition: col.suggested_definition,
                 suggested_encoding: col.suggested_encoding,
                 suggestion_confidence: col.suggestion_confidence,
-                hasAcceptedSuggestion: false,
+                // Mark as edited if user already had a value saved
+                definitionEdited: hasExistingDefinition,
+                encodingEdited: hasExistingEncoding,
               };
             });
             this.loadingDictionary = false;
@@ -1938,7 +2035,8 @@ export class CompetitionEditComponent implements OnInit {
               suggested_definition: null,
               suggested_encoding: null,
               suggestion_confidence: 'low' as const,
-              hasAcceptedSuggestion: false,
+              definitionEdited: true,
+              encodingEdited: true,
             }));
             this.loadingDictionary = false;
           },
@@ -1953,39 +2051,14 @@ export class CompetitionEditComponent implements OnInit {
   updateDictEntry(index: number, field: 'definition' | 'encoding', event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.dictionaryEntries[index][field] = value;
-  }
-
-  acceptSuggestion(index: number): void {
-    const entry = this.dictionaryEntries[index];
-    if (entry.suggested_definition && !entry.definition) {
-      entry.definition = entry.suggested_definition;
+    // Mark as edited when user types - this removes the suggestion styling
+    if (field === 'definition') {
+      this.dictionaryEntries[index].definitionEdited = true;
+    } else {
+      this.dictionaryEntries[index].encodingEdited = true;
     }
-    if (entry.suggested_encoding && !entry.encoding) {
-      entry.encoding = entry.suggested_encoding;
-    }
-    entry.hasAcceptedSuggestion = true;
-    this.updateHasSuggestions();
   }
 
-  acceptAllSuggestions(): void {
-    this.dictionaryEntries.forEach(entry => {
-      if (entry.suggested_definition && !entry.definition) {
-        entry.definition = entry.suggested_definition;
-      }
-      if (entry.suggested_encoding && !entry.encoding) {
-        entry.encoding = entry.suggested_encoding;
-      }
-      entry.hasAcceptedSuggestion = true;
-    });
-    this.hasSuggestions = false;
-  }
-
-  private updateHasSuggestions(): void {
-    this.hasSuggestions = this.dictionaryEntries.some(
-      entry => (entry.suggested_definition && !entry.definition) ||
-               (entry.suggested_encoding && !entry.encoding)
-    );
-  }
 
   saveDictionary(): void {
     if (!this.selectedFileForDict) return;
@@ -1998,9 +2071,15 @@ export class CompetitionEditComponent implements OnInit {
       display_order: i,
     }));
 
-    this.fileService.updateDictionary(this.slug, this.selectedFileForDict.id, entries).subscribe({
+    const fileId = this.selectedFileForDict.id;
+    this.fileService.updateDictionary(this.slug, fileId, entries).subscribe({
       next: () => {
         this.savingDictionary = false;
+        // Track that this file now has definitions if any definition was provided
+        const hasAnyDefinition = entries.some(e => e.definition && e.definition.trim());
+        if (hasAnyDefinition) {
+          this.filesWithDefinitions.add(fileId);
+        }
         this.snackBar.open('Dictionary saved!', 'Close', { duration: 2000 });
       },
       error: (err) => {

@@ -234,20 +234,24 @@ class DataDictionaryService:
         for col in columns:
             values = column_values[col]
             non_null = [v for v in values if v.strip()]
-            unique_values = set(non_null)
+            unique_values_set = set(non_null)
+            unique_count = len(unique_values_set)
 
             # Detect dtype
             dtype = self._detect_dtype(non_null)
 
-            # Get sample values (first 5 unique)
-            sample = list(unique_values)[:5]
+            # Get sample values (first 5 unique) for display
+            sample = list(unique_values_set)[:5]
+
+            # Get all unique values for encoding suggestion (if <= 6)
+            unique_values_list = list(unique_values_set) if unique_count <= 6 else []
 
             # Get suggestions based on column name and data
             suggestion = get_column_suggestion(
                 column_name=col,
                 dtype=dtype,
-                unique_count=len(unique_values),
-                sample_values=sample,
+                unique_count=unique_count,
+                unique_values=unique_values_list,
             )
 
             result.append(
@@ -256,7 +260,7 @@ class DataDictionaryService:
                     dtype=dtype,
                     sample_values=sample,
                     null_count=len(values) - len(non_null),
-                    unique_count=len(unique_values),
+                    unique_count=unique_count,
                     suggested_definition=suggestion.definition,
                     suggested_encoding=suggestion.encoding,
                     suggestion_confidence=suggestion.confidence,
@@ -274,15 +278,19 @@ class DataDictionaryService:
         int_count = 0
         float_count = 0
 
+        import math
         for v in values[:50]:  # Sample first 50
             try:
                 float_val = float(v)
-                if float_val == int(float_val):
+                # Skip infinity and NaN values
+                if math.isinf(float_val) or math.isnan(float_val):
+                    float_count += 1
+                elif float_val == int(float_val):
                     int_count += 1
                 else:
                     float_count += 1
-            except ValueError:
-                # Not a number
+            except (ValueError, OverflowError):
+                # Not a number or overflow
                 pass
 
         total_numeric = int_count + float_count
