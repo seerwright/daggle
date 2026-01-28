@@ -53,6 +53,9 @@ class ColumnInfoResponse(BaseModel):
     sample_values: list[str]
     null_count: int
     unique_count: int
+    suggested_definition: str | None = None
+    suggested_encoding: str | None = None
+    suggestion_confidence: str = "low"  # low, medium, high
 
 
 class PreviewResponse(BaseModel):

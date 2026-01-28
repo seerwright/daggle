@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.schemas.data_dictionary import DataDictionaryEntryUpdate
 from src.domain.models.competition_file import CompetitionFile
 from src.domain.models.data_dictionary import DataDictionaryEntry
+from src.domain.services.column_suggestions import get_column_suggestion
 from src.infrastructure.storage.factory import get_storage_backend
 
 
@@ -22,6 +23,9 @@ class ColumnInfo:
     sample_values: list[str]
     null_count: int
     unique_count: int
+    suggested_definition: str | None = None
+    suggested_encoding: str | None = None
+    suggestion_confidence: str = "low"
 
 
 @dataclass
@@ -238,6 +242,14 @@ class DataDictionaryService:
             # Get sample values (first 5 unique)
             sample = list(unique_values)[:5]
 
+            # Get suggestions based on column name and data
+            suggestion = get_column_suggestion(
+                column_name=col,
+                dtype=dtype,
+                unique_count=len(unique_values),
+                sample_values=sample,
+            )
+
             result.append(
                 ColumnInfo(
                     name=col,
@@ -245,6 +257,9 @@ class DataDictionaryService:
                     sample_values=sample,
                     null_count=len(values) - len(non_null),
                     unique_count=len(unique_values),
+                    suggested_definition=suggestion.definition,
+                    suggested_encoding=suggestion.encoding,
+                    suggestion_confidence=suggestion.confidence,
                 )
             )
 
