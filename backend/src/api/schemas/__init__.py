@@ -12,6 +12,11 @@ from src.api.schemas.competition import (
     CompetitionResponse,
     CompetitionUpdate,
 )
+from src.api.schemas.competition_file import (
+    CompetitionFileCreate,
+    CompetitionFileResponse,
+    CompetitionFileUpdate,
+)
 from src.api.schemas.submission import (
     LeaderboardEntry,
     LeaderboardResponse,
@@ -21,6 +26,9 @@ from src.api.schemas.submission import (
 
 __all__ = [
     "CompetitionCreate",
+    "CompetitionFileCreate",
+    "CompetitionFileResponse",
+    "CompetitionFileUpdate",
     "CompetitionListResponse",
     "CompetitionResponse",
     "CompetitionUpdate",

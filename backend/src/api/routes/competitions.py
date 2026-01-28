@@ -1,6 +1,10 @@
 """Competition routes."""
 
+import io
+import zipfile
+
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.api.dependencies import get_current_user, require_sponsor
@@ -10,9 +14,14 @@ from src.api.schemas.competition import (
     CompetitionResponse,
     CompetitionUpdate,
 )
+from src.api.schemas.competition_file import (
+    CompetitionFileResponse,
+    CompetitionFileUpdate,
+)
 from src.api.schemas.faq import FAQCreate, FAQResponse, FAQUpdate, FAQReorderRequest
 from src.domain.models.user import User, UserRole
 from src.domain.services.competition import CompetitionService
+from src.domain.services.competition_file import CompetitionFileService
 from src.domain.services.faq import FAQService
 from src.infrastructure.database import get_db
 
@@ -387,3 +396,241 @@ async def reorder_faqs(
 
     faq_service = FAQService(db)
     return await faq_service.reorder(competition.id, data.faq_ids)
+
+
+# ============================================================================
+# File Endpoints
+# ============================================================================
+
+
+@router.get("/{slug}/files", response_model=list[CompetitionFileResponse])
+async def list_files(
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """List all files for a competition."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    file_service = CompetitionFileService(db)
+    return await file_service.list_by_competition(competition.id)
+
+
+@router.post(
+    "/{slug}/files",
+    response_model=CompetitionFileResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_file(
+    slug: str,
+    file: UploadFile = File(...),
+    display_name: str | None = None,
+    purpose: str | None = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload a file for a competition.
+
+    Only the sponsor or admin can upload files.
+    Allowed file types: csv, json, txt, md, pdf, zip, gz, tar, parquet, pkl, npy, npz
+    Maximum file size: 100MB
+    """
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to upload files for this competition",
+        )
+
+    file_service = CompetitionFileService(db)
+
+    try:
+        return await file_service.upload(
+            competition=competition,
+            file=file,
+            display_name=display_name,
+            purpose=purpose,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+
+@router.get("/{slug}/files/download-all")
+async def download_all_files(
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Download all competition files as a zip archive."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    file_service = CompetitionFileService(db)
+    files = await file_service.list_by_competition(competition.id)
+
+    if not files:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No files available for this competition",
+        )
+
+    # Create zip archive in memory
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        for competition_file in files:
+            try:
+                content = await file_service.get_download_content(competition_file)
+                zip_file.writestr(competition_file.filename, content)
+            except FileNotFoundError:
+                # Skip files that don't exist in storage
+                continue
+
+    zip_buffer.seek(0)
+    zip_filename = f"{competition.slug}-data.zip"
+
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{zip_filename}"',
+        },
+    )
+
+
+@router.get("/{slug}/files/{file_id}")
+async def download_file(
+    slug: str,
+    file_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Download a competition file."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    file_service = CompetitionFileService(db)
+    competition_file = await file_service.get_by_id(file_id)
+
+    if competition_file is None or competition_file.competition_id != competition.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found",
+        )
+
+    try:
+        content = await file_service.get_download_content(competition_file)
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found in storage",
+        )
+
+    return StreamingResponse(
+        io.BytesIO(content),
+        media_type=competition_file.file_type or "application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename="{competition_file.filename}"',
+            "Content-Length": str(len(content)),
+        },
+    )
+
+
+@router.patch("/{slug}/files/{file_id}", response_model=CompetitionFileResponse)
+async def update_file(
+    slug: str,
+    file_id: int,
+    data: CompetitionFileUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update a file's metadata. Only the sponsor or admin can update files."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to manage files for this competition",
+        )
+
+    file_service = CompetitionFileService(db)
+    competition_file = await file_service.get_by_id(file_id)
+
+    if competition_file is None or competition_file.competition_id != competition.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found",
+        )
+
+    return await file_service.update(competition_file, data)
+
+
+@router.delete("/{slug}/files/{file_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_file(
+    slug: str,
+    file_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a competition file. Only the sponsor or admin can delete files."""
+    comp_service = CompetitionService(db)
+    competition = await comp_service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to manage files for this competition",
+        )
+
+    file_service = CompetitionFileService(db)
+    competition_file = await file_service.get_by_id(file_id)
+
+    if competition_file is None or competition_file.competition_id != competition.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="File not found",
+        )
+
+    await file_service.delete(competition_file)
