@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './header/header.component';
+import { BrandingService } from '../core/services/branding.service';
 
 @Component({
   selector: 'app-layout',
@@ -16,9 +17,11 @@ import { HeaderComponent } from './header/header.component';
       </main>
       <footer class="footer">
         <div class="footer-content">
-          <span class="footer-brand">Daggle</span>
-          <span class="footer-separator">·</span>
-          <span>Internal Data Science Platform</span>
+          <span class="footer-brand">{{ branding.productName() }}</span>
+          @if (branding.tagline()) {
+            <span class="footer-separator">·</span>
+            <span>{{ branding.tagline() }}</span>
+          }
         </div>
       </footer>
     </div>
@@ -68,4 +71,6 @@ import { HeaderComponent } from './header/header.component';
     }
   `],
 })
-export class LayoutComponent {}
+export class LayoutComponent {
+  constructor(public branding: BrandingService) {}
+}

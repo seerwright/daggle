@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
+import { BrandingService } from '../../../core/services/branding.service';
 
 @Component({
   selector: 'app-register',
@@ -27,7 +28,7 @@ import { AuthService } from '../../../core/services/auth.service';
       <div class="auth-card">
         <div class="auth-header">
           <h1 class="auth-title">Create your account</h1>
-          <p class="auth-subtitle">Join Daggle and start competing</p>
+          <p class="auth-subtitle">Join {{ branding.productName() }} and start competing</p>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
@@ -308,7 +309,8 @@ export class RegisterComponent {
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    public branding: BrandingService
   ) {
     this.form = this.fb.group({
       display_name: ['', Validators.required],

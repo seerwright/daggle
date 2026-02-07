@@ -15,12 +15,16 @@ export class ApiService {
     return this.http.get<T>(`${this.baseUrl}${path}`);
   }
 
-  post<T>(path: string, body: object): Observable<T> {
+  post<T>(path: string, body: object | FormData): Observable<T> {
     return this.http.post<T>(`${this.baseUrl}${path}`, body);
   }
 
   patch<T>(path: string, body: object): Observable<T> {
     return this.http.patch<T>(`${this.baseUrl}${path}`, body);
+  }
+
+  put<T>(path: string, body: object): Observable<T> {
+    return this.http.put<T>(`${this.baseUrl}${path}`, body);
   }
 
   delete<T>(path: string): Observable<T> {

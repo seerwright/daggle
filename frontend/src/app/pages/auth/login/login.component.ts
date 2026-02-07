@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../../core/services/auth.service';
+import { BrandingService } from '../../../core/services/branding.service';
 
 @Component({
   selector: 'app-login',
@@ -27,7 +28,7 @@ import { AuthService } from '../../../core/services/auth.service';
       <div class="auth-card">
         <div class="auth-header">
           <h1 class="auth-title">Welcome back</h1>
-          <p class="auth-subtitle">Sign in to your Daggle account</p>
+          <p class="auth-subtitle">Sign in to your {{ branding.productName() }} account</p>
         </div>
 
         <form [formGroup]="form" (ngSubmit)="onSubmit()" class="auth-form">
@@ -258,7 +259,8 @@ export class LoginComponent {
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
-    private router: Router
+    private router: Router,
+    public branding: BrandingService
   ) {
     this.form = this.fb.group({
       email: ['', [Validators.required, Validators.email]],

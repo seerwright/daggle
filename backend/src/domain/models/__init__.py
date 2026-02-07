@@ -1,6 +1,7 @@
 """Domain models package."""
 
 from src.domain.models.base import Base
+from src.domain.models.branding import SiteBranding
 from src.domain.models.competition import Competition
 from src.domain.models.competition_file import CompetitionFile
 from src.domain.models.competition_rule import CompetitionRule
@@ -26,6 +27,7 @@ __all__ = [
     "Enrollment",
     "Notification",
     "RuleTemplate",
+    "SiteBranding",
     "Submission",
     "Team",
     "TeamMember",

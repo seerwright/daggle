@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { BrandingService } from '../../core/services/branding.service';
 
 @Component({
   selector: 'app-home',
@@ -10,8 +11,8 @@ import { MatIconModule } from '@angular/material/icon';
   imports: [RouterLink, MatButtonModule, MatCardModule, MatIconModule],
   template: `
     <div class="hero">
-      <h1>Welcome to Daggle</h1>
-      <p>Your internal platform for data science competitions</p>
+      <h1>Welcome to {{ branding.productName() }}</h1>
+      <p>{{ branding.tagline() || 'Your internal platform for data science competitions' }}</p>
       <a mat-flat-button color="primary" routerLink="/competitions">
         Browse Competitions
       </a>
@@ -84,4 +85,6 @@ import { MatIconModule } from '@angular/material/icon';
     }
   `],
 })
-export class HomeComponent {}
+export class HomeComponent {
+  constructor(public branding: BrandingService) {}
+}

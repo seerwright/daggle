@@ -8,6 +8,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../../core/services/auth.service';
+import { BrandingService } from '../../core/services/branding.service';
 import { NotificationService } from '../../core/services/notification.service';
 
 @Component({
@@ -26,7 +27,12 @@ import { NotificationService } from '../../core/services/notification.service';
   ],
   template: `
     <header class="navbar">
-      <a routerLink="/" class="navbar-brand">Daggle</a>
+      <a routerLink="/" class="navbar-brand">
+        @if (branding.logoIconUrl()) {
+          <img [src]="branding.logoIconUrl()" [alt]="branding.productName()" class="brand-logo" />
+        }
+        <span class="brand-text">{{ branding.productName() }}</span>
+      </a>
       <span class="navbar-spacer"></span>
 
       <!-- Desktop Navigation -->
@@ -79,6 +85,13 @@ import { NotificationService } from '../../core/services/notification.service';
               <mat-icon>dashboard</mat-icon>
               Dashboard
             </button>
+            @if (isAdmin()) {
+              <mat-divider></mat-divider>
+              <button mat-menu-item routerLink="/admin/branding">
+                <mat-icon>palette</mat-icon>
+                Site Branding
+              </button>
+            }
             <mat-divider></mat-divider>
             <button mat-menu-item (click)="auth.logout()" class="logout-item">
               <mat-icon>logout</mat-icon>
@@ -170,6 +183,18 @@ import { NotificationService } from '../../core/services/notification.service';
               </a>
             }
 
+            @if (isAdmin()) {
+              <a
+                routerLink="/admin/branding"
+                routerLinkActive="active"
+                class="mobile-nav-link"
+                (click)="closeMobileMenu()"
+              >
+                <mat-icon>palette</mat-icon>
+                Site Branding
+              </a>
+            }
+
             <div class="mobile-nav-divider"></div>
 
             <button class="mobile-nav-link logout" (click)="handleLogout()">
@@ -215,6 +240,9 @@ import { NotificationService } from '../../core/services/notification.service';
     }
 
     .navbar-brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
       font-family: var(--font-display);
       font-size: var(--text-xl);
       font-weight: 700;
@@ -225,6 +253,16 @@ import { NotificationService } from '../../core/services/notification.service';
       &:hover {
         color: var(--color-accent);
       }
+    }
+
+    .brand-logo {
+      height: 32px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .brand-text {
+      white-space: nowrap;
     }
 
     .navbar-spacer {
@@ -579,6 +617,7 @@ export class HeaderComponent implements OnInit {
 
   constructor(
     public auth: AuthService,
+    public branding: BrandingService,
     private notificationService: NotificationService
   ) {}
 
@@ -603,6 +642,11 @@ export class HeaderComponent implements OnInit {
   canCreateCompetition(): boolean {
     const user = this.auth.currentUser();
     return user !== null && (user.role === 'sponsor' || user.role === 'admin');
+  }
+
+  isAdmin(): boolean {
+    const user = this.auth.currentUser();
+    return user !== null && user.role === 'admin';
   }
 
   toggleMobileMenu(): void {

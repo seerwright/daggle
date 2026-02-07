@@ -73,6 +73,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'admin/branding',
+        loadComponent: () =>
+          import('./pages/admin/branding/branding-settings.component').then(
+            (m) => m.BrandingSettingsComponent
+          ),
+      },
+      {
         path: '**',
         loadComponent: () =>
           import('./pages/not-found/not-found.component').then(
