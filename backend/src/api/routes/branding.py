@@ -54,6 +54,7 @@ async def get_branding(
         logo_icon_url=service.get_logo_url(branding.logo_icon_path),
         logo_full_light_url=service.get_logo_url(branding.logo_full_light_path),
         logo_icon_light_url=service.get_logo_url(branding.logo_icon_light_path),
+        favicon_url=service.get_logo_url(branding.favicon_path),
         palette_id=branding.palette_id,
         palette=palette,
     )
@@ -83,10 +84,12 @@ async def get_admin_branding(
         logo_icon_path=branding.logo_icon_path,
         logo_full_light_path=branding.logo_full_light_path,
         logo_icon_light_path=branding.logo_icon_light_path,
+        favicon_path=branding.favicon_path,
         logo_full_url=service.get_logo_url(branding.logo_full_path),
         logo_icon_url=service.get_logo_url(branding.logo_icon_path),
         logo_full_light_url=service.get_logo_url(branding.logo_full_light_path),
         logo_icon_light_url=service.get_logo_url(branding.logo_icon_light_path),
+        favicon_url=service.get_logo_url(branding.favicon_path),
         palette_id=branding.palette_id,
         palette=palette,
         created_at=branding.created_at,
@@ -127,10 +130,12 @@ async def update_branding(
         logo_icon_path=branding.logo_icon_path,
         logo_full_light_path=branding.logo_full_light_path,
         logo_icon_light_path=branding.logo_icon_light_path,
+        favicon_path=branding.favicon_path,
         logo_full_url=service.get_logo_url(branding.logo_full_path),
         logo_icon_url=service.get_logo_url(branding.logo_icon_path),
         logo_full_light_url=service.get_logo_url(branding.logo_full_light_path),
         logo_icon_light_url=service.get_logo_url(branding.logo_icon_light_path),
+        favicon_url=service.get_logo_url(branding.favicon_path),
         palette_id=branding.palette_id,
         palette=palette,
         created_at=branding.created_at,
@@ -140,19 +145,20 @@ async def update_branding(
 
 @admin_router.post("/logo", response_model=LogoUploadResponse)
 async def upload_logo(
-    logo_type: Literal["full", "icon", "full_light", "icon_light"],
+    logo_type: Literal["full", "icon", "full_light", "icon_light", "favicon"],
     file: UploadFile = File(...),
     admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Upload a logo file.
+    """Upload a logo or favicon file.
 
     Args:
-        logo_type: Type of logo to upload:
+        logo_type: Type of file to upload:
             - full: Main horizontal logo
-            - icon: Square icon/favicon
+            - icon: Square icon for header
             - full_light: Light variant for dark backgrounds
             - icon_light: Light icon variant
+            - favicon: Browser favicon (ico, png, or svg)
     """
     service = BrandingService(db)
 
@@ -194,11 +200,11 @@ async def upload_logo(
 
 @admin_router.delete("/logo/{logo_type}", response_model=LogoDeleteResponse)
 async def delete_logo(
-    logo_type: Literal["full", "icon", "full_light", "icon_light"],
+    logo_type: Literal["full", "icon", "full_light", "icon_light", "favicon"],
     admin: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Delete a logo file."""
+    """Delete a logo or favicon file."""
     service = BrandingService(db)
     deleted = await service.delete_logo(logo_type)
 

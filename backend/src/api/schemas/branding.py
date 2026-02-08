@@ -32,6 +32,7 @@ class BrandingResponse(BaseModel):
     logo_icon_url: str | None = None
     logo_full_light_url: str | None = None
     logo_icon_light_url: str | None = None
+    favicon_url: str | None = None
     palette_id: PaletteId
     palette: ColorPalette
 
@@ -58,10 +59,12 @@ class AdminBrandingResponse(BaseModel):
     logo_icon_path: str | None
     logo_full_light_path: str | None
     logo_icon_light_path: str | None
+    favicon_path: str | None
     logo_full_url: str | None = None
     logo_icon_url: str | None = None
     logo_full_light_url: str | None = None
     logo_icon_light_url: str | None = None
+    favicon_url: str | None = None
     palette_id: PaletteId
     palette: ColorPalette
     created_at: datetime

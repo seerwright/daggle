@@ -13,8 +13,8 @@ from src.config import settings
 from src.domain.models.branding import SiteBranding
 
 
-# Logo type literals
-LogoType = Literal["full", "icon", "full_light", "icon_light"]
+# Logo type literals (includes favicon)
+LogoType = Literal["full", "icon", "full_light", "icon_light", "favicon"]
 
 
 # =============================================================================
@@ -49,6 +49,7 @@ PALETTES: dict[PaletteId, ColorPalette] = {
             "--color-surface": "#ffffff",
             "--color-surface-elevated": "#ffffff",
             "--color-surface-muted": "#f3f2ee",
+            "--color-hero-background": "#fef3c7",
             # Text
             "--color-text-primary": "#1a1917",
             "--color-text-secondary": "#5c5850",
@@ -87,6 +88,7 @@ PALETTES: dict[PaletteId, ColorPalette] = {
             "--color-surface": "#ffffff",
             "--color-surface-elevated": "#ffffff",
             "--color-surface-muted": "#f1f5f9",
+            "--color-hero-background": "#dbeafe",
             # Text
             "--color-text-primary": "#0f172a",
             "--color-text-secondary": "#475569",
@@ -125,6 +127,7 @@ PALETTES: dict[PaletteId, ColorPalette] = {
             "--color-surface": "#ffffff",
             "--color-surface-elevated": "#ffffff",
             "--color-surface-muted": "#f4f4f5",
+            "--color-hero-background": "#d1fae5",
             # Text
             "--color-text-primary": "#18181b",
             "--color-text-secondary": "#52525b",
@@ -163,6 +166,7 @@ PALETTES: dict[PaletteId, ColorPalette] = {
             "--color-surface": "#ffffff",
             "--color-surface-elevated": "#ffffff",
             "--color-surface-muted": "#f1f5f9",
+            "--color-hero-background": "#ede9fe",
             # Text
             "--color-text-primary": "#0f172a",
             "--color-text-secondary": "#475569",
@@ -201,6 +205,7 @@ PALETTES: dict[PaletteId, ColorPalette] = {
             "--color-surface": "#ffffff",
             "--color-surface-elevated": "#ffffff",
             "--color-surface-muted": "#f5f5f4",
+            "--color-hero-background": "#ffe4e6",
             # Text
             "--color-text-primary": "#1c1917",
             "--color-text-secondary": "#57534e",
@@ -239,6 +244,7 @@ PALETTES: dict[PaletteId, ColorPalette] = {
             "--color-surface": "#ffffff",
             "--color-surface-elevated": "#ffffff",
             "--color-surface-muted": "#f1f5f9",
+            "--color-hero-background": "#e2e8f0",
             # Text
             "--color-text-primary": "#0f172a",
             "--color-text-secondary": "#475569",

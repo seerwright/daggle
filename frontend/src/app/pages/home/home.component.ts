@@ -47,40 +47,48 @@ import { BrandingService } from '../../core/services/branding.service';
   styles: [`
     .hero {
       text-align: center;
-      padding: 64px 0;
+      padding: var(--space-16) var(--space-6);
+      margin: 0 calc(-1 * var(--space-6)) var(--space-8);
+      background-color: var(--color-hero-background);
+      border-radius: var(--radius-lg);
     }
     .hero h1 {
-      font-size: 3rem;
-      margin-bottom: 16px;
+      font-family: var(--font-display);
+      font-size: var(--text-4xl);
+      font-weight: 700;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-4);
     }
     .hero p {
-      font-size: 1.25rem;
-      color: #666;
-      margin-bottom: 32px;
+      font-size: var(--text-lg);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-8);
     }
     .features {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
-      margin-top: 48px;
+      gap: var(--space-6);
+      margin-top: var(--space-8);
     }
     .features mat-card-content {
       text-align: center;
-      padding: 24px 16px;
+      padding: var(--space-6) var(--space-4);
     }
     .feature-icon {
       font-size: 48px;
       width: 48px;
       height: 48px;
-      color: #1976d2;
-      margin-bottom: 16px;
+      color: var(--color-accent);
+      margin-bottom: var(--space-4);
     }
     .features h3 {
-      margin: 0 0 8px;
-      font-size: 1.25rem;
+      margin: 0 0 var(--space-2);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text-primary);
     }
     .features p {
-      color: #666;
+      color: var(--color-text-secondary);
       margin: 0;
     }
   `],

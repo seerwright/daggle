@@ -40,6 +40,7 @@ class SiteBranding(Base):
     logo_icon_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     logo_full_light_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     logo_icon_light_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    favicon_path: Mapped[str | None] = mapped_column(String(500), nullable=True)
     palette_id: Mapped[str] = mapped_column(
         String(50),
         default="amber",

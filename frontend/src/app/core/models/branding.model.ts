@@ -20,6 +20,7 @@ export interface BrandingConfig {
   logo_icon_url: string | null;
   logo_full_light_url: string | null;
   logo_icon_light_url: string | null;
+  favicon_url: string | null;
   palette_id: PaletteId;
   palette: ColorPalette;
 }
@@ -30,6 +31,7 @@ export interface AdminBrandingConfig extends BrandingConfig {
   logo_icon_path: string | null;
   logo_full_light_path: string | null;
   logo_icon_light_path: string | null;
+  favicon_path: string | null;
   created_at: string;
   updated_at: string;
 }

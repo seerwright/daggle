@@ -252,6 +252,51 @@ import {
                   </button>
                 </div>
               </div>
+
+              <!-- Favicon Section -->
+              <div class="favicon-section">
+                <h4>Favicon</h4>
+                <p class="logo-hint">Browser icon shown in tabs (recommended: 32x32px ICO, PNG, or SVG)</p>
+                <div class="favicon-upload-row">
+                  <div class="logo-preview-area favicon">
+                    @if (branding()?.favicon_url) {
+                      <img
+                        [src]="branding()?.favicon_url"
+                        alt="Favicon"
+                        class="logo-preview"
+                      />
+                      <button
+                        mat-icon-button
+                        class="delete-logo-btn"
+                        (click)="deleteLogo('favicon')"
+                        [disabled]="uploading()"
+                      >
+                        <mat-icon>delete</mat-icon>
+                      </button>
+                    } @else {
+                      <div class="logo-placeholder">
+                        <mat-icon>tab</mat-icon>
+                        <span>No favicon</span>
+                      </div>
+                    }
+                  </div>
+                  <input
+                    type="file"
+                    accept=".ico,.png,.svg,image/x-icon,image/png,image/svg+xml"
+                    class="file-input"
+                    #faviconInput
+                    (change)="uploadLogo('favicon', $event)"
+                  />
+                  <button
+                    mat-stroked-button
+                    (click)="faviconInput.click()"
+                    [disabled]="uploading()"
+                  >
+                    <mat-icon>upload</mat-icon>
+                    Upload Favicon
+                  </button>
+                </div>
+              </div>
             </mat-card-content>
           </mat-card>
         </div>
@@ -306,6 +351,7 @@ import {
     }
 
     .settings-card {
+      background-color: var(--color-hero-background);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
       box-shadow: var(--shadow-sm);
@@ -525,6 +571,32 @@ import {
       display: none;
     }
 
+    /* Favicon Section */
+    .favicon-section {
+      margin-top: var(--space-8);
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--color-border);
+    }
+
+    .favicon-section h4 {
+      margin: 0 0 var(--space-2);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-primary);
+    }
+
+    .favicon-upload-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      margin-top: var(--space-3);
+    }
+
+    .logo-preview-area.favicon {
+      width: 48px;
+      height: 48px;
+    }
+
     @media (max-width: 600px) {
       .palette-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -652,7 +724,7 @@ export class BrandingSettingsComponent implements OnInit {
       });
   }
 
-  uploadLogo(logoType: 'full' | 'icon' | 'full_light' | 'icon_light', event: Event) {
+  uploadLogo(logoType: 'full' | 'icon' | 'full_light' | 'icon_light' | 'favicon', event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
@@ -698,7 +770,7 @@ export class BrandingSettingsComponent implements OnInit {
     input.value = '';
   }
 
-  deleteLogo(logoType: 'full' | 'icon' | 'full_light' | 'icon_light') {
+  deleteLogo(logoType: 'full' | 'icon' | 'full_light' | 'icon_light' | 'favicon') {
     this.uploading.set(true);
 
     this.brandingService.deleteLogo(logoType).subscribe({

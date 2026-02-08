@@ -23,6 +23,7 @@ const DEFAULT_BRANDING: BrandingConfig = {
   logo_icon_url: null,
   logo_full_light_url: null,
   logo_icon_light_url: null,
+  favicon_url: null,
   palette_id: 'amber',
   palette: {
     id: 'amber',
@@ -47,6 +48,7 @@ export class BrandingService {
   readonly tagline = computed(() => this.brandingSignal().tagline);
   readonly logoFullUrl = computed(() => this.brandingSignal().logo_full_url);
   readonly logoIconUrl = computed(() => this.brandingSignal().logo_icon_url);
+  readonly faviconUrl = computed(() => this.brandingSignal().favicon_url);
   readonly paletteId = computed(() => this.brandingSignal().palette_id);
   readonly palette = computed(() => this.brandingSignal().palette);
 
@@ -76,6 +78,7 @@ export class BrandingService {
           this.brandingSignal.set(branding);
           this.applyPaletteColors(branding.palette);
           this.updateDocumentTitle(branding.product_name);
+          this.updateFavicon(branding.favicon_url);
           this.initialized = true;
           resolve();
         },
@@ -112,6 +115,26 @@ export class BrandingService {
   }
 
   /**
+   * Update the favicon link element in the document head
+   */
+  private updateFavicon(faviconUrl: string | null): void {
+    if (!faviconUrl) {
+      return; // Keep default favicon
+    }
+
+    // Find existing favicon link or create new one
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+
+    // Update href to custom favicon
+    link.href = faviconUrl;
+  }
+
+  /**
    * Refresh branding from API (for admin use after updates)
    */
   refreshBranding(): Observable<BrandingConfig> {
@@ -120,6 +143,7 @@ export class BrandingService {
         this.brandingSignal.set(branding);
         this.applyPaletteColors(branding.palette);
         this.updateDocumentTitle(branding.product_name);
+        this.updateFavicon(branding.favicon_url);
       }),
     );
   }
@@ -157,10 +181,10 @@ export class BrandingService {
   }
 
   /**
-   * Upload a logo
+   * Upload a logo or favicon
    */
   uploadLogo(
-    logoType: 'full' | 'icon' | 'full_light' | 'icon_light',
+    logoType: 'full' | 'icon' | 'full_light' | 'icon_light' | 'favicon',
     file: File,
   ): Observable<LogoUploadResponse> {
     const formData = new FormData();
@@ -172,10 +196,10 @@ export class BrandingService {
   }
 
   /**
-   * Delete a logo
+   * Delete a logo or favicon
    */
   deleteLogo(
-    logoType: 'full' | 'icon' | 'full_light' | 'icon_light',
+    logoType: 'full' | 'icon' | 'full_light' | 'icon_light' | 'favicon',
   ): Observable<LogoDeleteResponse> {
     return this.api.delete<LogoDeleteResponse>(`/admin/branding/logo/${logoType}`);
   }

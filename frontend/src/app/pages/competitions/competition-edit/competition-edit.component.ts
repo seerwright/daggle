@@ -362,9 +362,16 @@ interface Section {
                   </div>
 
                   @if (files.length === 0) {
-                    <div class="empty-files">
-                      <mat-icon>folder_open</mat-icon>
-                      <p>No files uploaded yet</p>
+                    <div
+                      class="empty-files drop-zone"
+                      [class.drag-over]="isDraggingFile"
+                      (dragover)="onDragOver($event)"
+                      (dragleave)="onDragLeave($event)"
+                      (drop)="onFileDrop($event)"
+                    >
+                      <mat-icon>{{ isDraggingFile ? 'file_download' : 'folder_open' }}</mat-icon>
+                      <p>{{ isDraggingFile ? 'Drop file here' : 'No files uploaded yet' }}</p>
+                      <span class="drop-hint">Drag & drop files or use the button below</span>
                     </div>
                   } @else {
                     <div class="files-list">
@@ -386,6 +393,18 @@ interface Section {
                         </div>
                       }
                     </div>
+
+                    <!-- Drop zone when files exist -->
+                    <div
+                      class="drop-zone-inline"
+                      [class.drag-over]="isDraggingFile"
+                      (dragover)="onDragOver($event)"
+                      (dragleave)="onDragLeave($event)"
+                      (drop)="onFileDrop($event)"
+                    >
+                      <mat-icon>{{ isDraggingFile ? 'file_download' : 'add' }}</mat-icon>
+                      <span>{{ isDraggingFile ? 'Drop file here' : 'Drag & drop to add more files' }}</span>
+                    </div>
                   }
 
                   <!-- File Upload -->
@@ -393,13 +412,15 @@ interface Section {
                     <input
                       type="file"
                       #dataFileInput
+                      multiple
                       (change)="onDataFileSelected($event)"
                       hidden
                     />
                     <button class="btn btn-secondary" (click)="dataFileInput.click()" [disabled]="uploadingDataFile">
                       <mat-icon>upload_file</mat-icon>
-                      Upload File
+                      Upload Files
                     </button>
+                    <span class="upload-hint">CSV, MD, XLSX, JSON, and other formats accepted</span>
                     @if (uploadingDataFile) {
                       <span class="upload-status">Uploading...</span>
                     }
@@ -845,6 +866,7 @@ interface Section {
       display: grid;
       grid-template-columns: 280px 1fr;
       min-height: calc(100vh - 64px);
+      align-items: start;
     }
 
     /* Sidebar */
@@ -1120,8 +1142,64 @@ interface Section {
     .file-name { font-weight: 500; display: block; }
     .file-meta { font-size: var(--text-xs); color: var(--color-text-muted); }
 
-    .upload-section { display: flex; align-items: center; gap: var(--space-3); }
+    .upload-section { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
     .upload-status { font-size: var(--text-sm); color: var(--color-text-muted); }
+    .upload-hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+    /* Drop Zone */
+    .drop-zone {
+      border: 2px dashed var(--color-border-strong);
+      cursor: pointer;
+      transition: all 200ms ease;
+
+      &.drag-over {
+        border-color: var(--color-accent);
+        background-color: var(--color-accent-light);
+
+        mat-icon { color: var(--color-accent); }
+        p { color: var(--color-accent); font-weight: 500; }
+      }
+    }
+
+    .drop-hint {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: var(--space-1);
+    }
+
+    .drop-zone-inline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-4);
+      margin-top: var(--space-3);
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-md);
+      background-color: transparent;
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+      cursor: pointer;
+      transition: all 200ms ease;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+      }
+
+      &:hover {
+        border-color: var(--color-border-strong);
+        background-color: var(--color-surface-muted);
+      }
+
+      &.drag-over {
+        border-color: var(--color-accent);
+        border-style: solid;
+        background-color: var(--color-accent-light);
+        color: var(--color-accent);
+      }
+    }
 
     .thumbnail-preview-small {
       width: 200px;
@@ -1479,6 +1557,7 @@ export class CompetitionEditComponent implements OnInit {
   files: CompetitionFile[] = [];
   uploadingDataFile = false;
   deletingFileId: number | null = null;
+  isDraggingFile = false;
 
   // Truth set
   uploadingTruthSet = false;
@@ -1747,27 +1826,100 @@ export class CompetitionEditComponent implements OnInit {
   onDataFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      this.uploadingDataFile = true;
-      const uploadedFileName = input.files[0].name;
-      this.fileService.upload(this.slug, input.files[0]).subscribe({
-        next: (file) => {
-          this.files.push(file);
-          this.uploadingDataFile = false;
-          this.snackBar.open('File uploaded!', 'Close', { duration: 2000 });
+      this.uploadFiles(Array.from(input.files));
+      input.value = ''; // Reset input so same files can be selected again
+    }
+  }
 
-          // Auto-select newly uploaded CSV files for dictionary editing
-          if (uploadedFileName.toLowerCase().endsWith('.csv')) {
-            this.selectedFileForDict = file;
-            this.loadDictionaryForFile(file);
+  // Drag and Drop handlers
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingFile = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingFile = false;
+  }
+
+  onFileDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingFile = false;
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.uploadFiles(Array.from(files));
+    }
+  }
+
+  private uploadFile(file: File): void {
+    this.uploadFiles([file]);
+  }
+
+  private uploadFiles(files: File[]): void {
+    if (files.length === 0) return;
+
+    this.uploadingDataFile = true;
+    let completed = 0;
+    let failed = 0;
+    let lastCsvFile: CompetitionFile | null = null;
+
+    files.forEach(file => {
+      this.fileService.upload(this.slug, file).subscribe({
+        next: (uploadedFile) => {
+          this.files.push(uploadedFile);
+          completed++;
+
+          // Track last CSV file for auto-selection
+          if (file.name.toLowerCase().endsWith('.csv')) {
+            lastCsvFile = uploadedFile;
+          }
+
+          // Check if all files are done
+          if (completed + failed === files.length) {
+            this.uploadingDataFile = false;
+            if (failed === 0) {
+              this.snackBar.open(
+                files.length === 1 ? 'File uploaded!' : `${completed} files uploaded!`,
+                'Close',
+                { duration: 2000 }
+              );
+            } else {
+              this.snackBar.open(
+                `${completed} uploaded, ${failed} failed`,
+                'Close',
+                { duration: 3000 }
+              );
+            }
+
+            // Auto-select last CSV file for dictionary editing
+            if (lastCsvFile) {
+              this.selectedFileForDict = lastCsvFile;
+              this.loadDictionaryForFile(lastCsvFile);
+            }
           }
         },
         error: (err) => {
-          this.uploadingDataFile = false;
-          this.error = err.error?.detail || 'Failed to upload file';
-          setTimeout(() => this.error = '', 5000);
+          failed++;
+          if (completed + failed === files.length) {
+            this.uploadingDataFile = false;
+            if (completed === 0) {
+              this.error = err.error?.detail || 'Failed to upload files';
+              setTimeout(() => this.error = '', 5000);
+            } else {
+              this.snackBar.open(
+                `${completed} uploaded, ${failed} failed`,
+                'Close',
+                { duration: 3000 }
+              );
+            }
+          }
         },
       });
-    }
+    });
   }
 
   deleteFile(file: CompetitionFile): void {
@@ -1789,8 +1941,21 @@ export class CompetitionEditComponent implements OnInit {
   getFileIcon(filename: string): string {
     const ext = filename.split('.').pop()?.toLowerCase() || '';
     const iconMap: Record<string, string> = {
-      csv: 'table_chart', json: 'data_object', txt: 'description',
-      pdf: 'picture_as_pdf', zip: 'folder_zip', gz: 'folder_zip',
+      csv: 'table_chart',
+      json: 'data_object',
+      txt: 'description',
+      pdf: 'picture_as_pdf',
+      zip: 'folder_zip',
+      gz: 'folder_zip',
+      md: 'article',
+      xlsx: 'table_view',
+      xls: 'table_view',
+      parquet: 'storage',
+      feather: 'storage',
+      py: 'code',
+      ipynb: 'code',
+      r: 'code',
+      sql: 'database',
     };
     return iconMap[ext] || 'insert_drive_file';
   }
