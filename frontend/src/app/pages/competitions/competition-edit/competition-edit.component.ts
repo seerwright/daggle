@@ -236,7 +236,7 @@ interface Section {
                         type="text"
                         class="form-input"
                         formControlName="sponsor_name"
-                        placeholder="e.g., Acme Corp"
+                        placeholder="e.g., Jennifer Smith"
                       />
                     </div>
 

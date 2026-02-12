@@ -266,7 +266,7 @@ import { CompetitionCreate, Difficulty } from '../../../core/models/competition.
                 type="text"
                 class="form-input"
                 formControlName="sponsor_name"
-                placeholder="e.g., Acme Corp"
+                placeholder="e.g., Jennifer Smith"
               />
             </div>
 
