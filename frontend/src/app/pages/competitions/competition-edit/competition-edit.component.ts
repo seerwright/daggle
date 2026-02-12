@@ -289,17 +289,64 @@ interface Section {
                 </div>
 
                 <form [formGroup]="form" class="section-form">
-                  <div class="form-group">
-                    <label class="form-label" for="description">Full Description</label>
-                    <textarea
-                      id="description"
-                      class="form-input form-textarea form-textarea-lg"
-                      formControlName="description"
-                      placeholder="Detailed description, background, goals..."
-                      rows="10"
-                    ></textarea>
-                    <span class="form-hint">Markdown is supported</span>
-                  </div>
+                  <fieldset class="description-fieldset">
+                    <legend class="fieldset-legend">Competition Description</legend>
+                    <p class="fieldset-hint">Provide a structured description to help participants understand the competition.</p>
+
+                    <div class="form-group">
+                      <label class="form-label" for="desc_overview">Overview <span class="required">*</span></label>
+                      <textarea
+                        id="desc_overview"
+                        class="form-input form-textarea"
+                        formControlName="desc_overview"
+                        placeholder="What is this competition about? Describe the problem and dataset."
+                        rows="4"
+                        [class.error]="form.get('desc_overview')?.invalid && form.get('desc_overview')?.touched"
+                      ></textarea>
+                      @if (form.get('desc_overview')?.hasError('required') && form.get('desc_overview')?.touched) {
+                        <span class="form-error">Overview is required</span>
+                      }
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="desc_why_it_matters">Why It Matters</label>
+                      <textarea
+                        id="desc_why_it_matters"
+                        class="form-input form-textarea"
+                        formControlName="desc_why_it_matters"
+                        placeholder="Why is this problem important? What real-world impact could a solution have?"
+                        rows="3"
+                      ></textarea>
+                      <span class="form-hint">Optional — explain the significance of the problem</span>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="desc_goal">Goal <span class="required">*</span></label>
+                      <textarea
+                        id="desc_goal"
+                        class="form-input form-textarea"
+                        formControlName="desc_goal"
+                        placeholder="What should participants predict or optimize? What does a successful submission look like?"
+                        rows="3"
+                        [class.error]="form.get('desc_goal')?.invalid && form.get('desc_goal')?.touched"
+                      ></textarea>
+                      @if (form.get('desc_goal')?.hasError('required') && form.get('desc_goal')?.touched) {
+                        <span class="form-error">Goal is required</span>
+                      }
+                    </div>
+
+                    <div class="form-group">
+                      <label class="form-label" for="desc_value_creation">How the Improved Model Creates Value</label>
+                      <textarea
+                        id="desc_value_creation"
+                        class="form-input form-textarea"
+                        formControlName="desc_value_creation"
+                        placeholder="How would an improved model be used? What business or research value does it create?"
+                        rows="3"
+                      ></textarea>
+                      <span class="form-hint">Optional — describe the practical value of better predictions</span>
+                    </div>
+                  </fieldset>
 
                   <div class="form-group">
                     <label class="form-label" for="evaluation_metric">Evaluation Metric</label>
@@ -738,8 +785,10 @@ interface Section {
                         <span class="review-value">{{ form.get('evaluation_metric')?.value }}</span>
                       </div>
                       <div class="review-item">
-                        <span class="review-label">Description Length</span>
-                        <span class="review-value">{{ form.get('description')?.value?.length || 0 }} characters</span>
+                        <span class="review-label">Description Sections</span>
+                        <span class="review-value">
+                          {{ (form.get('desc_overview')?.value ? 1 : 0) + (form.get('desc_why_it_matters')?.value ? 1 : 0) + (form.get('desc_goal')?.value ? 1 : 0) + (form.get('desc_value_creation')?.value ? 1 : 0) }} of 4 filled
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1002,6 +1051,32 @@ interface Section {
 
     .form-textarea { resize: vertical; min-height: 80px; }
     .form-textarea-lg { min-height: 200px; }
+
+    .description-fieldset {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      margin: 0 0 var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+    }
+
+    .fieldset-legend {
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      padding: 0 var(--space-2);
+    }
+
+    .fieldset-hint {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin: 0;
+    }
+
+    .required { color: var(--color-error); }
 
     .form-hint-row { display: flex; justify-content: space-between; }
     .form-hint { font-size: var(--text-xs); color: var(--color-text-muted); }
@@ -1612,7 +1687,10 @@ export class CompetitionEditComponent implements OnInit {
     this.form = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(255)]],
       short_description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
-      description: ['', [Validators.required, Validators.minLength(10)]],
+      desc_overview: ['', [Validators.required, Validators.minLength(10)]],
+      desc_why_it_matters: [''],
+      desc_goal: ['', [Validators.required, Validators.minLength(10)]],
+      desc_value_creation: [''],
       status: ['draft'],
       difficulty: ['intermediate', Validators.required],
       evaluation_metric: ['', [Validators.required]],
@@ -1727,10 +1805,33 @@ export class CompetitionEditComponent implements OnInit {
       return;
     }
 
+    // Parse structured description or fall back to legacy plain text
+    let descOverview = '';
+    let descWhyItMatters = '';
+    let descGoal = '';
+    let descValueCreation = '';
+    try {
+      const parsed = JSON.parse(competition.description);
+      if (parsed && typeof parsed === 'object' && parsed.version === 1 && parsed.overview) {
+        descOverview = parsed.overview || '';
+        descWhyItMatters = parsed.why_it_matters || '';
+        descGoal = parsed.goal || '';
+        descValueCreation = parsed.value_creation || '';
+      } else {
+        descOverview = competition.description;
+      }
+    } catch {
+      // Legacy plain text description — put it in the overview field
+      descOverview = competition.description;
+    }
+
     this.form.patchValue({
       title: competition.title,
       short_description: competition.short_description,
-      description: competition.description,
+      desc_overview: descOverview,
+      desc_why_it_matters: descWhyItMatters,
+      desc_goal: descGoal,
+      desc_value_creation: descValueCreation,
       status: competition.status,
       difficulty: competition.difficulty,
       evaluation_metric: competition.evaluation_metric,
@@ -1778,7 +1879,7 @@ export class CompetitionEditComponent implements OnInit {
       case 'basics':
         return this.form.get('title')?.valid ? 'complete' : 'incomplete';
       case 'description':
-        return this.form.get('description')?.valid ? 'complete' : 'incomplete';
+        return (this.form.get('desc_overview')?.valid && this.form.get('desc_goal')?.valid) ? 'complete' : 'incomplete';
       case 'data':
         return this.files.length > 0 ? 'complete' : 'incomplete';
       case 'rules':
@@ -1801,10 +1902,22 @@ export class CompetitionEditComponent implements OnInit {
 
   private saveForm(callback: () => void): void {
     const formValue = this.form.value;
+
+    // Serialize structured description fields to JSON
+    const description = JSON.stringify({
+      version: 1,
+      overview: formValue.desc_overview?.trim() || '',
+      why_it_matters: formValue.desc_why_it_matters?.trim() || '',
+      goal: formValue.desc_goal?.trim() || '',
+      value_creation: formValue.desc_value_creation?.trim() || '',
+    });
+
+    const { desc_overview, desc_why_it_matters, desc_goal, desc_value_creation, ...rest } = formValue;
     const data = {
-      ...formValue,
-      start_date: new Date(formValue.start_date).toISOString(),
-      end_date: new Date(formValue.end_date).toISOString(),
+      ...rest,
+      description,
+      start_date: new Date(rest.start_date).toISOString(),
+      end_date: new Date(rest.end_date).toISOString(),
     };
 
     this.competitionService.update(this.slug, data).subscribe({
