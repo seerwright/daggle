@@ -87,23 +87,64 @@ import { CompetitionCreate, Difficulty } from '../../../core/models/competition.
             </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="description">Full Description</label>
-            <textarea
-              id="description"
-              class="form-input form-textarea"
-              formControlName="description"
-              placeholder="Detailed description, rules, evaluation criteria..."
-              rows="6"
-              [class.error]="form.get('description')?.invalid && form.get('description')?.touched"
-            ></textarea>
-            @if (form.get('description')?.hasError('required') && form.get('description')?.touched) {
-              <span class="form-error">Description is required</span>
-            }
-            @if (form.get('description')?.hasError('minlength') && form.get('description')?.touched) {
-              <span class="form-error">Description must be at least 10 characters</span>
-            }
-          </div>
+          <!-- Structured Description Sections -->
+          <fieldset class="description-fieldset">
+            <legend class="fieldset-legend">Competition Description</legend>
+
+            <div class="form-group">
+              <label class="form-label" for="desc_overview">Overview <span class="required">*</span></label>
+              <textarea
+                id="desc_overview"
+                class="form-input form-textarea"
+                formControlName="desc_overview"
+                placeholder="What is this competition about?"
+                rows="4"
+                [class.error]="form.get('desc_overview')?.invalid && form.get('desc_overview')?.touched"
+              ></textarea>
+              @if (form.get('desc_overview')?.hasError('required') && form.get('desc_overview')?.touched) {
+                <span class="form-error">Overview is required</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="desc_why_it_matters">Why It Matters</label>
+              <textarea
+                id="desc_why_it_matters"
+                class="form-input form-textarea"
+                formControlName="desc_why_it_matters"
+                placeholder="Why is this problem important?"
+                rows="3"
+              ></textarea>
+              <span class="form-hint">Optional</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="desc_goal">Goal <span class="required">*</span></label>
+              <textarea
+                id="desc_goal"
+                class="form-input form-textarea"
+                formControlName="desc_goal"
+                placeholder="What should participants predict or optimize?"
+                rows="3"
+                [class.error]="form.get('desc_goal')?.invalid && form.get('desc_goal')?.touched"
+              ></textarea>
+              @if (form.get('desc_goal')?.hasError('required') && form.get('desc_goal')?.touched) {
+                <span class="form-error">Goal is required</span>
+              }
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="desc_value_creation">How the Improved Model Creates Value</label>
+              <textarea
+                id="desc_value_creation"
+                class="form-input form-textarea"
+                formControlName="desc_value_creation"
+                placeholder="What impact would a better solution have?"
+                rows="3"
+              ></textarea>
+              <span class="form-hint">Optional</span>
+            </div>
+          </fieldset>
 
           <div class="form-row">
             <div class="form-group">
@@ -338,6 +379,28 @@ import { CompetitionCreate, Difficulty } from '../../../core/models/competition.
       min-height: 80px;
     }
 
+    .description-fieldset {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-5);
+    }
+
+    .fieldset-legend {
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      padding: 0 var(--space-2);
+    }
+
+    .required {
+      color: var(--color-error);
+    }
+
     .form-hint-row {
       display: flex;
       justify-content: space-between;
@@ -488,7 +551,10 @@ export class CompetitionCreateComponent {
     this.form = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(255)]],
       short_description: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(500)]],
-      description: ['', [Validators.required, Validators.minLength(10)]],
+      desc_overview: ['', [Validators.required, Validators.minLength(10)]],
+      desc_why_it_matters: [''],
+      desc_goal: ['', [Validators.required, Validators.minLength(10)]],
+      desc_value_creation: [''],
       difficulty: ['intermediate', Validators.required],
       evaluation_metric: ['', [Validators.required, Validators.minLength(1), Validators.maxLength(100)]],
       start_date: [null, Validators.required],
@@ -516,8 +582,20 @@ export class CompetitionCreateComponent {
     this.error = '';
 
     const formValue = this.form.value;
+
+    // Serialize structured description sections to JSON
+    const description = JSON.stringify({
+      version: 1,
+      overview: formValue.desc_overview?.trim() || '',
+      why_it_matters: formValue.desc_why_it_matters?.trim() || '',
+      goal: formValue.desc_goal?.trim() || '',
+      value_creation: formValue.desc_value_creation?.trim() || '',
+    });
+
+    const { desc_overview, desc_why_it_matters, desc_goal, desc_value_creation, ...rest } = formValue;
     const data: CompetitionCreate = {
-      ...formValue,
+      ...rest,
+      description,
       start_date: new Date(formValue.start_date).toISOString(),
       end_date: new Date(formValue.end_date).toISOString(),
     };
