@@ -4,19 +4,60 @@ import { MatIconModule } from '@angular/material/icon';
 import { Competition } from '../../../../../core/models/competition.model';
 import { FAQAccordionComponent } from './faq-accordion/faq-accordion.component';
 
+interface StructuredDescription {
+  overview: string;
+  why_it_matters: string;
+  goal: string;
+  value_creation: string;
+}
+
 @Component({
   selector: 'app-overview-tab',
   standalone: true,
   imports: [CommonModule, MatIconModule, FAQAccordionComponent],
   template: `
     <div class="overview-tab">
-      <!-- Description Section -->
-      <section class="overview-section">
-        <h2 class="section-title">Description</h2>
-        <div class="section-content">
-          <p class="description-text">{{ competition.description }}</p>
-        </div>
-      </section>
+      <!-- Description Sections -->
+      @if (descriptionSections) {
+        <section class="overview-section">
+          <h2 class="section-title">Overview</h2>
+          <div class="section-content">
+            <p class="description-text">{{ descriptionSections.overview }}</p>
+          </div>
+        </section>
+
+        @if (descriptionSections.why_it_matters) {
+          <section class="overview-section">
+            <h2 class="section-title">Why It Matters</h2>
+            <div class="section-content">
+              <p class="description-text">{{ descriptionSections.why_it_matters }}</p>
+            </div>
+          </section>
+        }
+
+        <section class="overview-section">
+          <h2 class="section-title">Goal</h2>
+          <div class="section-content">
+            <p class="description-text">{{ descriptionSections.goal }}</p>
+          </div>
+        </section>
+
+        @if (descriptionSections.value_creation) {
+          <section class="overview-section">
+            <h2 class="section-title">How the Improved Model Creates Value</h2>
+            <div class="section-content">
+              <p class="description-text">{{ descriptionSections.value_creation }}</p>
+            </div>
+          </section>
+        }
+      } @else {
+        <section class="overview-section">
+          <h2 class="section-title">Description</h2>
+          <div class="section-content">
+            <p class="description-text">{{ competition.description }}</p>
+          </div>
+        </section>
+      }
 
       <!-- Evaluation Section -->
       <section class="overview-section">
@@ -318,9 +359,27 @@ export class OverviewTabComponent implements OnInit {
   progressPercent = 0;
   daysRemaining = 0;
   daysUntilStart = 0;
+  descriptionSections: StructuredDescription | null = null;
 
   ngOnInit(): void {
     this.calculateTimelineState();
+    this.parseDescription();
+  }
+
+  private parseDescription(): void {
+    try {
+      const parsed = JSON.parse(this.competition.description);
+      if (parsed && typeof parsed === 'object' && parsed.version === 1 && parsed.overview) {
+        this.descriptionSections = {
+          overview: parsed.overview || '',
+          why_it_matters: parsed.why_it_matters || '',
+          goal: parsed.goal || '',
+          value_creation: parsed.value_creation || '',
+        };
+      }
+    } catch {
+      // Not JSON — legacy plain text description, render as-is
+    }
   }
 
   private calculateTimelineState(): void {
