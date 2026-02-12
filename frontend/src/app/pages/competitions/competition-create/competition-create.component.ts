@@ -214,6 +214,48 @@ import { CompetitionCreate, Difficulty } from '../../../core/models/competition.
             <span class="toggle-hint">Public competitions are visible to all users</span>
           </div>
 
+          <fieldset class="form-fieldset">
+            <legend class="form-legend">Sponsor Information</legend>
+            <span class="form-hint">Optional details about the competition sponsor</span>
+
+            <div class="form-group">
+              <label class="form-label" for="sponsor_name">Sponsor Name</label>
+              <input
+                id="sponsor_name"
+                type="text"
+                class="form-input"
+                formControlName="sponsor_name"
+                placeholder="e.g., Acme Corp"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="sponsor_title">Sponsor Title</label>
+              <input
+                id="sponsor_title"
+                type="text"
+                class="form-input"
+                formControlName="sponsor_title"
+                placeholder="e.g., VP of Data Science"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="sponsor_contact_email">Contact Email</label>
+              <input
+                id="sponsor_contact_email"
+                type="email"
+                class="form-input"
+                formControlName="sponsor_contact_email"
+                placeholder="e.g., sponsor@example.com"
+                [class.error]="form.get('sponsor_contact_email')?.invalid && form.get('sponsor_contact_email')?.touched"
+              />
+              @if (form.get('sponsor_contact_email')?.hasError('email') && form.get('sponsor_contact_email')?.touched) {
+                <span class="form-error">Must be a valid email address</span>
+              }
+            </div>
+          </fieldset>
+
           @if (error) {
             <div class="alert alert-error">
               {{ error }}
@@ -380,6 +422,22 @@ import { CompetitionCreate, Difficulty } from '../../../core/models/competition.
       color: var(--color-text-muted);
     }
 
+    .form-fieldset {
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-5);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+
+    .form-legend {
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      padding: 0 var(--space-2);
+    }
+
     .alert {
       padding: var(--space-3) var(--space-4);
       border-radius: var(--radius-md);
@@ -496,6 +554,9 @@ export class CompetitionCreateComponent {
       max_team_size: [1, [Validators.required, Validators.min(1), Validators.max(10)]],
       daily_submission_limit: [5, [Validators.required, Validators.min(1), Validators.max(100)]],
       is_public: [true],
+      sponsor_name: [''],
+      sponsor_title: [''],
+      sponsor_contact_email: ['', [Validators.email]],
     }, { validators: this.dateValidator });
   }
 
@@ -520,6 +581,9 @@ export class CompetitionCreateComponent {
       ...formValue,
       start_date: new Date(formValue.start_date).toISOString(),
       end_date: new Date(formValue.end_date).toISOString(),
+      sponsor_name: formValue.sponsor_name || undefined,
+      sponsor_title: formValue.sponsor_title || undefined,
+      sponsor_contact_email: formValue.sponsor_contact_email || undefined,
     };
 
     this.competitionService.create(data).subscribe({
