@@ -36,6 +36,27 @@ import { FAQAccordionComponent } from './faq-accordion/faq-accordion.component';
         </div>
       </section>
 
+      <!-- Sponsored By Section -->
+      @if (competition.sponsor_name) {
+        <section class="overview-section">
+          <h2 class="section-title">Sponsored By</h2>
+          <div class="section-content">
+            <div class="sponsor-info">
+              <p class="sponsor-name">{{ competition.sponsor_name }}</p>
+              @if (competition.sponsor_title) {
+                <p class="sponsor-title">{{ competition.sponsor_title }}</p>
+              }
+              @if (competition.sponsor_contact_email) {
+                <a class="sponsor-email" [href]="'mailto:' + competition.sponsor_contact_email">
+                  <mat-icon>email</mat-icon>
+                  {{ competition.sponsor_contact_email }}
+                </a>
+              }
+            </div>
+          </div>
+        </section>
+      }
+
       <!-- Timeline Section -->
       <section class="overview-section">
         <h2 class="section-title">Timeline</h2>
@@ -153,6 +174,47 @@ import { FAQAccordionComponent } from './faq-accordion/faq-accordion.component';
       &.muted {
         color: var(--color-text-muted);
         font-style: italic;
+      }
+    }
+
+    /* Sponsor Section */
+    .sponsor-info {
+      padding: var(--space-4);
+      background-color: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+
+    .sponsor-name {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--color-text-primary);
+      margin: 0 0 var(--space-1);
+    }
+
+    .sponsor-title {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-3);
+    }
+
+    .sponsor-email {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--color-accent);
+      text-decoration: none;
+
+      mat-icon {
+        font-size: 16px;
+        width: 16px;
+        height: 16px;
+      }
+
+      &:hover {
+        text-decoration: underline;
       }
     }
 

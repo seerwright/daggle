@@ -22,6 +22,14 @@ import { AuthService } from '../../../../core/services/auth.service';
           @if (competition.short_description) {
             <p class="competition-tagline">{{ competition.short_description }}</p>
           }
+          @if (competition.sponsor_name) {
+            <p class="sponsor-line">
+              Sponsored by <strong>{{ competition.sponsor_name }}</strong>
+              @if (competition.sponsor_title) {
+                <span class="sponsor-title">, {{ competition.sponsor_title }}</span>
+              }
+            </p>
+          }
           <div class="competition-meta">
             <span class="status-badge" [class]="'status-' + competition.status">
               {{ competition.status }}
@@ -125,6 +133,16 @@ import { AuthService } from '../../../../core/services/auth.service';
       color: var(--color-text-secondary);
       margin: 0 0 var(--space-3);
       line-height: var(--leading-relaxed);
+    }
+
+    .sponsor-line {
+      font-size: var(--text-sm);
+      color: var(--color-text-secondary);
+      margin: 0 0 var(--space-3);
+    }
+
+    .sponsor-title {
+      color: var(--color-text-muted);
     }
 
     .competition-meta {

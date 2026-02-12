@@ -8,6 +8,9 @@ export interface Competition {
   description: string;
   short_description: string;
   sponsor_id: number;
+  sponsor_name: string | null;
+  sponsor_title: string | null;
+  sponsor_contact_email: string | null;
   status: CompetitionStatus;
   start_date: string;
   end_date: string;
@@ -28,6 +31,7 @@ export interface CompetitionListItem {
   title: string;
   slug: string;
   short_description: string;
+  sponsor_name: string | null;
   status: CompetitionStatus;
   start_date: string;
   end_date: string;
@@ -48,4 +52,7 @@ export interface CompetitionCreate {
   evaluation_metric: string;
   evaluation_description?: string;
   is_public: boolean;
+  sponsor_name?: string;
+  sponsor_title?: string;
+  sponsor_contact_email?: string;
 }
