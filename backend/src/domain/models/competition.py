@@ -51,6 +51,9 @@ class Competition(Base, TimestampMixin):
     sponsor: Mapped["User"] = relationship(  # noqa: F821
         back_populates="sponsored_competitions",
     )
+    sponsor_name: Mapped[str | None] = mapped_column(String(255))
+    sponsor_title: Mapped[str | None] = mapped_column(String(255))
+    sponsor_contact_email: Mapped[str | None] = mapped_column(String(255))
 
     # Status and dates
     status: Mapped[CompetitionStatus] = mapped_column(

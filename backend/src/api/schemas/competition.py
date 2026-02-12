@@ -38,6 +38,9 @@ class CompetitionCreate(BaseModel):
     evaluation_metric: str = Field(min_length=1, max_length=100)
     evaluation_description: str | None = None
     is_public: bool = True
+    sponsor_name: str | None = None
+    sponsor_title: str | None = None
+    sponsor_contact_email: str | None = None
 
 
 class CompetitionUpdate(BaseModel):
@@ -55,6 +58,9 @@ class CompetitionUpdate(BaseModel):
     evaluation_description: str | None = None
     is_public: bool | None = None
     status: CompetitionStatus | None = None
+    sponsor_name: str | None = None
+    sponsor_title: str | None = None
+    sponsor_contact_email: str | None = None
 
 
 class CompetitionResponse(BaseModel):
@@ -66,6 +72,9 @@ class CompetitionResponse(BaseModel):
     description: str
     short_description: str
     sponsor_id: int
+    sponsor_name: str | None = None
+    sponsor_title: str | None = None
+    sponsor_contact_email: str | None = None
     status: CompetitionStatus
     start_date: datetime
     end_date: datetime
@@ -93,6 +102,9 @@ class CompetitionResponse(BaseModel):
             "description": obj.description,
             "short_description": obj.short_description,
             "sponsor_id": obj.sponsor_id,
+            "sponsor_name": obj.sponsor_name,
+            "sponsor_title": obj.sponsor_title,
+            "sponsor_contact_email": obj.sponsor_contact_email,
             "status": obj.status,
             "start_date": obj.start_date,
             "end_date": obj.end_date,
@@ -117,6 +129,7 @@ class CompetitionListResponse(BaseModel):
     title: str
     slug: str
     short_description: str
+    sponsor_name: str | None = None
     status: CompetitionStatus
     start_date: datetime
     end_date: datetime
@@ -135,6 +148,7 @@ class CompetitionListResponse(BaseModel):
             title=obj.title,
             slug=obj.slug,
             short_description=obj.short_description,
+            sponsor_name=obj.sponsor_name,
             status=obj.status,
             start_date=obj.start_date,
             end_date=obj.end_date,
