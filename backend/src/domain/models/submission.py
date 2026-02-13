@@ -48,6 +48,7 @@ class Submission(Base, TimestampMixin):
     # Relationships
     competition: Mapped["Competition"] = relationship(  # noqa: F821
         back_populates="submissions",
+        foreign_keys=[competition_id],
     )
     user: Mapped["User"] = relationship(  # noqa: F821
         back_populates="submissions",
