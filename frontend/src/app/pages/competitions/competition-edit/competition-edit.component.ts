@@ -545,6 +545,50 @@ interface Section {
                   </div>
                 </div>
 
+                <!-- Baseline Predictions -->
+                <div class="baseline-manager">
+                  <div class="files-header">
+                    <h3 class="subsection-title">Baseline Predictions</h3>
+                    @if (competition?.has_baseline) {
+                      <span class="badge badge-success">Uploaded</span>
+                    } @else {
+                      <span class="badge badge-warning">Not uploaded</span>
+                    }
+                  </div>
+                  <p class="subsection-hint">Optional CSV with baseline predictions. Must match truth set format. Scored and shown on the leaderboard as a benchmark.</p>
+
+                  @if (competition?.has_baseline && competition?.baseline_score != null) {
+                    <div class="baseline-score-display">
+                      <mat-icon>flag</mat-icon>
+                      <span>Baseline score: <strong>{{ competition!.baseline_score!.toFixed(4) }}</strong></span>
+                    </div>
+                  }
+
+                  <div class="upload-section">
+                    <input
+                      type="file"
+                      #baselineInput
+                      accept=".csv"
+                      (change)="onBaselineSelected($event)"
+                      hidden
+                    />
+                    <button
+                      class="btn btn-secondary"
+                      (click)="baselineInput.click()"
+                      [disabled]="uploadingBaseline || !competition?.has_truth_set"
+                    >
+                      <mat-icon>upload_file</mat-icon>
+                      {{ competition?.has_baseline ? 'Replace Baseline' : 'Upload Baseline' }}
+                    </button>
+                    @if (!competition?.has_truth_set) {
+                      <span class="upload-hint">Upload a truth set first</span>
+                    }
+                    @if (uploadingBaseline) {
+                      <span class="upload-status">Uploading & scoring...</span>
+                    }
+                  </div>
+                </div>
+
                 <!-- Data Dictionary Editor -->
                 <div class="dictionary-manager">
                   <div class="files-header">
@@ -852,6 +896,17 @@ interface Section {
                             <mat-icon class="check-icon">check_circle</mat-icon> Uploaded
                           } @else {
                             <mat-icon class="warning-icon">warning</mat-icon> Not uploaded
+                          }
+                        </span>
+                      </div>
+                      <div class="review-item">
+                        <span class="review-label">Baseline</span>
+                        <span class="review-value">
+                          @if (competition?.has_baseline) {
+                            <mat-icon class="check-icon">check_circle</mat-icon>
+                            Score: {{ competition!.baseline_score?.toFixed(4) ?? 'N/A' }}
+                          } @else {
+                            <mat-icon class="muted-icon">remove_circle_outline</mat-icon> None
                           }
                         </span>
                       </div>
@@ -1212,7 +1267,7 @@ interface Section {
     }
 
     /* Files Manager */
-    .files-manager, .truth-set-manager, .dictionary-manager {
+    .files-manager, .truth-set-manager, .baseline-manager, .dictionary-manager {
       margin-bottom: var(--space-6);
       padding-bottom: var(--space-6);
       border-bottom: 1px solid var(--color-border);
@@ -1277,6 +1332,21 @@ interface Section {
     .upload-section { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
     .upload-status { font-size: var(--text-sm); color: var(--color-text-muted); }
     .upload-hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+    .baseline-score-display {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      background-color: var(--color-accent-light);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-4);
+      color: var(--color-accent);
+      font-size: var(--text-sm);
+
+      mat-icon { font-size: 18px; width: 18px; height: 18px; }
+      strong { font-family: var(--font-mono); }
+    }
 
     /* Drop Zone */
     .drop-zone {
@@ -1693,6 +1763,9 @@ export class CompetitionEditComponent implements OnInit {
 
   // Truth set
   uploadingTruthSet = false;
+
+  // Baseline
+  uploadingBaseline = false;
 
   // Thumbnail
   selectedThumbnail: File | null = null;
@@ -2162,6 +2235,26 @@ export class CompetitionEditComponent implements OnInit {
         error: (err) => {
           this.uploadingTruthSet = false;
           this.error = err.error?.detail || 'Failed to upload truth set';
+          setTimeout(() => this.error = '', 5000);
+        },
+      });
+    }
+  }
+
+  // Baseline
+  onBaselineSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.uploadingBaseline = true;
+      this.competitionService.uploadBaseline(this.slug, input.files[0]).subscribe({
+        next: (competition) => {
+          this.competition = competition;
+          this.uploadingBaseline = false;
+          this.snackBar.open('Baseline uploaded and scored!', 'Close', { duration: 2000 });
+        },
+        error: (err) => {
+          this.uploadingBaseline = false;
+          this.error = err.error?.detail || 'Failed to upload baseline';
           setTimeout(() => this.error = '', 5000);
         },
       });
