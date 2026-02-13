@@ -85,6 +85,8 @@ class CompetitionResponse(BaseModel):
     evaluation_description: str | None = None
     is_public: bool
     has_truth_set: bool = False
+    has_baseline: bool = False
+    baseline_score: float | None = None
     thumbnail_url: str | None = None
     created_at: datetime
     updated_at: datetime
@@ -115,6 +117,8 @@ class CompetitionResponse(BaseModel):
             "evaluation_description": obj.evaluation_description,
             "is_public": obj.is_public,
             "has_truth_set": obj.solution_path is not None,
+            "has_baseline": obj.baseline_submission_id is not None,
+            "baseline_score": obj.baseline_submission.public_score if obj.baseline_submission else None,
             "thumbnail_url": _path_to_url(obj.thumbnail_path),
             "created_at": obj.created_at,
             "updated_at": obj.updated_at,

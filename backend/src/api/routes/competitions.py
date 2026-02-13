@@ -212,6 +212,53 @@ async def upload_truth_set(
     return CompetitionResponse.from_orm_with_extras(competition)
 
 
+@router.post("/{slug}/baseline", response_model=CompetitionResponse)
+async def upload_baseline(
+    slug: str,
+    file: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload a baseline prediction CSV for the competition.
+
+    Only the sponsor or admin can upload a baseline.
+    The truth set must be uploaded first.
+    The CSV must match the submission format (id + prediction columns).
+    """
+    service = CompetitionService(db)
+    competition = await service.get_by_slug(slug)
+
+    if competition is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Competition not found",
+        )
+
+    # Check permissions
+    if competition.sponsor_id != current_user.id and current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to upload a baseline for this competition",
+        )
+
+    # Validate file type
+    if file.filename and not file.filename.endswith(".csv"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be a CSV file",
+        )
+
+    try:
+        competition = await service.upload_baseline(competition, file)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    return CompetitionResponse.from_orm_with_extras(competition)
+
+
 @router.post("/{slug}/thumbnail", response_model=CompetitionResponse)
 async def upload_thumbnail(
     slug: str,

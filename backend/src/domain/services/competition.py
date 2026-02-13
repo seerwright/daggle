@@ -2,6 +2,7 @@
 
 import csv
 import io
+from datetime import datetime, timezone
 
 from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,8 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.api.schemas.competition import CompetitionCreate, CompetitionUpdate
 from src.common.utils import slugify
 from src.domain.models.competition import Competition
+from src.domain.models.submission import Submission, SubmissionStatus
 from src.domain.models.user import User
+from src.domain.scoring.scorer import create_scorer_for_competition
 from src.infrastructure.repositories.competition import CompetitionRepository
+from src.infrastructure.repositories.submission import SubmissionRepository
 from src.infrastructure.storage.factory import get_storage_backend
 
 
@@ -181,4 +185,79 @@ class CompetitionService:
 
         # Update competition
         competition.thumbnail_path = thumbnail_path
+        return await self.repo.update(competition)
+
+    async def upload_baseline(
+        self, competition: Competition, file: UploadFile
+    ) -> Competition:
+        """Upload a baseline prediction CSV that gets scored and appears on the leaderboard.
+
+        Args:
+            competition: The competition to upload the baseline for
+            file: The uploaded CSV file with baseline predictions
+
+        Returns:
+            Updated competition with baseline_submission_id set
+
+        Raises:
+            ValueError: If truth set is not uploaded or scoring fails
+        """
+        if not competition.solution_path:
+            raise ValueError("Truth set must be uploaded before uploading a baseline")
+
+        # Read file content
+        content = await file.read()
+        await file.seek(0)
+
+        # Save file using storage backend
+        storage = get_storage_backend()
+        storage_key = f"baseline_predictions/{competition.id}/baseline.csv"
+        file_path = await storage.save(storage_key, content)
+
+        # Create submission record
+        submission_repo = SubmissionRepository(self.session)
+        submission = Submission(
+            competition_id=competition.id,
+            user_id=competition.sponsor_id,
+            file_path=file_path,
+            file_name=file.filename or "baseline.csv",
+            status=SubmissionStatus.PENDING,
+            is_baseline=True,
+        )
+        submission = await submission_repo.create(submission)
+
+        # Score using the existing scorer
+        scorer = create_scorer_for_competition(competition)
+        if scorer is None:
+            submission.status = SubmissionStatus.FAILED
+            submission.error_message = "No scorer available for this competition"
+            await submission_repo.update(submission)
+            raise ValueError("Could not create scorer for this competition")
+
+        try:
+            result = scorer.score(content)
+            if result.success:
+                submission.status = SubmissionStatus.SCORED
+                submission.public_score = result.score
+                submission.private_score = result.score
+                submission.scored_at = datetime.now(timezone.utc)
+            else:
+                submission.status = SubmissionStatus.FAILED
+                submission.error_message = result.error_message
+                await submission_repo.update(submission)
+                raise ValueError(
+                    f"Baseline scoring failed: {result.error_message}"
+                )
+        except ValueError:
+            raise
+        except Exception as e:
+            submission.status = SubmissionStatus.FAILED
+            submission.error_message = f"Scoring error: {str(e)}"
+            await submission_repo.update(submission)
+            raise ValueError(f"Baseline scoring error: {str(e)}")
+
+        await submission_repo.update(submission)
+
+        # Update competition
+        competition.baseline_submission_id = submission.id
         return await self.repo.update(competition)
