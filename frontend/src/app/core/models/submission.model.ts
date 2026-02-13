@@ -13,13 +13,14 @@ export interface Submission {
 }
 
 export interface LeaderboardEntry {
-  rank: number;
-  user_id: number;
-  username: string;
+  rank: number | null;
+  user_id: number | null;
+  username: string | null;
   display_name: string;
   best_score: number;
   submission_count: number;
   last_submission: string;
+  is_baseline?: boolean;
 }
 
 export interface Leaderboard {

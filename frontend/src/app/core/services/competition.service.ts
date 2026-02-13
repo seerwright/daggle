@@ -38,4 +38,8 @@ export class CompetitionService {
   uploadThumbnail(slug: string, file: File): Observable<Competition> {
     return this.api.upload<Competition>(`/competitions/${slug}/thumbnail`, file);
   }
+
+  uploadBaseline(slug: string, file: File): Observable<Competition> {
+    return this.api.upload<Competition>(`/competitions/${slug}/baseline`, file);
+  }
 }

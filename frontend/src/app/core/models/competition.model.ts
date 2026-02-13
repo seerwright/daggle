@@ -21,6 +21,8 @@ export interface Competition {
   evaluation_description: string | null;
   is_public: boolean;
   has_truth_set: boolean;
+  has_baseline: boolean;
+  baseline_score: number | null;
   thumbnail_url: string | null;
   created_at: string;
   updated_at: string;

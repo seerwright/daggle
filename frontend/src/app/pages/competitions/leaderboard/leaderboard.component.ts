@@ -28,22 +28,36 @@ import { LeaderboardEntry } from '../../../core/models/submission.model';
           <ng-container matColumnDef="rank">
             <th mat-header-cell *matHeaderCellDef class="rank-cell">Rank</th>
             <td mat-cell *matCellDef="let entry" class="rank-cell">
-              <span class="rank-display" [ngClass]="getRankClass(entry.rank)">
-                {{ entry.rank }}
-              </span>
+              @if (entry.is_baseline) {
+                <mat-icon class="baseline-icon">flag</mat-icon>
+              } @else {
+                <span class="rank-display" [ngClass]="getRankClass(entry.rank)">
+                  {{ entry.rank }}
+                </span>
+              }
             </td>
           </ng-container>
 
           <ng-container matColumnDef="user">
             <th mat-header-cell *matHeaderCellDef>Participant</th>
             <td mat-cell *matCellDef="let entry">
-              <div class="user-cell">
-                <div class="user-avatar">{{ getInitials(entry.display_name) }}</div>
-                <div>
-                  <div class="user-name">{{ entry.display_name }}</div>
-                  <div class="user-team">&#64;{{ entry.username }}</div>
+              @if (entry.is_baseline) {
+                <div class="user-cell baseline-user">
+                  <mat-icon class="baseline-avatar-icon">flag</mat-icon>
+                  <div>
+                    <div class="user-name">Baseline</div>
+                    <div class="user-team">Benchmark prediction</div>
+                  </div>
                 </div>
-              </div>
+              } @else {
+                <div class="user-cell">
+                  <div class="user-avatar">{{ getInitials(entry.display_name) }}</div>
+                  <div>
+                    <div class="user-name">{{ entry.display_name }}</div>
+                    <div class="user-team">&#64;{{ entry.username }}</div>
+                  </div>
+                </div>
+              }
             </td>
           </ng-container>
 
@@ -70,7 +84,7 @@ import { LeaderboardEntry } from '../../../core/models/submission.model';
 
           <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
           <tr mat-row *matRowDef="let row; columns: displayedColumns;"
-              [ngClass]="{'rank-1': row.rank === 1, 'rank-2': row.rank === 2, 'rank-3': row.rank === 3}">
+              [ngClass]="{'rank-1': row.rank === 1 && !row.is_baseline, 'rank-2': row.rank === 2 && !row.is_baseline, 'rank-3': row.rank === 3 && !row.is_baseline, 'baseline-row': row.is_baseline}">
           </tr>
         </table>
       </div>
@@ -227,6 +241,34 @@ import { LeaderboardEntry } from '../../../core/models/submission.model';
       background-color: rgba(194, 133, 90, 0.08);
     }
 
+    tr.baseline-row {
+      background-color: var(--color-accent-light);
+      border-top: 2px dashed var(--color-border-strong);
+    }
+
+    .baseline-icon {
+      color: var(--color-accent);
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+    }
+
+    .baseline-avatar-icon {
+      color: var(--color-accent);
+      font-size: 24px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .baseline-user .user-name {
+      color: var(--color-accent);
+      font-weight: 600;
+    }
+
     /* Responsive */
     @media (max-width: 640px) {
       .table-container {
@@ -278,7 +320,8 @@ export class LeaderboardComponent implements OnInit {
     });
   }
 
-  getRankClass(rank: number): string {
+  getRankClass(rank: number | null): string {
+    if (rank === null) return '';
     if (rank === 1) return 'rank-gold';
     if (rank === 2) return 'rank-silver';
     if (rank === 3) return 'rank-bronze';
