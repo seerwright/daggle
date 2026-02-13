@@ -247,13 +247,32 @@ class SubmissionService:
             best_score_agg = func.max(Submission.public_score)
 
         if is_team_competition:
-            return await self._get_team_leaderboard(
+            entries = await self._get_team_leaderboard(
                 competition, best_score_agg, lower_better, limit
-            ), True
+            )
         else:
-            return await self._get_user_leaderboard(
+            entries = await self._get_user_leaderboard(
                 competition, best_score_agg, lower_better, limit
-            ), False
+            )
+
+        # Append baseline entry if exists
+        if competition.baseline_submission_id and competition.baseline_submission:
+            bs = competition.baseline_submission
+            if bs.status == SubmissionStatus.SCORED and bs.public_score is not None:
+                entries.append({
+                    "rank": None,
+                    "user_id": None,
+                    "username": None,
+                    "display_name": "Baseline",
+                    "team_id": None,
+                    "team_name": None,
+                    "best_score": bs.public_score,
+                    "submission_count": 1,
+                    "last_submission": bs.scored_at or bs.created_at,
+                    "is_baseline": True,
+                })
+
+        return entries, is_team_competition
 
     async def _get_user_leaderboard(
         self,
@@ -274,6 +293,7 @@ class SubmissionService:
             )
             .where(Submission.competition_id == competition.id)
             .where(Submission.status == SubmissionStatus.SCORED)
+            .where(Submission.is_baseline == False)  # noqa: E712
             .group_by(Submission.user_id)
         )
 
@@ -350,6 +370,7 @@ class SubmissionService:
             )
             .where(Submission.competition_id == competition.id)
             .where(Submission.status == SubmissionStatus.SCORED)
+            .where(Submission.is_baseline == False)  # noqa: E712
             .where(Submission.team_id.isnot(None))
             .group_by(Submission.team_id)
         )
@@ -368,6 +389,7 @@ class SubmissionService:
             )
             .where(Submission.competition_id == competition.id)
             .where(Submission.status == SubmissionStatus.SCORED)
+            .where(Submission.is_baseline == False)  # noqa: E712
             .where(Submission.team_id.is_(None))
             .group_by(Submission.user_id)
         )

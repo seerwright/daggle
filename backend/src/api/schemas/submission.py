@@ -40,15 +40,16 @@ class SubmissionListResponse(BaseModel):
 class LeaderboardEntry(BaseModel):
     """Schema for leaderboard entry."""
 
-    rank: int
-    user_id: int | None  # None for team entries
-    username: str | None  # None for team entries
+    rank: int | None = None  # None for baseline entries
+    user_id: int | None = None  # None for team or baseline entries
+    username: str | None = None  # None for team or baseline entries
     display_name: str
     team_id: int | None = None  # Set for team competitions
     team_name: str | None = None  # Set for team competitions
     best_score: float
     submission_count: int
     last_submission: datetime
+    is_baseline: bool = False
 
 
 class LeaderboardResponse(BaseModel):
