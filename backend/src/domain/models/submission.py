@@ -3,7 +3,7 @@
 import enum
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.domain.models.base import Base, TimestampMixin
@@ -31,6 +31,9 @@ class Submission(Base, TimestampMixin):
     # Submission data
     file_path: Mapped[str] = mapped_column(String(500))
     file_name: Mapped[str] = mapped_column(String(255))
+
+    # Baseline flag
+    is_baseline: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
 
     # Scoring
     status: Mapped[SubmissionStatus] = mapped_column(

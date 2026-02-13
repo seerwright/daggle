@@ -77,12 +77,22 @@ class Competition(Base, TimestampMixin):
     sample_submission_path: Mapped[str | None] = mapped_column(String(500))
     solution_path: Mapped[str | None] = mapped_column(String(500))
 
+    # Baseline
+    baseline_submission_id: Mapped[int | None] = mapped_column(
+        ForeignKey("submissions.id"), nullable=True
+    )
+
     # Media
     thumbnail_path: Mapped[str | None] = mapped_column(String(500))
 
     # Relationships
+    baseline_submission: Mapped["Submission | None"] = relationship(  # noqa: F821
+        foreign_keys=[baseline_submission_id],
+        lazy="selectin",
+    )
     submissions: Mapped[list["Submission"]] = relationship(  # noqa: F821
         back_populates="competition",
+        foreign_keys="[Submission.competition_id]",
         lazy="selectin",
     )
     teams: Mapped[list["Team"]] = relationship(  # noqa: F821
