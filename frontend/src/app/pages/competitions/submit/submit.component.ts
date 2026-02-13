@@ -85,7 +85,7 @@ import { Competition } from '../../../core/models/competition.model';
           </button>
           <span class="limit-info">
             <mat-icon>info_outline</mat-icon>
-            Daily limit: {{ competition?.daily_submission_limit }} submissions
+            Daily limit: {{ competition.daily_submission_limit }} submissions
           </span>
         </div>
       </div>
